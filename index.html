@@ -159,7 +159,7 @@
                     </button>
                     <div id="${idPlaylist}" class="hidden divide-y divide-slate-700/50">
             `;
-        } else if (blocoAtual && textoPrimeiraColuna && !textoPrimeiraColuna.trim().startsWith(" ")) {
+        } else if (blocoAtual && textoPrimeiraColuna.trim() !== '') {
             const musica = linha[0];
             const tom = linha[1] || '';
             const variacao = linha[2] || '';
