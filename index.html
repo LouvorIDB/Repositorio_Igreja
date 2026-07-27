@@ -42,13 +42,12 @@
         </div>
     </div>
 
-    <!-- Player de Áudio Fixo no Rodapé (Usa o visualizador embutido do Drive) -->
+    <!-- Player de Áudio Fixo no Rodapé -->
     <div class="bg-slate-800 border-t border-slate-700 p-4 fixed bottom-0 left-0 right-0 shadow-2xl z-50">
         <div class="container mx-auto max-w-4xl flex flex-col sm:flex-row items-center justify-between gap-3">
             <div class="text-center sm:text-left w-full sm:w-1/3">
                 <span id="nowPlayingTitle" class="text-sm font-semibold text-emerald-300 block truncate">Nenhuma música selecionada</span>
             </div>
-            <!-- Container do Player Integrado do Drive -->
             <div id="playerContainer" class="w-full sm:w-2/3 flex justify-center items-center">
                 <span class="text-xs text-slate-400">Clique em "▶ Ouvir VS" em qualquer música para carregar o player.</span>
             </div>
@@ -139,9 +138,10 @@
                     const musica = linha[0];
                     const tom = linha[1] || '';
                     const variacao = linha[2] || '';
-                    const vsLink = linha[3] || '';
-                    const ytDado = linha[4] || ''; 
-                    const fileId = extrairIdDrive(vsLink);
+                    const vsCelular = linha[3] || ''; // Coluna D (VS)
+                    const ytDado = linha[4] || '';   // Coluna E (YouTube)
+                    
+                    const fileId = extrairIdDrive(vsCelular);
                     const linkYoutubeFinal = obterLinkYoutube(ytDado, musica);
                     contadorCard++;
 
@@ -180,10 +180,10 @@
             container.innerHTML = '';
 
             for (let i = 1; i < rows.length; i++) {
-                const [musica, tom, variacaoTom, vsLink, ytDado] = rows[i]; 
+                const [musica, tom, variacaoTom, vsCelular, ytDado] = rows[i]; 
                 if (!musica) continue;
 
-                const fileId = extrairIdDrive(vsLink);
+                const fileId = extrairIdDrive(vsCelular);
                 const linkYoutubeFinal = obterLinkYoutube(ytDado, musica);
                 const cardId = `rep-${i}`;
 
@@ -229,10 +229,10 @@
             container.innerHTML = '';
 
             for (let i = 1; i < rows.length; i++) {
-                const [musica, tom, variacaoTom, vsLink, ytDado] = rows[i];
+                const [musica, tom, variacaoTom, vsCelular, ytDado] = rows[i];
                 if (!musica || !musica.toLowerCase().includes(termo)) continue;
 
-                const fileId = extrairIdDrive(vsLink);
+                const fileId = extrairIdDrive(vsCelular);
                 const linkYoutubeFinal = obterLinkYoutube(ytDado, musica);
                 const cardId = `rep-filtrado-${i}`;
 
@@ -265,14 +265,11 @@
             }
         }
 
-        // Função que injeta o player oficial integrado do Google Drive no rodapé
         function playDriveAudio(title, fileId) {
             const titleSpan = document.getElementById('nowPlayingTitle');
             const playerContainer = document.getElementById('playerContainer');
             
             titleSpan.textContent = `Tocando: ${title}`;
-            
-            // Cria um iframe embed seguro do Google Drive que carrega o player nativo do Google
             playerContainer.innerHTML = `
                 <iframe src="https://drive.google.com/file/d/${fileId}/preview" 
                     width="100%" height="48" allow="autoplay" 
