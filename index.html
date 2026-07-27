@@ -5,11 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Repertório - Igreja</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilo para centralizar e ajustar perfeitamente o player do Google Drive */
+        .drive-player-wrapper {
+            position: relative;
+            width: 100%;
+            height: 56px;
+            overflow: hidden;
+            border-radius: 0.5rem;
+            background-color: #1e293b;
+        }
+        .drive-player-wrapper iframe {
+            position: absolute;
+            top: -50px;
+            left: 0;
+            width: 100%;
+            height: 150px;
+            border: 0;
+        }
+    </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between">
 
     <!-- Espaçamento extra grande no final para o conteúdo nunca ficar escondido -->
-    <div class="container mx-auto px-4 py-8 max-w-4xl pb-56">
+    <div class="container mx-auto px-4 py-8 max-w-4xl pb-60">
         <!-- Cabeçalho e Navegação -->
         <header class="mb-8 text-center">
             <h1 class="text-3xl font-bold text-emerald-400">Repertório & Escalas</h1>
@@ -43,14 +62,13 @@
         </div>
     </div>
 
-    <!-- Rodapé Fixo com altura expandida para acomodar o player inteiro -->
-    <div class="bg-slate-800 border-t border-slate-700 px-6 py-4 fixed bottom-0 left-0 right-0 shadow-2xl z-50">
+    <!-- Rodapé Fixo Ajustado -->
+    <div class="bg-slate-800 border-t border-slate-700 px-6 py-5 fixed bottom-0 left-0 right-0 shadow-2xl z-50">
         <div class="container mx-auto max-w-4xl flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="text-center md:text-left w-full md:w-1/3">
                 <span id="nowPlayingTitle" class="text-xs md:text-sm font-semibold text-emerald-300 block truncate">Nenhuma música selecionada</span>
             </div>
-            <!-- Container com altura forçada de 80px para o player do Drive encaixar perfeitamente -->
-            <div id="playerContainer" class="w-full md:w-2/3 h-20 flex justify-center items-center overflow-hidden">
+            <div id="playerContainer" class="w-full md:w-2/3 flex justify-center items-center">
                 <span class="text-xs text-slate-400">Clique em "▶ Ouvir VS" para carregar o player.</span>
             </div>
         </div>
@@ -274,12 +292,11 @@
             titleSpan.textContent = `Tocando: ${title}`;
 
             if (fileId) {
-                // Iframe configurado com altura total de 80px e escala interna otimizada para evitar cortes
+                // Utiliza a classe CSS de máscara para reposicionar o iframe perfeitamente sem cortes
                 playerContainer.innerHTML = `
-                    <iframe src="https://drive.google.com/file/d/${fileId}/preview" 
-                        width="100%" height="80" allow="autoplay" 
-                        class="rounded-lg border-0 bg-slate-900 scale-100 origin-center">
-                    </iframe>
+                    <div class="drive-player-wrapper">
+                        <iframe src="https://drive.google.com/file/d/${fileId}/preview" allow="autoplay"></iframe>
+                    </div>
                 `;
             } else {
                 playerContainer.innerHTML = `
