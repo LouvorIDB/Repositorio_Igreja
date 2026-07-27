@@ -92,13 +92,29 @@
             }
         }
 
+        // Conversor robusto para links do Google Drive funcionarem no player nativo
         function extrairIdDrive(url) {
             if (!url) return '';
-            const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-            if (match && match[1]) {
-                return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+            let fileId = '';
+            
+            // Padrão 1: /file/d/ID_DO_ARQUIVO/view
+            const match1 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (match1 && match1[1]) {
+                fileId = match1[1];
+            } else {
+                // Padrão 2: ?id=ID_DO_ARQUIVO ou open?id=ID_DO_ARQUIVO
+                const match2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                if (match2 && match2[1]) {
+                    fileId = match2[1];
+                }
             }
-            return url;
+
+            if (fileId) {
+                // Retorna o link de exportação direta do Google Drive
+                return `https://drive.google.com/uc?export=download&id=${fileId}`;
+            }
+            
+            return url; // Se não for link do Drive, retorna o original
         }
 
         function renderizarCultos(rows) {
@@ -129,7 +145,7 @@
                     const tom = linha[1] || '';
                     const variacao = linha[2] || '';
                     const vsLink = linha[3] || '';
-                    const ytLink = linha[4] || ''; // Coluna E (YouTube)
+                    const ytLink = linha[4] || ''; 
                     const audioDireto = extrairIdDrive(vsLink);
                     contadorCard++;
 
@@ -168,7 +184,7 @@
             container.innerHTML = '';
 
             for (let i = 1; i < rows.length; i++) {
-                const [musica, tom, variacaoTom, vsLink, ytLink] = rows[i]; // Coluna E (YouTube) inclusa
+                const [musica, tom, variacaoTom, vsLink, ytLink] = rows[i]; 
                 if (!musica) continue;
 
                 const audioDireto = extrairIdDrive(vsLink);
