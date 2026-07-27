@@ -93,29 +93,28 @@
         }
 
         // Conversor robusto para links do Google Drive funcionarem no player nativo
-        function extrairIdDrive(url) {
-            if (!url) return '';
-            let fileId = '';
-            
-            // Padrão 1: /file/d/ID_DO_ARQUIVO/view
-            const match1 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-            if (match1 && match1[1]) {
-                fileId = match1[1];
-            } else {
-                // Padrão 2: ?id=ID_DO_ARQUIVO ou open?id=ID_DO_ARQUIVO
-                const match2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-                if (match2 && match2[1]) {
-                    fileId = match2[1];
-                }
-            }
-
-            if (fileId) {
-                // Retorna o link de exportação direta do Google Drive
-                return `https://drive.google.com/uc?export=download&id=${fileId}`;
-            }
-            
-            return url; // Se não for link do Drive, retorna o original
+       function extrairIdDrive(url) {
+    if (!url) return '';
+    let fileId = '';
+    
+    // Pega o ID do arquivo independente do formato do link do Drive
+    const match1 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match1 && match1[1]) {
+        fileId = match1[1];
+    } else {
+        const match2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (match2 && match2[1]) {
+            fileId = match2[1];
         }
+    }
+
+    if (fileId) {
+        // Usa um link alternativo de streaming direto compatível com tags <audio>
+        return `https://docs.google.com/uc?export=open&id=${fileId}`;
+    }
+    
+    return url;
+}
 
         function renderizarCultos(rows) {
             const container = document.getElementById('secao-cultos');
