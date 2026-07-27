@@ -284,26 +284,35 @@
                 container.appendChild(card);
             }
         }
-
+function fecharPlayer() {
+    document.getElementById('nowPlayingTitle').textContent = 'Nenhuma música selecionada';
+    document.getElementById('playerContainer').innerHTML = `
+        <span class="text-xs text-slate-400">Clique em "▶ Ouvir VS" para carregar o player.</span>
+    `;
+}
         function playDriveAudio(title, fileId, rawValue) {
-            const titleSpan = document.getElementById('nowPlayingTitle');
-            const playerContainer = document.getElementById('playerContainer');
-            
-            titleSpan.textContent = `Tocando: ${title}`;
+    const titleSpan = document.getElementById('nowPlayingTitle');
+    const playerContainer = document.getElementById('playerContainer');
+    
+    titleSpan.textContent = `Tocando: ${title}`;
 
-            if (fileId) {
-                // Utiliza a classe CSS de máscara para reposicionar o iframe perfeitamente sem cortes
-                playerContainer.innerHTML = `
-                    <div class="drive-player-wrapper">
-                        <iframe src="https://drive.google.com/file/d/${fileId}/preview" allow="autoplay"></iframe>
-                    </div>
-                `;
-            } else {
-                playerContainer.innerHTML = `
-                    <span class="text-xs text-yellow-400">Insira o link de compartilhamento completo do Drive na planilha.</span>
-                `;
-            }
-        }
+    if (fileId) {
+        playerContainer.innerHTML = `
+            <div class="flex items-center gap-2 w-full">
+                <div class="drive-player-wrapper flex-1">
+                    <iframe src="https://drive.google.com/file/d/${fileId}/preview" allow="autoplay"></iframe>
+                </div>
+                <button onclick="fecharPlayer()" title="Fechar player" class="shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white transition text-sm">
+                    ✕
+                </button>
+            </div>
+        `;
+    } else {
+        playerContainer.innerHTML = `
+            <span class="text-xs text-yellow-400">Insira o link de compartilhamento completo do Drive na planilha.</span>
+        `;
+    }
+}
 
         async function enviarComentario(musica, idAutor, idTexto, idStatus) {
             const autor = document.getElementById(idAutor).value;
