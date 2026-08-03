@@ -373,27 +373,33 @@ function fecharPlayer() {
     }
 }
 
-        function playYoutubeAudio(title, url) {
+                    function playYoutubeAudio(title, url) {
     const videoId = extrairIdYoutube(url);
     const titleSpan = document.getElementById('nowPlayingTitle');
     const playerContainer = document.getElementById('playerContainer');
 
-    titleSpan.textContent = `Tocando: ${title}`;
+    titleSpan.textContent = `▶ ${title}`;
 
     if (videoId) {
+        const linkYoutube = `https://www.youtube.com/watch?v=${videoId}`;
         playerContainer.innerHTML = `
             <div class="flex items-center gap-2 w-full">
-                <div class="relative w-full rounded-lg overflow-hidden bg-black" style="height: 80px;">
-                    <iframe 
-                        src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0" 
+                <div class="relative w-full rounded-lg overflow-hidden bg-black" style="height: 180px;">
+                    <iframe
+                        src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0"
                         allow="autoplay; encrypted-media"
                         allowfullscreen
-                        style="left:0; width:100%; height:600px; border:0;">
+                        style="width:100%; height:100%; border:0;">
                     </iframe>
                 </div>
-                <button onclick="fecharPlayer()" title="Fechar player" class="shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white transition text-sm">
-                    ✕
-                </button>
+                <div class="flex flex-col gap-2 shrink-0">
+                    <a href="${linkYoutube}" target="_blank" title="Abrir no YouTube" class="w-7 h-7 flex items-center justify-center rounded-full bg-red-700 hover:bg-red-500 text-white transition text-sm">
+                        ↗
+                    </a>
+                    <button onclick="fecharPlayer()" title="Fechar player" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white transition text-sm">
+                        ✕
+                    </button>
+                </div>
             </div>
         `;
     } else {
