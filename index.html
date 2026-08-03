@@ -201,7 +201,7 @@
                             <input type="text" id="sugestao-autor-${contadorBloco}" placeholder="Seu nome" class="sm:w-1/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-red-500">
                             <input type="text" id="sugestao-texto-${contadorBloco}" placeholder="Nome da música sugerida" class="sm:w-2/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-red-500">
                         </div>
-                       onclick="enviarComentario('${blocoAtual.replace(/'/g, "\\'")}', 'sugestao-autor-${contadorBloco}', 'sugestao-texto-${contadorBloco}', 'sugestao-status-${contadorBloco}', 'Sugestão para Culto')" class="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-medium">Enviar sugestão</button>
+                      <button onclick="enviarComentario('${blocoAtual.replace(/'/g, "\\'")}', 'sugestao-autor-${contadorBloco}', 'sugestao-texto-${contadorBloco}', 'sugestao-status-${contadorBloco}', 'Sugestão para Culto')" class="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-medium">Enviar sugestão</button>
                         <p id="sugestao-status-${contadorBloco}" class="text-xs text-emerald-400 hidden">Sugestão enviada com sucesso!</p>
                     </div>
                 `;
@@ -235,7 +235,7 @@
                     <div class="flex gap-2">
                         <input type="text" id="autor-c-${contadorCard}" placeholder="Seu nome" class="w-1/3 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
                         <input type="text" id="comentario-c-${contadorCard}" placeholder="Ex: Mudar tom para C..." class="w-2/3 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
-                        onclick="enviarComentario('${musica.replace(/'/g, "\\'")}', 'autor-c-${contadorCard}', 'comentario-c-${contadorCard}', 'status-c-${contadorCard}', 'Ajuste de Tom')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-medium">Enviar</button>
+                       <button onclick="enviarComentario('${musica.replace(/'/g, "\\'")}', 'autor-c-${contadorCard}', 'comentario-c-${contadorCard}', 'status-c-${contadorCard}', 'Ajuste de Tom')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-medium">Enviar</button>
                     </div>
                     <p id="status-c-${contadorCard}" class="text-xs text-emerald-400 hidden">Enviado com sucesso!</p>
                 </div>
@@ -281,7 +281,7 @@
                         <div class="flex gap-2">
                             <input type="text" id="autor-${i}" placeholder="Seu nome" class="w-1/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-emerald-500">
                             <input type="text" id="comentario-${i}" placeholder="Ex: Mudar tom para C..." class="w-2/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-emerald-500">
-                            <onclick="enviarComentario('${musica.replace(/'/g, "\\'")}', 'autor-${i}', 'comentario-${i}', 'status-${i}', 'Ajuste de Tom')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded text-sm font-medium">Enviar</button>
+                            <button onclick="enviarComentario('${musica.replace(/'/g, "\\'")}', 'autor-${i}', 'comentario-${i}', 'status-${i}', 'Ajuste de Tom')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded text-sm font-medium">Enviar</button>
                         </div>
                         <p id="status-${i}" class="text-xs text-emerald-400 hidden">Solicitação enviada com sucesso!</p>
                     </div>
@@ -335,7 +335,7 @@
                         <div class="flex gap-2">
                             <input type="text" id="autor-f-${i}" placeholder="Seu nome" class="w-1/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-emerald-500">
                             <input type="text" id="comentario-f-${i}" placeholder="Ex: Mudar tom para C..." class="w-2/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-emerald-500">
-                            onclick="enviarComentario('${musica.replace(/'/g, "\\'")}', 'autor-f-${i}', 'comentario-f-${i}', 'status-f-${i}', 'Ajuste de Tom')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded text-sm font-medium">Enviar</button>
+                            <button onclick="enviarComentario('${musica.replace(/'/g, "\\'")}', 'autor-f-${i}', 'comentario-f-${i}', 'status-f-${i}', 'Ajuste de Tom')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded text-sm font-medium">Enviar</button>
                         </div>
                         <p id="status-f-${i}" class="text-xs text-emerald-400 hidden">Solicitação enviada com sucesso!</p>
                     </div>
