@@ -101,6 +101,19 @@
                 <label for="culto-em-montagem" class="text-sm text-slate-300">Marcar como "EM MONTAGEM"</label>
             </div>
 
+            <div class="flex items-center gap-3">
+                <input type="checkbox" id="culto-oculto" class="w-4 h-4 accent-slate-500">
+                <label for="culto-oculto" class="text-sm text-slate-300">Ocultar da visualização geral (culto já realizado)</label>
+            </div>
+
+            <!-- Equipe escalada -->
+            <div>
+                <h3 class="text-sm font-semibold text-slate-300 mb-2">Equipe Escalada</h3>
+                <div id="culto-cantores-lista" class="flex flex-wrap gap-2 min-h-[30px]">
+                    <p class="text-slate-500 text-xs">Carregando cantores...</p>
+                </div>
+            </div>
+
             <!-- Músicas do culto -->
             <div>
                 <div class="flex items-center justify-between mb-2">
@@ -199,8 +212,9 @@
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzY7ME_zU4avoz3cyswfP1INGxyaJuMDAHxCyZtDHnLuItqNE_YhtKgYBYmO_1YJdMH/exec";
         const SENHA_ADMIN = "idblouvor"; // ← ALTERE AQUI
 
-        let dadosGlobais = { cultos: [], repertorio: [], banco: [] };
+        let dadosGlobais = { cultos: [], repertorio: [], banco: [], cantores: [] };
         let musicasCultoAtual = []; // músicas sendo editadas no modal
+        let escaladosCultoAtual = []; // cantores escalados sendo editados no modal
         let cultoEditandoIndex = null; // índice do culto sendo editado (null = novo)
         let isAdmin = false;
 
@@ -222,6 +236,7 @@
                 dadosGlobais.cultos = data.cultos || [];
                 dadosGlobais.repertorio = data.repertorio || [];
                 dadosGlobais.banco = data.banco || [];
+                dadosGlobais.cantores = data.cantores || [];
 
                 renderizarCultos(dadosGlobais.cultos);
                 renderizarRepertorio(dadosGlobais.repertorio);
@@ -295,12 +310,19 @@
 
             blocos.forEach((bloco, idx) => {
                 const emMontagem = bloco.titulo.toUpperCase().includes('EM MONTAGEM');
-                const cor = emMontagem ? 'border-red-700/50 bg-red-900/20' : 'border-slate-700 bg-slate-800/60';
-                const corTexto = emMontagem ? 'text-red-300' : 'text-emerald-300';
+                const oculto = bloco.titulo.toUpperCase().includes('OCULTO');
+                const cor = oculto
+                    ? 'border-slate-700 bg-slate-800/30 opacity-60'
+                    : (emMontagem ? 'border-red-700/50 bg-red-900/20' : 'border-slate-700 bg-slate-800/60');
+                const corTexto = oculto ? 'text-slate-400' : (emMontagem ? 'text-red-300' : 'text-emerald-300');
+                const tituloExibicao = bloco.titulo.replace(/ - OCULTO/i, '').trim();
                 html += `
                     <div class="flex items-center justify-between px-4 py-3 rounded-xl border ${cor} gap-3">
-                        <span class="text-sm font-semibold ${corTexto} uppercase">${bloco.titulo}</span>
-                        <button onclick="editarCulto(${bloco.startIndex})" class="bg-slate-700 hover:bg-emerald-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs transition">✏️ Editar</button>
+                        <span class="text-sm font-semibold ${corTexto} uppercase">${tituloExibicao}${oculto ? ' 🙈' : ''}</span>
+                        <div class="flex gap-2 shrink-0">
+                            <button onclick="toggleOcultoCulto(${bloco.startIndex})" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs transition">${oculto ? '👁️ Mostrar' : '🙈 Ocultar'}</button>
+                            <button onclick="editarCulto(${bloco.startIndex})" class="bg-slate-700 hover:bg-emerald-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs transition">✏️ Editar</button>
+                        </div>
                     </div>
                 `;
             });
@@ -313,6 +335,7 @@
         function mostrarFormCulto(startIndex) {
             cultoEditandoIndex = startIndex;
             musicasCultoAtual = [];
+            escaladosCultoAtual = [];
 
             document.getElementById('status-salvar-culto').classList.add('hidden');
             document.getElementById('erro-salvar-culto').classList.add('hidden');
@@ -323,12 +346,18 @@
                 document.getElementById('culto-data').value = '';
                 document.getElementById('culto-tipo').value = 'DOMINGO';
                 document.getElementById('culto-em-montagem').checked = false;
+                document.getElementById('culto-oculto').checked = false;
             } else {
                 // Editar existente
                 const rows = dadosGlobais.cultos;
                 const tituloCulto = rows[startIndex][0].toString();
                 document.getElementById('modal-culto-titulo').textContent = 'Editar Culto';
                 document.getElementById('culto-em-montagem').checked = tituloCulto.toUpperCase().includes('EM MONTAGEM');
+                document.getElementById('culto-oculto').checked = tituloCulto.toUpperCase().includes('OCULTO');
+
+                // Carrega a equipe escalada (gravada na coluna F da linha do cabeçalho)
+                const escaladosStr = rows[startIndex][5] ? rows[startIndex][5].toString() : '';
+                escaladosCultoAtual = escaladosStr ? escaladosStr.split(',').map(s => s.trim()).filter(Boolean) : [];
 
                 // Extrai data e tipo do título (ex: "11/07 - CULTO DE SABADO")
                 const partes = tituloCulto.split(' - ');
@@ -353,12 +382,28 @@
             }
 
             renderizarMusicasCulto();
+            renderizarCantoresCulto();
             document.getElementById('seletor-musica').classList.add('hidden');
             document.getElementById('modal-culto').classList.remove('hidden');
         }
 
         function editarCulto(startIndex) {
             mostrarFormCulto(startIndex);
+        }
+
+        // Alterna rapidamente se um culto aparece ou não na visualização geral, sem abrir o modal completo
+        async function toggleOcultoCulto(startIndex) {
+            try {
+                await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ acao: 'toggleOculto', startIndex })
+                });
+                await carregarDados();
+            } catch (err) {
+                alert('Erro ao alternar a visibilidade do culto.');
+            }
         }
 
         function fecharModalCulto() {
@@ -397,6 +442,35 @@
         function removerMusica(idx) {
             musicasCultoAtual.splice(idx, 1);
             renderizarMusicasCulto();
+        }
+
+        // ===================== ADMIN: EQUIPE ESCALADA (CANTORES) =====================
+
+        function renderizarCantoresCulto() {
+            const container = document.getElementById('culto-cantores-lista');
+            const cantores = dadosGlobais.cantores;
+
+            if (!cantores || cantores.length <= 1) {
+                container.innerHTML = '<p class="text-slate-500 text-xs">Nenhum cantor cadastrado. Crie uma aba "Cantores" na planilha com os nomes na coluna A.</p>';
+                return;
+            }
+
+            container.innerHTML = cantores.slice(1).map(row => {
+                const nome = row[0] ? row[0].toString() : '';
+                if (!nome) return '';
+                const ativo = escaladosCultoAtual.includes(nome);
+                const classe = ativo
+                    ? 'bg-emerald-600 text-white border-emerald-500'
+                    : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500';
+                return `<button type="button" onclick="toggleCantorEscalado('${nome.replace(/'/g, "\\'")}')" class="px-3 py-1.5 rounded-full text-xs font-medium border transition ${classe}">${ativo ? '✓ ' : ''}${nome}</button>`;
+            }).join('');
+        }
+
+        function toggleCantorEscalado(nome) {
+            const idx = escaladosCultoAtual.indexOf(nome);
+            if (idx === -1) escaladosCultoAtual.push(nome);
+            else escaladosCultoAtual.splice(idx, 1);
+            renderizarCantoresCulto();
         }
 
         // ===================== ADMIN: SELETOR DE MÚSICAS DO BANCO =====================
@@ -462,10 +536,11 @@
             const data = document.getElementById('culto-data').value.trim();
             const tipo = document.getElementById('culto-tipo').value;
             const emMontagem = document.getElementById('culto-em-montagem').checked;
+            const oculto = document.getElementById('culto-oculto').checked;
 
             if (!data) { alert('Preencha a data do culto.'); return; }
 
-            const titulo = `${data} - CULTO DE ${tipo}${emMontagem ? ' - EM MONTAGEM' : ''}`;
+            const titulo = `${data} - CULTO DE ${tipo}${emMontagem ? ' - EM MONTAGEM' : ''}${oculto ? ' - OCULTO' : ''}`;
 
             const btn = document.getElementById('btn-salvar-culto');
             btn.textContent = 'Salvando...';
@@ -475,6 +550,7 @@
                 acao: 'salvarCulto',
                 titulo,
                 musicas: musicasCultoAtual,
+                escalados: escaladosCultoAtual,
                 editandoIndex: cultoEditandoIndex // null = novo culto
             };
 
@@ -550,6 +626,8 @@
 
             let blocoAtual = null;
             let blocoEmMontagem = false;
+            let blocoOculto = false;
+            let escaladosAtual = '';
             let htmlCultos = '';
             let contadorCard = 0;
             let contadorBloco = 0;
@@ -559,13 +637,18 @@
                 const textoPrimeiraColuna = linha[0] ? linha[0].toString() : '';
 
                 if (textoPrimeiraColuna.includes("CULTO DE")) {
-                    if (blocoAtual) htmlCultos += `</div></div>`;
+                    if (blocoAtual && !blocoOculto) htmlCultos += `</div></div>`;
 
                     contadorBloco++;
                     const idPlaylist = `playlist-culto-${contadorBloco}`;
                     const idSeta = `seta-culto-${contadorBloco}`;
                     blocoAtual = textoPrimeiraColuna;
                     blocoEmMontagem = blocoAtual.toUpperCase().includes('EM MONTAGEM');
+                    blocoOculto = blocoAtual.toUpperCase().includes('OCULTO');
+                    escaladosAtual = linha[5] ? linha[5].toString().trim() : '';
+
+                    // Culto marcado como oculto: não aparece na visualização geral do site
+                    if (blocoOculto) continue;
 
                     const corHeader = blocoEmMontagem
                         ? 'bg-red-900/60 hover:bg-red-900/80 border-b border-red-700/50'
@@ -578,6 +661,7 @@
                                 <h2 class="font-bold ${corTexto} text-sm uppercase tracking-wider">${blocoAtual}</h2>
                                 <span id="${idSeta}" class="${corTexto} text-xs">▼</span>
                             </button>
+                            ${escaladosAtual ? `<div class="px-4 py-2 text-xs text-slate-400 bg-slate-900/40 border-b border-slate-700/50">🎤 Escalados: <span class="text-emerald-300 font-medium">${escaladosAtual}</span></div>` : ''}
                             <div id="${idPlaylist}" class="hidden divide-y divide-slate-700/50">
                     `;
 
@@ -595,7 +679,7 @@
                             </div>
                         `;
                     }
-                } else if (blocoAtual && textoPrimeiraColuna.trim() !== '' && !blocoEmMontagem) {
+                } else if (blocoAtual && !blocoOculto && textoPrimeiraColuna.trim() !== '' && !blocoEmMontagem) {
                     const musica = linha[0];
                     const tom = linha[1] || '';
                     const variacao = linha[2] || '';
@@ -632,7 +716,7 @@
                 }
             }
 
-            if (blocoAtual) htmlCultos += `</div></div>`;
+            if (blocoAtual && !blocoOculto) htmlCultos += `</div></div>`;
             container.innerHTML = htmlCultos || '<p class="text-center text-slate-500 py-10">Nenhum culto agendado encontrado na planilha.</p>';
         }
 
