@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Repertório - Igreja</title>
+    <title>Playlists - Igreja</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .drive-player-wrapper {
@@ -724,10 +724,10 @@
 
                     // Monta linha de escala de instrumentos + cantores
                     const partsEscala = [];
-                   // DEPOIS:
-                if (instrObj.violao) partsEscala.push(`🎸 Violão: ${instrObj.violao}`);
-                if (instrObj.bateria) partsEscala.push(`🥁 Bateria: ${instrObj.bateria}`);
-                if (instrObj.teclado) partsEscala.push(`🎹 Teclado: ${instrObj.teclado}`);
+                    if (instrObj.violao) partsEscala.push(`🎸 Violão: ${instrObj.violao}`);
+                    if (instrObj.bateria) partsEscala.push(`🥁 Bateria: ${instrObj.bateria}`);
+                    if (instrObj.teclado) partsEscala.push(`🎹 Teclado: ${instrObj.teclado}`);
+                    const linhaInstrumentos = partsEscala.length > 0
                         ? `<div class="px-4 py-1.5 text-xs text-slate-300 bg-slate-900/40 border-b border-slate-700/30 flex flex-wrap gap-3">${partsEscala.join('<span class="text-slate-600">|</span>')}</div>`
                         : '';
                     const linhaCantores = cantoresCulto
