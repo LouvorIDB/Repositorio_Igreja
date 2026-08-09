@@ -1,0 +1,17 @@
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Dependências
+node_modules/
+
+# Arquivos temporários
+*.tmp
+*.log
+
+# Configurações locais
+.env
+.env.*
+
+# Credenciais / configurações locais do clasp
+# .clasp.json

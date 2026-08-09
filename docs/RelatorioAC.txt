@@ -1,0 +1,664 @@
+# 📚 Documentação Técnica Completa do Backend (Google Apps Script)
+
+---
+
+# 1. ARQUITETURA
+
+O sistema é baseado no **Google Apps Script (V8 Runtime)** executado na infraestrutura serverless da nuvem Google e vinculado a uma planilha do **Google Sheets**, que funciona como camada de persistência e banco de dados relacional.
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                                FRONTEND EXTERNO                                 │
+│                       (Site Web / App da Equipe de Louvor)                      │
+└───────────────────────────────┬──────────────────▲───────────────────────────────┘
+                                │ (HTTP POST JSON) │ (HTTP GET JSON)
+                                ▼                  │
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                               GOOGLE APPS SCRIPT                                 │
+│                                 (V8 Runtime)                                     │
+│                                                                                  │
+│   ┌────────────────────────┐                   ┌─────────────────────────────┐   
+│   │        doGet()         │                   │          doPost()           │   
+│   └───────────┬────────────┘                   └──────────────┬──────────────┘   
+│               │                                               │                  
+│               └───────────────────────┬───────────────────────┘                  
+│                                       ▼                                          
+│                        ┌──────────────────────────────┐                          
+│                        │      SpreadsheetApp API      │                          
+│                        └──────────────┬───────────────┘                          
+└───────────────────────────────────────┼──────────────────────────────────────────┘
+                                        │
+                                        ▼
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                                 GOOGLE SHEETS                                    │
+│  [Playlists]   [Banco_Musicas]   [Cantores]   [Musicas_Novas]   [Solicitacoes]    │
+└──────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Relação entre os Componentes:
+
+* **Google Sheets:** Atua como o banco de dados do sistema. As abas (`Playlists`, `Banco_Musicas`, `Cantores`, `Musicas_Novas`, `Historico`, `Solicitacoes`) armazenam as tabelas e dados operacionais.
+* **Código.js:** Contém toda a lógica de servidor em JavaScript. Possui rotinas acionadas pela interface do editor (`onOpen`, `gerarBlocoCulto`, `processarEscolha`, `salvarNoHistorico`, `limparPlanilhaPrincipal`) e manipuladores de requisição HTTP (`doGet` e `doPost`).
+* **PromptCulto.html:** Componente de interface gráfica (modal) aberto dentro do próprio Google Sheets. Comunica-se com o backend via `google.script.run`.
+* **Endpoint `doGet`:** Interface de leitura exposta como Web App. Retorna o estado atual das tabelas em JSON para consumo do frontend externo.
+* **Endpoint `doPost`:** Interface de escrita exposta como Web App. Recebe requisições HTTP POST com objetos JSON contendo a propriedade `acao` para criar, modificar ou ocultar dados na planilha.
+* **Frontend Externo:** Aplicação cliente externa (Web/Mobile) que interage com os endpoints `doGet` e `doPost` para exibir e gerenciar a escala do ministério de louvor.
+
+---
+
+# 2. TODAS AS FUNÇÕES
+
+### 1. `onOpen()`
+* **Arquivo:** Código.js
+* **Finalidade:** Gatilho automático disparado ao abrir a planilha no Google Sheets. Adiciona o menu personalizado `⛪ Ministério` à interface do usuário.
+* **Quem chama:** Google Sheets (evento de sistema `onOpen`).
+* **Quais funções ela chama:** `SpreadsheetApp.getUi()`, `ui.createMenu()`, `addItem()`, `addSeparator()`, `addToUi()`.
+* **Abas da planilha utilizadas:** Nenhuma.
+* **Lê dados?** Não.
+* **Escreve dados?** Não.
+* **Exclui dados?** Não.
+* **Altera formatação?** Altera a barra de menus da interface da planilha.
+
+---
+
+### 2. `gerarBlocoCulto()`
+* **Arquivo:** Código.js
+* **Finalidade:** Renderiza a janela modal de diálogo para seleção do culto com base em `PromptCulto.html`.
+* **Quem chama:** Menu da planilha (`⛪ Ministério` -> `Gerar Novo Culto`).
+* **Quais funções ela chama:** `HtmlService.createHtmlOutputFromFile()`, `SpreadsheetApp.getUi().showModalDialog()`.
+* **Abas da planilha utilizadas:** Nenhuma.
+* **Lê dados?** Não (lê o arquivo de template HTML `PromptCulto.html`).
+* **Escreve dados?** Não.
+* **Exclui dados?** Não.
+* **Altera formatação?** Exibe um diálogo modal na interface.
+
+---
+
+### 3. `processarEscolha(tipo)`
+* **Arquivo:** Código.js
+* **Finalidade:** Gera e formata uma nova tabela de culto de 7 colunas na planilha ativa (`DOMINGO` com 6 músicas, `QUARTA` com 4 músicas, ou `SABADO` com 5 músicas).
+* **Quem chama:** `PromptCulto.html` via `google.script.run.processarEscolha(tipo)`.
+* **Quais funções ela chama:** `buscarProximaData()`, `SpreadsheetApp.getActiveSpreadsheet()`, `sheet.getLastRow()`, `sheet.getRange()`, `merge()`, `setValue()`, `setBackground()`, `setFontColor()`, `setFontWeight()`, `setHorizontalAlignment()`, `setVerticalAlignment()`, `setBackgrounds()`, `setBorder()`, `SpreadsheetApp.newDataValidation()`, `requireValueInList()`, `build()`, `setDataValidation()`, `ss.toast()`.
+* **Abas da planilha utilizadas:** Aba ativa no momento da execução.
+* **Lê dados?** Sim (lê `sheet.getLastRow()` para calcular a posição inicial).
+* **Escreve dados?** Sim (escreve título, formatações e validação de menus suspensos).
+* **Exclui dados?** Não.
+* **Altera formatação?** Sim (mescla células, define cores de fundo, bordas e validações de dados).
+
+---
+
+### 4. `buscarProximaData(sheet, tipo)`
+* **Arquivo:** Código.js
+* **Finalidade:** Varre a coluna A da planilha ativa de baixo para cima procurando o último culto do tipo especificado e calcula a próxima data somando 7 dias.
+* **Quem chama:** `processarEscolha(tipo)`.
+* **Quais funções ela chama:** `sheet.getLastRow()`, `sheet.getRange()`, `getValues()`, `calcularPrimeiraData()`, `formatarData()`.
+* **Abas da planilha utilizadas:** Aba informada pelo parâmetro `sheet` (aba ativa).
+* **Lê dados?** Sim (lê toda a coluna A do intervalo utilizado).
+* **Escreve dados?** Não.
+* **Exclui dados?** Não.
+* **Altera formatação?** Não.
+
+---
+
+### 5. `calcularPrimeiraData(tipo)`
+* **Arquivo:** Código.js
+* **Finalidade:** Calcula a próxima ocorrência do dia da semana (`DOMINGO` = 0, `QUARTA` = 3, `SABADO` = 6) em relação à data atual.
+* **Quem chama:** `buscarProximaData()`.
+* **Quais funções ela chama:** Métodos nativos da classe `Date` do JavaScript (`getDay()`, `getDate()`, `setDate()`).
+* **Abas da planilha utilizadas:** Nenhuma.
+* **Lê dados?** Não.
+* **Escreve dados?** Não.
+* **Exclui dados?** Não.
+* **Altera formatação?** Não.
+
+---
+
+### 6. `formatarData(data)`
+* **Arquivo:** Código.js
+* **Finalidade:** Converte um objeto `Date` em uma string formatada `dd/MM` considerando o fuso horário `"GMT-3"`.
+* **Quem chama:** `buscarProximaData()`.
+* **Quais funções ela chama:** `Utilities.formatDate()`.
+* **Abas da planilha utilizadas:** Nenhuma.
+* **Lê dados?** Não.
+* **Escreve dados?** Não.
+* **Exclui dados?** Não.
+* **Altera formatação?** Não.
+
+---
+
+### 7. `salvarNoHistorico()`
+* **Arquivo:** Código.js
+* **Finalidade:** Copia a seleção ativa da planilha e a anexa ao final da aba `Historico`, preenchendo a Coluna H com o Mês/Ano informado via prompt.
+* **Quem chama:** Menu da planilha (`⛪ Ministério` -> `Arquivar Seleção no Histórico`).
+* **Quais funções ela chama:** `SpreadsheetApp.getActiveSpreadsheet()`, `ss.getActiveSheet()`, `ss.getSheetByName('Historico')`, `origem.getActiveRange()`, `ui.prompt()`, `destino.getLastRow()`, `rangeSelecionado.getNumRows()`, `destino.getRange()`, `rangeSelecionado.copyTo()`, `setValues()`, `setRowHeights()`, `ss.toast()`.
+* **Abas da planilha utilizadas:** Aba ativa (origem) e aba `Historico` (destino).
+* **Lê dados?** Sim (lê a seleção da aba ativa e a última linha da aba `Historico`).
+* **Escreve dados?** Sim (copia o conteúdo e grava o texto de mês/ano na Coluna 8).
+* **Exclui dados?** Não.
+* **Altera formatação?** Sim (ajusta a altura das linhas copiadas na aba `Historico` para 30px).
+
+---
+
+### 8. `limparPlanilhaPrincipal()`
+* **Arquivo:** Código.js
+* **Finalidade:** Limpa todo o conteúdo, formatos e mesclagens da aba ativa da linha 3 até o final.
+* **Quem chama:** Menu da planilha (`⛪ Ministério` -> `Limpar Aba de Playlists`).
+* **Quais funções ela chama:** `SpreadsheetApp.getActiveSpreadsheet()`, `ss.getActiveSheet()`, `ui.alert()`, `sheet.getLastRow()`, `sheet.getRange()`, `clear()`, `clearFormat()`, `breakApart()`, `ss.toast()`.
+* **Abas da planilha utilizadas:** Aba ativa.
+* **Lê dados?** Sim (lê `sheet.getLastRow()`).
+* **Escreve dados?** Não.
+* **Exclui dados?** Sim (apaga os dados e formatações a partir da linha 3).
+* **Altera formatação?** Sim (desfaz mesclagens e limpa estilos).
+
+---
+
+### 9. `doGet(e)`
+* **Arquivo:** Código.js
+* **Finalidade:** Endpoint HTTP GET do Web App. Lê todas as informações das tabelas e as retorna em formato JSON.
+* **Quem chama:** Frontend externo (requisições HTTP GET).
+* **Quais funções ela chama:** `SpreadsheetApp.getActiveSpreadsheet()`, `ss.getSheetByName()`, `sheet.getDataRange().getValues()`, `ContentService.createTextOutput()`, `setMimeType()`.
+* **Abas da planilha utilizadas:** `Playlists`, `Banco_Musicas`, `Cantores`, `Musicas_Novas`.
+* **Lê dados?** Sim (lê os dados de todas as 4 abas).
+* **Escreve dados?** Não.
+* **Exclui dados?** Não.
+* **Altera formatação?** Não.
+
+---
+
+### 10. `doPost(e)`
+* **Arquivo:** Código.js
+* **Finalidade:** Endpoint HTTP POST do Web App. Executa mutações na planilha com base na propriedade `data.acao` (`moverMusicasNovas`, `toggleOculto`, `salvarCulto` ou fallback para solicitações).
+* **Quem chama:** Frontend externo (requisições HTTP POST).
+* **Quais funções ela chama:** `JSON.parse()`, `SpreadsheetApp.getActiveSpreadsheet()`, `ss.getSheetByName()`, `sheet.getLastRow()`, `sheet.getRange()`, `getValues()`, `setValues()`, `setValue()`, `sort()`, `deleteRows()`, `insertRowsBefore()`, `insertRowsAfter()`, `merge()`, `setBackground()`, `setFontColor()`, `setFontWeight()`, `setHorizontalAlignment()`, `ss.insertSheet()`, `appendRow()`, `ContentService.createTextOutput()`, `setMimeType()`.
+* **Abas da planilha utilizadas:** `Musicas_Novas`, `Banco_Musicas`, `Playlists`, `Solicitacoes`.
+* **Lê dados?** Sim (lê dados de músicas, índices e conteúdos de células).
+* **Escreve dados?** Sim (grava novos blocos de cultos, solicitações e atualiza visibilidade).
+* **Exclui dados?** Sim (deleta linhas antigas em modo de edição de culto e limpa `Musicas_Novas`).
+* **Altera formatação?** Sim (aplica estilos ao cabeçalho dos cultos salvos).
+
+---
+
+### 11. `selecionar(tipo)` *(Client-side HTML)*
+* **Arquivo:** PromptCulto.html
+* **Finalidade:** Executada no navegador do usuário. Desabilita a interface do modal e aciona a função de servidor `processarEscolha` via `google.script.run`.
+* **Quem chama:** Evento `onclick` dos botões do modal HTML.
+* **Quais funções ela chama:** `document.querySelectorAll()`, `document.getElementById()`, `google.script.run.withSuccessHandler()`, `google.script.host.close()`, `withFailureHandler()`, `processarEscolha(tipo)`.
+* **Abas da planilha utilizadas:** Nenhuma diretamente.
+* **Lê dados?** Não.
+* **Escreve dados?** Não.
+* **Exclui dados?** Não.
+* **Altera formatação?** Altera a exibição dos elementos HTML no DOM.
+
+---
+
+### 12. `sincronizarArquivosDrive()` *(Função Ausente / Pendente)*
+* **Arquivo:** Declarada apenas em Código.js (linha 12)
+* **Finalidade:** Nenhuma (função referenciada no menu, mas não implementada).
+* **Quem chama:** Menu da planilha (`⛪ Ministério` -> `Sincronizar Drive`).
+* **Quais funções ela chama:** Nenhuma.
+* **Abas da planilha utilizadas:** Nenhuma.
+* **Lê / Escreve / Exclui / Formata:** N/A. Lança erro ao ser acionada.
+
+---
+
+# 3. API DO WEB APP
+
+## 3.1. Endpoint `doGet`
+
+* **Dados Retornados:** Matrizes bidimensionais contendo os valores brutos de 4 abas principais da planilha.
+* **Abas Consultadas:** `Playlists`, `Banco_Musicas`, `Cantores`, `Musicas_Novas`.
+* **Estrutura do JSON Retornado:**
+  ```json
+  {
+    "cultos": [
+      ["15/08 - CULTO DE DOMINGO", "", "", "", "", "{\"violao\":\"João\"}", "Carlos, Ana"],
+      ["Grande É o Senhor", "G", "Original", "https://...", "https://...", "", "Carlos"]
+    ],
+    "repertorio": [
+      ["Nome da Música", "Tom", "Artista", "Link VS", "Link YT"]
+    ],
+    "banco": [
+      ["Nome da Música", "Tom", "Artista", "Link VS", "Link YT"]
+    ],
+    "cantores": [
+      ["Nome do Cantor"]
+    ],
+    "novas": [
+      ["Nome da Música", "Tom", "Artista", "Link VS", "Link YT"]
+    ]
+  }
+  ```
+* **Nomes das Propriedades:** `cultos`, `repertorio`, `banco`, `cantores`, `novas`.
+* **Tratamento de Erros:** Não há bloco `try...catch` global. Se alguma aba não for encontrada, o operador ternário atribui uma matriz vazia `[]` como fallback.
+
+---
+
+## 3.2. Endpoint `doPost`
+
+### Ação 1: `moverMusicasNovas`
+* **Nome da Ação:** `moverMusicasNovas`
+* **Dados Esperados:** `{"acao": "moverMusicasNovas"}`
+* **Validações:** Checa se a aba `Musicas_Novas` existe e se possui dados além do cabeçalho (`getLastRow() > 1`).
+* **Abas Utilizadas:** `Musicas_Novas`, `Banco_Musicas`.
+* **Operações Realizadas:**
+  1. Lê as músicas sugeridas da aba `Musicas_Novas` (linhas 2 em diante).
+  2. Escreve os registros no final da aba `Banco_Musicas`.
+  3. Reordena a aba `Banco_Musicas` alfabeticamente pela Coluna A (ignorando o cabeçalho).
+  4. Exclui as linhas processadas da aba `Musicas_Novas`.
+* **Resposta Retornada:**
+  * Se houver dados: `{"status": "sucesso"}`
+  * Se estiver vazia: `{"status": "vazio"}`
+* **Possíveis Erros:** Erros de concorrência ao tentar deletar linhas ou falha se a aba `Banco_Musicas` não existir.
+
+---
+
+### Ação 2: `toggleOculto`
+* **Nome da Ação:** `toggleOculto`
+* **Dados Esperados:** `{"acao": "toggleOculto", "startIndex": 10}`
+* **Validações:** Converte o índice recebido adicionando 1 (`startIndex + 1`).
+* **Abas Utilizadas:** `Playlists`.
+* **Operações Realizadas:**
+  1. Seleciona a célula A da linha correspondente (`startIndex + 1`).
+  2. Executa Regex `/ - OCULTO/i`. Se contiver a string, remove-a; caso contrário, sufixa ` - OCULTO`.
+  3. Atualiza o valor da célula na planilha.
+* **Resposta Retornada:** `{"status": "sucesso", "novoValor": "15/08 - CULTO DE DOMINGO - OCULTO"}`
+* **Possíveis Erros:** Passar um `startIndex` inválido ou fora dos limites da aba `Playlists`.
+
+---
+
+### Ação 3: `salvarCulto`
+* **Nome da Ação:** `salvarCulto`
+* **Dados Esperados:**
+  ```json
+  {
+    "acao": "salvarCulto",
+    "editandoIndex": null,
+    "titulo": "15/08 - CULTO DE DOMINGO",
+    "instrumentos": { "violao": "João", "teclado": "Maria" },
+    "cantoresCulto": ["Carlos", "Ana"],
+    "musicas": [
+      {
+        "nome": "Grande É o Senhor",
+        "tom": "G",
+        "variacao": "Original",
+        "vs": "https://...",
+        "yt": "https://...",
+        "cantores": ["Carlos"]
+      }
+    ]
+  }
+  ```
+* **Validações:** Verifica se `editandoIndex !== null` para definir se é uma atualização de bloco existente ou inserção de um novo culto.
+* **Abas Utilizadas:** `Playlists`.
+* **Operações Realizadas:**
+  * **Modo Edição (`editandoIndex !== null`):**
+    1. Calcula `startRow = editandoIndex + 1`.
+    2. Varia as linhas para baixo contando a quantidade de linhas do bloco antigo até encontrar `"CULTO DE"` ou linha em branco.
+    3. Deleta o bloco antigo com `deleteRows()`.
+    4. Abre espaço para o novo bloco com `insertRowsBefore()`.
+  * **Modo Criação (`editandoIndex === null`):**
+    1. Define `startRow = getLastRow() + 2`.
+    2. Insere as novas linhas no final da planilha com `insertRowsAfter()`.
+  * **Gravação dos Dados:**
+    1. Grava o título na linha de cabeçalho (A:E mesclados com fundo `#ea4335`).
+    2. Serializa o objeto `instrumentos` em JSON na Coluna F.
+    3. Grava os cantores do culto separados por vírgula na Coluna G.
+    4. Grava cada música nas linhas subsequentes (Coluna A: Nome, B: Tom, C: Variação, D: VS, E: YT, F: Vazio, G: Cantores da música).
+* **Resposta Retornada:** `{"status": "sucesso"}`
+* **Possíveis Erros:** `editandoIndex` incorreto apontando para fora da planilha ou inconsistência na contagem de linhas do bloco antigo.
+
+---
+
+### Ação Fallback (Solicitações de Integrantes)
+* **Nome da Ação:** Qualidade genérica / Fallback quando `acao` não é nenhuma das anteriores.
+* **Dados Esperados:**
+  ```json
+  {
+    "categoria": "Ajuste de Tom",
+    "musica": "Agraço de Pai",
+    "autor": "Pedro",
+    "texto": "Solicito mudar tom para D"
+  }
+  ```
+* **Validações:** Verifica se a aba `Solicitacoes` existe; se não existir, cria a aba e insere o cabeçalho `["Data/Hora", "Categoria", "Música / Culto", "Quem Pediu", "Solicitação"]`.
+* **Abas Utilizadas:** `Solicitacoes`.
+* **Operações Realizadas:** Anexa uma nova linha no final da aba com `appendRow()`.
+* **Resposta Retornada:** `{"status": "sucesso"}`
+* **Possíveis Erros:** Erros de permissão de criação de nova aba.
+
+---
+
+# 4. GOOGLE SHEETS
+
+### 1. Aba `Playlists`
+* **Onde é utilizada:** `doGet`, `doPost` (`toggleOculto`, `salvarCulto`).
+* **Colunas Utilizadas:** Colunas 1 a 7 (A a G).
+* **Linhas Especiais:** Linha de cabeçalho de cada culto (possui texto `"CULTO DE"` e formato mesclado de A a E).
+* **Células Especiais:** Células F (JSON de instrumentos) e G (Cantores do evento) na linha do cabeçalho.
+* **Estrutura Esperada:** Blocos de cultos separados por 1 linha em branco.
+
+### 2. Aba `Banco_Musicas`
+* **Onde é utilizada:** `doGet`, `doPost` (`moverMusicasNovas`).
+* **Colunas Utilizadas:** Colunas 1 a 5 (A a E) - Nome, Tom, Artista, Link VS, Link YT.
+* **Linhas Especiais:** Linha 1 (Cabeçalho da tabela).
+* **Estrutura Esperada:** Lista do acervo de músicas ordenada de A a Z.
+
+### 3. Aba `Cantores`
+* **Onde é utilizada:** `doGet`.
+* **Colunas Utilizadas:** Coluna A (Nome dos integrantes do vocal).
+* **Linhas Especiais:** Nenhuma.
+* **Estrutura Esperada:** Lista de nomes dos cantores cadastrados.
+
+### 4. Aba `Musicas_Novas`
+* **Onde é utilizada:** `doGet`, `doPost` (`moverMusicasNovas`).
+* **Colunas Utilizadas:** Colunas 1 a 5 (A a E) - Nome, Tom, Artista, Link VS, Link YT.
+* **Linhas Especiais:** Linha 1 (Cabeçalho da tabela).
+* **Estrutura Esperada:** Fila temporária com sugestões de músicas a serem aprovadas.
+
+### 5. Aba `Historico`
+* **Onde é utilizada:** `salvarNoHistorico()`.
+* **Colunas Utilizadas:** Colunas 1 a 8 (A a H). Colunas A:G contêm o bloco copiado; Coluna H contém a string de Mês/Ano.
+* **Linhas Especiais:** Nenhuma.
+* **Estrutura Esperada:** Arquivo morto de playlists antigas.
+
+### 6. Aba `Solicitacoes`
+* **Onde é utilizada:** `doPost` (Fallback).
+* **Colunas Utilizadas:** Colunas 1 a 5 (A a E) - Data/Hora, Categoria, Música/Culto, Quem Pediu, Solicitação.
+* **Linhas Especiais:** Linha 1 (Cabeçalho).
+* **Estrutura Esperada:** Tabela de solicitações e recados enviados pela equipe.
+
+---
+
+# 5. PLAYLISTS / CULTOS
+
+### Como um Culto é Representado na Aba `Playlists`:
+
+Um culto é um bloco estruturado de N+2 linhas na aba `Playlists`.
+
+```
+Linha Cabeçalho │ [ 15/08 - CULTO DE DOMINGO ] (A:E Mescladas) │ JSON_Inst (F) │ Cantores (G)
+Linha Música 1  │ Nome (A) │ Tom (B) │ Var (C) │ VS (D) │ YT (E) │ (Vazio F) │ Cantores_Música (G)
+Linha Música 2  │ Nome (A) │ Tom (B) │ Var (C) │ VS (D) │ YT (E) │ (Vazio F) │ Cantores_Música (G)
+Linha Rodapé    │ [ Linha de Rodapé em Branco / Separador ] (A:G)
+```
+
+* **Cabeçalho:** A Coluna A contém o título (ex: `"15/08 - CULTO DE DOMINGO"`). As células de A a E são mescladas.
+* **Instrumentos:** Armazenados no cabeçalho na **Coluna F** como string JSON (ex: `{"violao":"João","bateria":"Pedro"}`).
+* **Cantores do Culto:** Armazenados no cabeçalho na **Coluna G** separados por vírgulas.
+* **Músicas:** Armazenadas nas linhas imediatamente abaixo do cabeçalho. Cada música ocupa 1 linha da Coluna A à E. A Coluna G armazena os cantores específicos daquela canção.
+* **Término do Culto:** O bloco termina em uma linha em branco ou no cabeçalho do culto seguinte.
+* **Localização:** Localizado via `startIndex` / `editandoIndex` informado pelo frontend, convertido para a linha real da planilha (`index + 1`).
+* **Substituição:** O algoritmo conta as linhas do bloco antigo varrendo a coluna A até encontrar a string `"CULTO DE"`, exclui as linhas antigas com `deleteRows()` e insere as novas com `insertRowsBefore()`.
+* **Ocultação:** Ação `toggleOculto` altera o texto da Coluna A da linha de cabeçalho adicionando ou removendo o sufixo ` - OCULTO`.
+* **Dependência da String `"CULTO DE"`:** Presente no `processarEscolha` (linha 49), `buscarProximaData` (linha 94) e `salvarCulto` (linha 252). Se essa string exata não for encontrada, o parser falhará ao delimitar o final do bloco.
+
+---
+
+# 6. MODELO DE DADOS
+
+| Aba | Coluna | Conteúdo | Tipo de Dado | Quem Grava | Quem Lê |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Playlists** | A | Título do Culto / Nome da Música | String | `processarEscolha`, `salvarCulto`, `toggleOculto` | `doGet`, `buscarProximaData`, `salvarCulto` |
+| **Playlists** | B | Tom da Música | String | `processarEscolha`, `salvarCulto` | `doGet` |
+| **Playlists** | C | Variação de Tom | String | `processarEscolha`, `salvarCulto` | `doGet` |
+| **Playlists** | D | Link do Multitrack (VS) | String (URL) | `salvarCulto` | `doGet` |
+| **Playlists** | E | Link do YouTube | String (URL) | `salvarCulto` | `doGet` |
+| **Playlists** | F | Instrumentos (JSON no cabeçalho) | String (JSON) | `salvarCulto` | `doGet` |
+| **Playlists** | G | Cantores do Culto / Da Música | String (CSV) | `salvarCulto` | `doGet` |
+| **Banco_Musicas** | A | Nome da Música | String | `moverMusicasNovas` | `doGet` |
+| **Banco_Musicas** | B | Tom Padrão | String | `moverMusicasNovas` | `doGet` |
+| **Banco_Musicas** | C | Artista / Variação | String | `moverMusicasNovas` | `doGet` |
+| **Banco_Musicas** | D | Link do VS | String (URL) | `moverMusicasNovas` | `doGet` |
+| **Banco_Musicas** | E | Link do YouTube | String (URL) | `moverMusicasNovas` | `doGet` |
+| **Cantores** | A | Nome do Cantor | String | Manualmente na Planilha | `doGet` |
+| **Musicas_Novas** | A:E | Dados da Música Sugerida | String | Inserção externa / manual | `doGet`, `moverMusicasNovas` |
+| **Historico** | A:G | Dados Copiados da Playlist | Vários | `salvarNoHistorico` | Leitura manual |
+| **Historico** | H | Mês e Ano de Referência | String | `salvarNoHistorico` | Leitura manual |
+| **Solicitacoes** | A | Data/Hora do Envio | Date | `doPost` (Fallback) | Leitura manual |
+| **Solicitacoes** | B | Categoria da Solicitação | String | `doPost` (Fallback) | Leitura manual |
+| **Solicitacoes** | C | Música ou Culto Relacionado | String | `doPost` (Fallback) | Leitura manual |
+| **Solicitacoes** | D | Nome de Quem Pediu | String | `doPost` (Fallback) | Leitura manual |
+| **Solicitacoes** | E | Texto da Solicitação | String | `doPost` (Fallback) | Leitura manual |
+
+---
+
+# 7. FRONTEND → BACKEND
+
+* **Endpoints:** 
+  * `GET https://script.google.com/macros/s/{SCRIPT_ID}/exec`
+  * `POST https://script.google.com/macros/s/{SCRIPT_ID}/exec`
+* **Ações (`POST`):** `moverMusicasNovas`, `toggleOculto`, `salvarCulto` e solicitações em geral.
+* **Parâmetros de Entrada:** Corpo da requisição HTTP POST contendo objeto JSON (`e.postData.contents`).
+* **Formato dos Dados:** Objetos JSON serializados em String no envio e no retorno.
+* **Respostas:** Objetos JSON com propriedade `status` (`"sucesso"`, `"vazio"`, ou `"erro"` com a mensagem de exceção).
+
+---
+
+# 8. SEGURANÇA
+
+* **Autenticação:** Ausente. O arquivo `appsscript.json` especifica `"access": "ANYONE_ANONYMOUS"`.
+* **Autorização:** Ausente. Qualquer usuário com a URL do Web App pode executar leituras ou mutações.
+* **Validações:** Mínimas (apenas checa se a aba `Musicas_Novas` possui dados antes de mover).
+* **Endpoints Públicos:** Tanto `doGet` quanto `doPost` são públicos.
+* **Dados Sensíveis:** Nomes de membros do ministério de louvor e links internos de ensaios expostos.
+* **Segredos:** Não há uso de chaves ou tokens secretos no código.
+* **Operações Destrutivas Expostas:** Deletar linhas (`deleteRows()`) de cultos antigos e apagar a aba `Musicas_Novas`.
+* **Riscos de Requisições Anônimas:** Acesso anônimo malicioso pode apagar o conteúdo da aba `Playlists` ou inundar a planilha com solicitações falsas.
+
+---
+
+# 9. CONCORRÊNCIA
+
+### Funções com Operações de Escrita:
+* `processarEscolha`
+* `salvarNoHistorico`
+* `limparPlanilhaPrincipal`
+* `doPost` -> `moverMusicasNovas`
+* `doPost` -> `toggleOculto`
+* `doPost` -> `salvarCulto`
+* `doPost` -> Fallback (`Solicitacoes`)
+
+### Análise de `LockService`:
+* **Resultado:** O serviço `LockService` **NÃO ESTÁ IMPLEMENTADO**.
+
+### Risco de Requisições Simultâneas:
+* **ALTO.** Duas chamadas simultâneas ao `salvarCulto` ou `moverMusicasNovas` podem conflitar ao calcular `getLastRow()`, resultando em sobrescrita de linhas, deletamento incorreto ou desalinhamento de blocos.
+
+---
+
+# 10. ERROS
+
+1. **Blocos `try/catch` Existentes:**
+   * `gerarBlocoCulto()` (Captura erros ao abrir o modal HTML).
+   * `processarEscolha()` (Captura erros ao aplicar a validação de dados).
+   * `doPost()` (Captura exceções globais e retorna JSON de erro).
+2. **Mensagens de Erro:**
+   * `"Erro ao abrir janela: "`
+   * `"Erro ao aplicar menus suspensos: "`
+   * `{"status": "erro", "message": error.toString()}`
+3. **Funções com Risco de Falha Sem Tratamento:**
+   * `doGet()`: Lança erro HTTP 500 se alguma aba esperada não for encontrada ou se `getDataRange()` falhar.
+   * `salvarNoHistorico()`: Quebra se o usuário cancelar o prompt ou se a aba `Historico` não existir.
+   * `sincronizarArquivosDrive()`: Chamada no menu que falha 100% das vezes porque a função não existe.
+4. **Dependências Vulneráveis:** Dependência estrita dos nomes exatos das abas (`Playlists`, `Banco_Musicas`, `Cantores`, `Musicas_Novas`, `Historico`, `Solicitacoes`).
+
+---
+
+# 11. DEPENDÊNCIAS
+
+### Serviços Google Utilizados:
+* **`SpreadsheetApp`**: Manipulação de planilhas, intervalos, formatação, menus e interface do usuário.
+* **`HtmlService`**: Renderização da modal HTML `PromptCulto.html`.
+* **`ContentService`**: Retorno de respostas formatadas em JSON.
+* **`Utilities`**: Formatação de datas (`Utilities.formatDate`).
+
+### Serviços NÃO Utilizados:
+* `DriveApp` *(sem implementação)*
+* `PropertiesService`
+* `CacheService`
+* `LockService`
+* `UrlFetchApp`
+
+---
+
+# 12. PROBLEMAS
+
+### 🔴 CRÍTICOS
+1. **Função Faltante no Menu:** Chamada para `sincronizarArquivosDrive()` no menu `onOpen` lança erro ao ser acionada.
+2. **Falta de Trava de Concorrência:** Ausência de `LockService` nas operações de escrita do `doPost`.
+
+### 🟠 ALTOS
+3. **Falta de Autenticação/Autorização:** Web App exposto como `ANYONE_ANONYMOUS` sem token de validação.
+4. **Desalinhamento Visual do Cabeçalho:** `processarEscolha` e `salvarCulto` mesclam 5 colunas em um layout de 7 colunas.
+5. **Vulnerabilidade no Parser por String:** Lógica de identificação dependente exclusivamente do texto `"CULTO DE"`.
+
+### 🟡 MÉDIOS
+6. **Ausência de `try/catch` no `doGet`:** Riscos de quebra de leitura com erro 500.
+7. **Contagem de Linhas por Loop Frágil:** Algoritmo de limpeza de linhas vazias no modo edição suscetível a erros de formatação.
+
+### 🟢 BAIXOS
+8. **Mistura de Padrões de Nomenclatura:** Variáveis alternando entre inglês e português.
+9. **Falta de Logs Estruturados:** Sem uso ativo de auditoria via `console.log`.
+
+---
+
+# 13. RECOMENDAÇÕES
+
+1. **Implementar ou Remover a Função de Drive:** Implementar a função `sincronizarArquivosDrive()` ou removê-la do menu `onOpen`.
+2. **Adicionar `LockService`:** Proteger o `doPost` com `const lock = LockService.getScriptLock(); lock.tryLock(10000);`.
+3. **Adicionar Autenticação Simples na API:** Exigir um segredo/token de validação nas requisições POST.
+4. **Corrigir Formatação do Cabeçalho:** Ajustar `.merge()` de `1, 5` para `1, 7` na criação e salvamento de cultos.
+5. **Utilizar Identificadores Únicos:** Substituir a busca textual por `"CULTO DE"` por IDs únicos gravados nas propriedades da célula/linha.
+
+---
+
+# 14. FLUXOS
+
+### A) Usuário acessa o site
+1. O usuário abre a página web no navegador.
+2. O aplicativo solicita os dados do backend via requisição HTTP GET.
+
+### B) Site carrega os dados
+1. O backend recebe a requisição no `doGet()`.
+2. O script consulta as abas `Playlists`, `Banco_Musicas`, `Cantores` e `Musicas_Novas`.
+3. Retorna o JSON com todos os arrays de dados.
+4. O frontend renderiza a interface na tela.
+
+### C) Administrador entra
+1. O administrador se autentica na interface do frontend cliente.
+
+### D) Administrador cria um culto
+1. O administrador envia os dados do culto via `POST` com `acao: "salvarCulto"` e `editandoIndex: null`.
+2. O `doPost` localiza o final da aba `Playlists` (`getLastRow() + 2`).
+3. Escreve o cabeçalho (com JSON de instrumentos e cantores) e as linhas de músicas.
+4. Retorna `{"status": "sucesso"}`.
+
+### E) Administrador edita um culto
+1. O administrador edita um culto existente e envia um `POST` com `acao: "salvarCulto"` e `editandoIndex: N`.
+2. O `doPost` calcula a linha inicial (`N + 1`), conta as linhas do bloco antigo varrendo até o próximo `"CULTO DE"`, exclui as linhas antigas e insere as novas.
+
+### F) Administrador altera escala
+1. O administrador altera integrantes nos campos de instrumentos ou cantores.
+2. O fluxo segue o mesmo caminho da **Edição de Culto (Item E)**.
+
+### G) Usuário envia solicitação
+1. O integrante envia um pedido ou aviso pelo site.
+2. O frontend envia `POST` com a estrutura de solicitação (fallback).
+3. O backend garante a aba `Solicitacoes` e insere a linha com `appendRow()`.
+
+### H) Músicas novas são movidas para o banco
+1. O administrador aprova as músicas sugeridas no site.
+2. O frontend envia `POST` com `acao: "moverMusicasNovas"`.
+3. O `doPost` lê os dados de `Musicas_Novas`, anexa ao final de `Banco_Musicas`, reordena de A a Z e deleta o conteúdo de `Musicas_Novas`.
+
+### I) Culto é ocultado
+1. O administrador clica em ocultar/exibir um culto.
+2. O frontend envia `POST` com `acao: "toggleOculto"` e `startIndex`.
+3. O `doPost` seleciona a célula do cabeçalho na aba `Playlists` e insere ou remove a string ` - OCULTO`.
+
+### J) Dados são registrados no histórico
+1. O usuário seleciona um intervalo na planilha pelo Google Sheets.
+2. Aciona o menu `⛪ Ministério` -> `Arquivar Seleção no Histórico`.
+3. Informa o Mês/Ano no prompt.
+4. O script copia o intervalo para o final da aba `Historico` e preenche a coluna H.
+
+---
+
+# 15. CONTRATO DA API
+
+### GET `/exec`
+* **Requisição:** `GET /exec`
+* **Resposta:**
+  ```json
+  {
+    "cultos": [ ["String"] ],
+    "repertorio": [ ["String"] ],
+    "banco": [ ["String"] ],
+    "cantores": [ ["String"] ],
+    "novas": [ ["String"] ]
+  }
+  ```
+
+---
+
+### POST `/exec` — `moverMusicasNovas`
+* **Requisição:** `{"acao": "moverMusicasNovas"}`
+* **Processamento:** Copia registros de `Musicas_Novas` para `Banco_Musicas`, ordena alfabeticamente e limpa a aba de origem.
+* **Resposta:** `{"status": "sucesso"}` ou `{"status": "vazio"}`
+
+---
+
+### POST `/exec` — `toggleOculto`
+* **Requisição:** `{"acao": "toggleOculto", "startIndex": 5}`
+* **Processamento:** Altera o texto da célula A da linha `startIndex + 1` adicionando ou removendo ` - OCULTO`.
+* **Resposta:** `{"status": "sucesso", "novoValor": "15/08 - CULTO DE DOMINGO - OCULTO"}`
+
+---
+
+### POST `/exec` — `salvarCulto`
+* **Requisição:**
+  ```json
+  {
+    "acao": "salvarCulto",
+    "editandoIndex": null,
+    "titulo": "15/08 - CULTO DE DOMINGO",
+    "instrumentos": { "violao": "João" },
+    "cantoresCulto": ["Ana"],
+    "musicas": [
+      {
+        "nome": "Santo Espírito",
+        "tom": "E",
+        "variacao": "Original",
+        "vs": "",
+        "yt": "",
+        "cantores": ["Ana"]
+      }
+    ]
+  }
+  ```
+* **Processamento:** Exclui o bloco antigo (se em edição) ou insere um novo bloco no final de `Playlists`.
+* **Resposta:** `{"status": "sucesso"}`
+
+---
+
+### POST `/exec` — Fallback (Solicitações)
+* **Requisição:**
+  ```json
+  {
+    "categoria": "Observação",
+    "musica": "Santo Espírito",
+    "autor": "Gabriel",
+    "texto": "Aumentar a introdução"
+  }
+  ```
+* **Processamento:** Anexa uma linha com os dados da solicitação na aba `Solicitacoes`.
+* **Resposta:** `{"status": "sucesso"}`
+
+---
+
+# RESUMO EXECUTIVO
+
+Este sistema funciona como uma ponte automatizada entre uma planilha do **Google Sheets** (que atua como banco de dados) e uma **aplicação web externa** utilizada pelo ministério de louvor da igreja.
+
+1. **Operação Interna:** Na planilha, os voluntários utilizam menus personalizados para gerar rapidamente tabelas formatadas de cultos (Domingo, Quarta ou Sábado), arquivar seleções no histórico e limpar dados antigos.
+2. **Operação Externa (API):** O script disponibiliza uma API HTTP pública. Quando o site/aplicativo web é aberto, ele chama a função `doGet` para carregar a lista de cultos, o repertório de músicas e os cantores. Quando um administrador cria, altera ou oculta um culto no site, o aplicativo envia um `POST` para a função `doPost`, que altera, insere ou remove diretamente as linhas e cores dentro da planilha do Google Sheets.

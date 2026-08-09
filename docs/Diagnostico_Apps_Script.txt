@@ -1,0 +1,110 @@
+# 📊 Diagnóstico Técnico — Projeto Louvor (Apps Script)
+
+## 1. Visão Geral da Arquitetura
+
+O projeto é uma solução baseada em **Google Apps Script (V8 Runtime)** acoplada a uma planilha do **Google Sheets**, desenvolvida para gerenciar o ministério de louvor de uma igreja (escalas, repertórios, tons e instrumentistas).
+
+A aplicação opera em dois frontes:
+1. **Interface Interna (Google Sheets GUI):** Menus customizados e uma janela modal em HTML (`PromptCulto.html`) para automação de tarefas na planilha.
+2. **API REST / Web App HTTP:** Endpoints `doGet` e `doPost` que servem dados da planilha em JSON e recebem comandos remotos (salvar cultos, alterar visibilidade, mover músicas e registrar solicitações).
+
+```
+   [ Web Client / App Externo ] 
+                │ (HTTP GET/POST)
+                ▼
+       [ Web App doGet/doPost ] ──┐
+                                  ├──► [ Google Sheets (Planilha Principal) ]
+       [ Menu Customizado GUI ] ──┘     ├── Playlists
+       [ PromptCulto.html Modal ]       ├── Banco_Musicas
+                                        ├── Cantores
+                                        ├── Musicas_Novas
+                                        └── Solicitacoes / Historico
+```
+
+---
+
+## 2. Análise dos Arquivos do Repositório
+
+### 📄 1. appsscript.json (Manifesto)
+* **Fuso Horário:** `America/Sao_Paulo` (Correto para horário de Brasília).
+* **Logging:** Utiliza `STACKDRIVER` (GCP Cloud Logging).
+* **Configuração do Web App:**
+  * `executeAs`: `USER_DEPLOYING` — O script roda com as permissões do usuário que publicou o Web App.
+  * `access`: `ANYONE_ANONYMOUS` — Permite que requisições HTTP externas acessem a API sem login da conta Google.
+
+### 📄 2. PromptCulto.html (Modal de Seleção)
+* Interface minimalista renderizada via `HtmlService`.
+* Oferece 3 opções pré-configuradas:
+  * **Domingo:** 6 músicas (Cor Verde - `#34a853`)
+  * **Quarta:** 4 músicas (Cor Azul - `#4285f4`)
+  * **Sábado:** 5 músicas (Cor Vermelha - `#ea4335`)
+* **Comunicação assíncrona:** Executa `google.script.run.processarEscolha(tipo)` e lida com o estado visual de carregamento (`loader`) e erros (`withFailureHandler`).
+
+### 📄 3. Código.js (Lógica do Servidor)
+Contém toda a regra de negócio dividida em duas áreas:
+
+#### A. Automação da Planilha (Módulos Internos)
+* **`onOpen()`**: Adiciona o menu `⛪ Ministério` à interface do Google Sheets.
+* **`gerarBlocoCulto()`**: Abre o modal `PromptCulto.html`.
+* **`processarEscolha(tipo)`**: Gera a estrutura de tabela para o novo culto, calcula a data dinamicamente com `buscarProximaData()`, aplica validação de dados em listas suspensas (Tons e Variações) e define cores de fundo.
+* **`salvarNoHistorico()`**: Copia o intervalo selecionado pelo usuário para a aba `Historico` adicionando uma coluna com a referência do mês/ano.
+* **`limparPlanilhaPrincipal()`**: Limpa a aba ativa mantendo apenas as primeiras linhas.
+
+#### B. API Web App (Módulos HTTP)
+* **`doGet(e)`**: Lê e retorna os dados das abas `Playlists`, `Banco_Musicas`, `Cantores` e `Musicas_Novas` serializados em JSON.
+* **`doPost(e)`**: Processa as seguintes ações via payload JSON (`data.acao`):
+  * `moverMusicasNovas`: Move linhas de `Musicas_Novas` para `Banco_Musicas`, reordena de A a Z e limpa a origem.
+  * `toggleOculto`: Alterna o sufixo `- OCULTO` na célula de título do culto.
+  * `salvarCulto`: Cria ou substitui um bloco de culto completo no formato de 7 colunas (incluindo JSON de instrumentos na Coluna F e cantores na Coluna G).
+  * *Fallback*: Se nenhuma ação específica for passada, salva uma linha na aba `Solicitacoes`.
+
+---
+
+## 3. Principais Problemas e Vulnerabilidades Detectadas
+
+### 🔴 Erros Críticos (Bugs Funcionais)
+
+1. **Função Inexistente no Menu (`sincronizarArquivosDrive`):**
+   * Em `Código.js` (linha 12), o menu declara:
+     ```javascript
+     .addItem('Sincronizar Drive', 'sincronizarArquivosDrive')
+     ```
+   * **Falha:** A função `sincronizarArquivosDrive` **não existe** em nenhum lugar do script. Clicar neste item no Google Sheets causará uma exceção imediata (`Script function not found: sincronizarArquivosDrive`).
+
+2. **Desalinhamento de Colunas do Cabeçalho (Inconsistência Visual):**
+   * Na função `processarEscolha` (`Código.js` linha 48) e na função `salvarCulto` (`Código.js` linha 275):
+     ```javascript
+     sheet.getRange(startRow, 1, 1, 5).merge() // Mescla 5 colunas (A a E)
+     ```
+   * **Falha:** O bloco da música utiliza **7 colunas** (A a G) para acomodar os dados de instrumentos (coluna F) e cantores (coluna G). Ao mesclar apenas até a coluna 5 (E), as colunas F e G ficam sem a formatação e a cor de fundo do cabeçalho.
+
+---
+
+### 🟡 Riscos de Arquitetura e Fragilidades
+
+3. **Ausência de Trava de Concorrência (`LockService`):**
+   * No endpoint `doPost`, operações como `salvarCulto` e `moverMusicasNovas` inserem e excluem linhas diretamente na planilha.
+   * **Risco:** Se dois usuários ou requisições simultâneas chamarem a API ao mesmo tempo, a leitura e a escrita do `getLastRow()` entrarão em *race condition*, corrompendo a estrutura de linhas da planilha.
+
+4. **Busca de Blocos por Correspondência de String Frágil:**
+   * Em `buscarProximaData` e na substituição de blocos em `salvarCulto`, o código varre a coluna A procurando pela substring `"CULTO DE"`.
+   * **Risco:** Se uma música cadastrada contiver no nome `"CULTO DE"` (ex: *"Música para Culto de Celebração"*), a varredura interpretará a linha como se fosse um cabeçalho de evento, corrompendo o cálculo de substituição de linhas.
+
+5. **Tratamento de Erros e Resiliência em `doGet`:**
+   * A função `doGet` não possui bloco `try...catch`. Caso uma das abas (`Playlists`, `Banco_Musicas`, etc.) seja excluída ou renomeada na planilha, a API falhará com erro 500 sem entregar uma resposta JSON amigável ao cliente.
+
+6. **Segurança e Validação no Web App (`ANYONE_ANONYMOUS`):**
+   * O endpoint `doPost` aceita requisições sem nenhum tipo de autenticação ou token de segurança (`API Key` / `Secret Header`). Qualquer cliente que possua a URL do Web App pode enviar requisições POST para apagar ou alterar blocos na planilha.
+
+---
+
+## 4. Matriz de Recomendações e Boas Práticas
+
+| Item | Área | Diagnóstico | Ação Sugerida (Para futuras correções) |
+| :--- | :--- | :--- | :--- |
+| 1 | **Menu** | Função `sincronizarArquivosDrive` ausente. | Criar a função no `Código.js` ou remover o item do menu em `onOpen()`. |
+| 2 | **Layout** | Cabeçalho mesclando 5 colunas em tabela de 7 colunas. | Ajustar `getRange(startRow, 1, 1, 5).merge()` para `.getRange(startRow, 1, 1, 7).merge()`. |
+| 3 | **Concorrência** | `doPost` sem tratamento concorrente. | Envolver as operações de escrita no `doPost` com `LockService.getScriptLock()`. |
+| 4 | **Segurança** | Web App aceita qualquer POST anônimo sem chave. | Incluir validação de chave de segurança (`data.token === SECRET_KEY`). |
+| 5 | **Resiliência** | `doGet` sem tratamento de exceção (`try/catch`). | Envolver `doGet` em bloco `try/catch` retornando JSON de erro se necessário. |
+| 6 | **Estrutura** | Dependência de texto `"CULTO DE"` na Coluna A. | Adicionar metadados ocultos ou utilizar um marcador único para cada bloco de culto. |
