@@ -11,14 +11,50 @@ function fecharModalAdmin() {
     document.getElementById('modal-admin').classList.add('hidden');
 }
 
-function entrarAdmin() {
-    const senha = document.getElementById('input-senha-admin').value;
-    if (senha === SENHA_ADMIN) {
-        isAdmin = true;
-        fecharModalAdmin();
-        abrirPainelAdmin();
-    } else {
-        document.getElementById('erro-senha').classList.remove('hidden');
+async function entrarAdmin() {
+    const inputSenha = document.getElementById('input-senha-admin');
+    const erroSenha = document.getElementById('erro-senha');
+    const btnEntrar = document.querySelector('#modal-admin button[onclick="entrarAdmin()"]') || document.querySelector('#modal-admin button:last-child');
+    const senha = inputSenha.value;
+
+    if (!senha) {
+        erroSenha.textContent = 'Senha incorreta.';
+        erroSenha.classList.remove('hidden');
+        return;
+    }
+
+    const textoOriginalBtn = btnEntrar ? btnEntrar.textContent : 'Entrar';
+    if (btnEntrar) {
+        btnEntrar.textContent = 'Validando...';
+        btnEntrar.disabled = true;
+    }
+    erroSenha.classList.add('hidden');
+
+    try {
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ acao: 'validarSenha', senha })
+        });
+        const resData = await response.json();
+
+        if (resData && resData.autorizado === true) {
+            isAdmin = true;
+            fecharModalAdmin();
+            abrirPainelAdmin();
+        } else {
+            erroSenha.textContent = 'Senha incorreta.';
+            erroSenha.classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error('Erro ao validar senha:', error);
+        erroSenha.textContent = 'Senha incorreta.';
+        erroSenha.classList.remove('hidden');
+    } finally {
+        if (btnEntrar) {
+            btnEntrar.textContent = textoOriginalBtn;
+            btnEntrar.disabled = false;
+        }
     }
 }
 
