@@ -661,6 +661,43 @@ function doPost(e) {
 
 
     // ========================================================
+    // VALIDAR SENHA ADMIN
+    // ========================================================
+
+    if (
+      data.acao ===
+      'validarSenha'
+    ) {
+
+      const senhaEsperada =
+        PropertiesService
+          .getScriptProperties()
+          .getProperty('SENHA_ADMIN') ||
+        'idblouvor';
+
+      if (
+        data.senha ===
+        senhaEsperada
+      ) {
+
+        return respostaJSON({
+          status: 'sucesso',
+          autorizado: true
+        });
+
+      } else {
+
+        return respostaJSON({
+          status: 'erro',
+          autorizado: false,
+          message:
+            'Senha incorreta.'
+        });
+      }
+    }
+
+
+    // ========================================================
     // MOVER MÚSICAS NOVAS PARA O BANCO
     // ========================================================
 
