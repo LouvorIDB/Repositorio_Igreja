@@ -223,6 +223,7 @@
     <script src="js/config.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/player.js"></script>
+    <script src="js/admin.js"></script>
     <script>
         // ===================== INICIALIZAÇÃO =====================
 
@@ -256,85 +257,7 @@
 
 
 
-        // ===================== ADMIN: LOGIN =====================
 
-        function abrirModalAdmin() {
-            document.getElementById('modal-admin').classList.remove('hidden');
-            document.getElementById('input-senha-admin').value = '';
-            document.getElementById('erro-senha').classList.add('hidden');
-            setTimeout(() => document.getElementById('input-senha-admin').focus(), 100);
-        }
-
-        function fecharModalAdmin() {
-            document.getElementById('modal-admin').classList.add('hidden');
-        }
-
-        function entrarAdmin() {
-            const senha = document.getElementById('input-senha-admin').value;
-            if (senha === SENHA_ADMIN) {
-                isAdmin = true;
-                fecharModalAdmin();
-                abrirPainelAdmin();
-            } else {
-                document.getElementById('erro-senha').classList.remove('hidden');
-            }
-        }
-
-        function sairAdmin() {
-            isAdmin = false;
-            document.getElementById('painel-admin').classList.add('hidden');
-        }
-
-        // ===================== ADMIN: PAINEL =====================
-
-        function abrirPainelAdmin() {
-            document.getElementById('painel-admin').classList.remove('hidden');
-            renderizarAdminListaCultos();
-        }
-
-        function renderizarAdminListaCultos() {
-            const container = document.getElementById('admin-lista-cultos');
-            const rows = dadosGlobais.cultos;
-            let html = '';
-            let blocos = [];
-            let blocoAtual = null;
-            let blocoIndex = null;
-
-            for (let i = 0; i < rows.length; i++) {
-                const texto = rows[i][0] ? rows[i][0].toString() : '';
-                if (texto.includes("CULTO DE")) {
-                    if (blocoAtual !== null) blocos.push({ titulo: blocoAtual, startIndex: blocoIndex });
-                    blocoAtual = texto;
-                    blocoIndex = i;
-                }
-            }
-            if (blocoAtual !== null) blocos.push({ titulo: blocoAtual, startIndex: blocoIndex });
-
-            if (blocos.length === 0) {
-                container.innerHTML = '<p class="text-slate-500 text-sm">Nenhum culto encontrado na planilha.</p>';
-                return;
-            }
-
-            blocos.forEach((bloco) => {
-                const emMontagem = bloco.titulo.toUpperCase().includes('EM MONTAGEM');
-                const oculto = bloco.titulo.toUpperCase().includes('OCULTO');
-                const cor = oculto ? 'border-slate-700 bg-slate-800/30 opacity-60'
-                    : (emMontagem ? 'border-red-700/50 bg-red-900/20' : 'border-slate-700 bg-slate-800/60');
-                const corTexto = oculto ? 'text-slate-400' : (emMontagem ? 'text-red-300' : 'text-emerald-300');
-                const tituloExibicao = bloco.titulo.replace(/ - OCULTO/i, '').trim();
-                html += `
-                    <div class="flex items-center justify-between px-4 py-3 rounded-xl border ${cor} gap-3">
-                        <span class="text-sm font-semibold ${corTexto} uppercase">${tituloExibicao}${oculto ? ' 🙈' : ''}</span>
-                        <div class="flex gap-2 shrink-0">
-                            <button onclick="toggleOcultoCulto(${bloco.startIndex})" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs transition">${oculto ? '👁️ Mostrar' : '🙈 Ocultar'}</button>
-                            <button onclick="editarCulto(${bloco.startIndex})" class="bg-slate-700 hover:bg-emerald-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs transition">✏️ Editar</button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
 
         // ===================== ADMIN: CRIAR / EDITAR CULTO =====================
 
@@ -400,16 +323,7 @@
 
         function editarCulto(startIndex) { mostrarFormCulto(startIndex); }
 
-        async function toggleOcultoCulto(startIndex) {
-            try {
-                await fetch(WEB_APP_URL, {
-                    method: 'POST', mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ acao: 'toggleOculto', startIndex })
-                });
-                await carregarDados();
-            } catch (err) { alert('Erro ao alternar a visibilidade do culto.'); }
-        }
+
 
         function fecharModalCulto() {
             document.getElementById('modal-culto').classList.add('hidden');
