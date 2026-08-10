@@ -15,7 +15,7 @@ async function entrarAdmin() {
     const inputSenha = document.getElementById('input-senha-admin');
     const erroSenha = document.getElementById('erro-senha');
     const btnEntrar = document.querySelector('#modal-admin button[onclick="entrarAdmin()"]') || document.querySelector('#modal-admin button:last-child');
-    const senha = inputSenha.value;
+    const senha = inputSenha.value.trim();
 
     if (!senha) {
         erroSenha.textContent = 'Senha incorreta.';
@@ -33,7 +33,6 @@ async function entrarAdmin() {
     try {
         const response = await fetch(WEB_APP_URL, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ acao: 'validarSenha', senha })
         });
         const resData = await response.json();

@@ -676,8 +676,12 @@ function doPost(e) {
         'idblouvor';
 
       if (
-        data.senha ===
+        (data.senha || '')
+          .toString()
+          .trim() ===
         senhaEsperada
+          .toString()
+          .trim()
       ) {
 
         return respostaJSON({
