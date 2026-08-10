@@ -220,17 +220,8 @@
         </div>
     </div>
 
+    <script src="js/config.js"></script>
     <script>
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzY7ME_zU4avoz3cyswfP1INGxyaJuMDAHxCyZtDHnLuItqNE_YhtKgYBYmO_1YJdMH/exec";
-        const SENHA_ADMIN = "idblouvor";
-
-        let dadosGlobais = { cultos: [], repertorio: [], banco: [], cantores: [] };
-        let musicasCultoAtual = [];
-        let cantoresCultoAtual = []; // cantores selecionados para cantar no culto
-        let escalaInstrumentos = { violao: '', bateria: '', teclado: '' };
-        let cultoEditandoIndex = null;
-        let isAdmin = false;
-
         // ===================== INICIALIZAÇÃO =====================
 
         window.addEventListener('DOMContentLoaded', () => {
