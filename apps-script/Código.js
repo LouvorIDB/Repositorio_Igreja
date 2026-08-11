@@ -12,8 +12,6 @@ function onOpen() {
     .addSeparator()
     .addItem('Arquivar Seleção no Histórico', 'salvarNoHistorico')
     .addItem('Limpar Aba de Playlists', 'limparPlanilhaPrincipal')
-    .addSeparator()
-    .addItem('Sincronizar Drive', 'sincronizarArquivosDrive')
     .addToUi();
 }
 

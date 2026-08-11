@@ -90,7 +90,6 @@ function renderizarCultos(rows) {
     let blocoAtual = null;
     let blocoEmMontagem = false;
     let blocoOculto = false;
-    let escaladosInfo = null; // { instrumentos, cantores }
     let htmlCultos = '';
     let contadorCard = 0;
     let contadorBloco = 0;

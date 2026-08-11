@@ -3,7 +3,7 @@ function fecharPlayer() {
     document.getElementById('playerContainer').innerHTML = '<span class="text-xs text-slate-400">Clique em "▶ Ouvir VS" para carregar o player.</span>';
 }
 
-function playDriveAudio(title, fileId, rawValue) {
+function playDriveAudio(title, fileId) {
     document.getElementById('nowPlayingTitle').textContent = `Tocando: ${title}`;
     const pc = document.getElementById('playerContainer');
     if (fileId) {

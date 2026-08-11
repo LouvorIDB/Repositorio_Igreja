@@ -74,7 +74,7 @@ async function entrarAdmin() {
     const senha = inputSenha.value.trim();
 
     if (!senha) {
-        erroSenha.textContent = 'Senha incorreta.';
+        erroSenha.textContent = 'Digite a senha.';
         erroSenha.classList.remove('hidden');
         return;
     }

@@ -60,7 +60,7 @@ function mostrarToast(mensagem, tipo = 'info') {
 
     const corClasse = cores[tipo] || cores.info;
     const toast = document.createElement('div');
-    toast.className = `pointer-events-auto flex items-center justify-between px-4 py-3 rounded-xl border shadow-2xl transition-all duration-300 transform translate-y-[-10px] opacity-0 text-sm font-medium ${corClasse}`;
+    toast.className = `pointer-events-auto flex items-center justify-between px-4 py-3 rounded-xl border shadow-2xl transition-all duration-300 transform -translate-y-2 opacity-0 text-sm font-medium ${corClasse}`;
 
     toast.innerHTML = `
         <span class="flex-1 mr-2">${mensagem}</span>
@@ -70,13 +70,13 @@ function mostrarToast(mensagem, tipo = 'info') {
     container.appendChild(toast);
 
     requestAnimationFrame(() => {
-        toast.classList.remove('translate-y-[-10px]', 'opacity-0');
+        toast.classList.remove('-translate-y-2', 'opacity-0');
         toast.classList.add('translate-y-0', 'opacity-100');
     });
 
     setTimeout(() => {
         toast.classList.remove('translate-y-0', 'opacity-100');
-        toast.classList.add('translate-y-[-10px]', 'opacity-0');
+        toast.classList.add('-translate-y-2', 'opacity-0');
         setTimeout(() => toast.remove(), 300);
     }, 3500);
 }
