@@ -259,19 +259,26 @@ async function moverMusicasNovasParaBanco() {
     statusDiv.classList.add('hidden');
 
     try {
-        await fetch(WEB_APP_URL, {
-            method: 'POST', mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
             body: JSON.stringify({ acao: 'moverMusicasNovas' })
         });
-        statusDiv.textContent = '✅ Músicas movidas para o Banco com sucesso! A planilha foi ordenada A-Z. Recarregue o site para ver as mudanças.';
-        statusDiv.classList.remove('hidden');
-        btn.textContent = '🌟 Mover Músicas Novas → Banco';
-        btn.disabled = false;
-        await carregarDados();
+        const resData = await response.json();
+
+        if (resData && resData.status === 'sucesso') {
+            statusDiv.textContent = '✅ Músicas movidas para o Banco com sucesso! A planilha foi ordenada A-Z. Recarregue o site para ver as mudanças.';
+            statusDiv.classList.remove('hidden');
+            await carregarDados();
+        } else {
+            const msgErro = (resData && resData.message) ? resData.message : 'Erro ao mover músicas. Tente novamente.';
+            statusDiv.textContent = '❌ Erro: ' + msgErro;
+            statusDiv.classList.remove('hidden');
+        }
     } catch (err) {
+        console.error('Erro ao mover músicas:', err);
         statusDiv.textContent = '❌ Erro ao mover músicas. Tente novamente.';
         statusDiv.classList.remove('hidden');
+    } finally {
         btn.textContent = '🌟 Mover Músicas Novas → Banco';
         btn.disabled = false;
     }
@@ -334,13 +341,20 @@ async function enviarComentario(musica, idAutor, idTexto, idStatus, categoria = 
     statusEl.textContent = 'Enviando...';
     statusEl.classList.remove('hidden');
     try {
-        await fetch(WEB_APP_URL, {
-            method: 'POST', mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
             body: JSON.stringify({ musica, autor, texto, categoria })
         });
-        statusEl.textContent = 'Enviado!';
-        document.getElementById(idTexto).value = '';
-        setTimeout(() => statusEl.classList.add('hidden'), 4000);
-    } catch (error) { statusEl.textContent = 'Erro ao enviar.'; }
+        const resData = await response.json();
+        if (resData && resData.status === 'sucesso') {
+            statusEl.textContent = 'Enviado!';
+            document.getElementById(idTexto).value = '';
+            setTimeout(() => statusEl.classList.add('hidden'), 4000);
+        } else {
+            statusEl.textContent = (resData && resData.message) ? resData.message : 'Erro ao enviar.';
+        }
+    } catch (error) {
+        console.error('Erro ao enviar comentário:', error);
+        statusEl.textContent = 'Erro ao enviar.';
+    }
 }

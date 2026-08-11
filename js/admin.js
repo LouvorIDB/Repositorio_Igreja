@@ -115,11 +115,18 @@ function renderizarAdminListaCultos() {
 
 async function toggleOcultoCulto(startIndex) {
     try {
-        await fetch(WEB_APP_URL, {
-            method: 'POST', mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
             body: JSON.stringify({ acao: 'toggleOculto', startIndex })
         });
-        await carregarDados();
-    } catch (err) { alert('Erro ao alternar a visibilidade do culto.'); }
+        const resData = await response.json();
+        if (resData && resData.status === 'sucesso') {
+            await carregarDados();
+        } else {
+            alert((resData && resData.message) ? resData.message : 'Erro ao alternar a visibilidade do culto.');
+        }
+    } catch (err) {
+        console.error('Erro ao alternar visibilidade:', err);
+        alert('Erro ao alternar a visibilidade do culto.');
+    }
 }

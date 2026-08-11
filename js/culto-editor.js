@@ -236,8 +236,13 @@ async function salvarCulto() {
     };
 
     const btn = document.getElementById('btn-salvar-culto');
+    const statusEl = document.getElementById('status-salvar-culto');
+    const erroEl = document.getElementById('erro-salvar-culto');
+
     btn.textContent = 'Salvando...';
     btn.disabled = true;
+    statusEl.classList.add('hidden');
+    erroEl.classList.add('hidden');
 
     const payload = {
         acao: 'salvarCulto',
@@ -249,17 +254,24 @@ async function salvarCulto() {
     };
 
     try {
-        await fetch(WEB_APP_URL, {
-            method: 'POST', mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
             body: JSON.stringify(payload)
         });
-        document.getElementById('status-salvar-culto').classList.remove('hidden');
-        btn.textContent = 'Salvar na Planilha';
-        btn.disabled = false;
-        await carregarDados();
+        const resData = await response.json();
+
+        if (resData && resData.status === 'sucesso') {
+            statusEl.classList.remove('hidden');
+            await carregarDados();
+        } else {
+            erroEl.textContent = (resData && resData.message) ? resData.message : 'Erro ao salvar. Tente novamente.';
+            erroEl.classList.remove('hidden');
+        }
     } catch (err) {
-        document.getElementById('erro-salvar-culto').classList.remove('hidden');
+        console.error('Erro ao salvar culto:', err);
+        erroEl.textContent = 'Erro ao salvar. Tente novamente.';
+        erroEl.classList.remove('hidden');
+    } finally {
         btn.textContent = 'Salvar na Planilha';
         btn.disabled = false;
     }
