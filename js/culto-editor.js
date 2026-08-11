@@ -209,7 +209,7 @@ function filtrarBanco() {
 
 function adicionarMusicaDoBanco(nome, tom, variacao, vs, yt) {
     if (musicasCultoAtual.find(m => m.nome === nome)) {
-        alert(`"${nome}" já está na playlist.`);
+        mostrarToast(`"${nome}" já está na playlist.`, 'aviso');
         return;
     }
     musicasCultoAtual.push({ nome, tom, variacao, vs, yt, cantores: [] });
@@ -225,7 +225,7 @@ async function salvarCulto() {
     const emMontagem = document.getElementById('culto-em-montagem').checked;
     const oculto = document.getElementById('culto-oculto').checked;
 
-    if (!data) { alert('Preencha a data do culto.'); return; }
+    if (!data) { mostrarToast('Preencha a data do culto.', 'aviso'); return; }
 
     const titulo = `${data} - CULTO DE ${tipo}${emMontagem ? ' - EM MONTAGEM' : ''}${oculto ? ' - OCULTO' : ''}`;
 
@@ -261,6 +261,7 @@ async function salvarCulto() {
         const resData = await response.json();
 
         if (resData && resData.status === 'sucesso') {
+            limparCacheLocal();
             statusEl.classList.remove('hidden');
             await carregarDados();
         } else {

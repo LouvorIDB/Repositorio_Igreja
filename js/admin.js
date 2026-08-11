@@ -121,12 +121,13 @@ async function toggleOcultoCulto(startIndex) {
         });
         const resData = await response.json();
         if (resData && resData.status === 'sucesso') {
+            limparCacheLocal();
             await carregarDados();
         } else {
-            alert((resData && resData.message) ? resData.message : 'Erro ao alternar a visibilidade do culto.');
+            mostrarToast((resData && resData.message) ? resData.message : 'Erro ao alternar a visibilidade do culto.', 'erro');
         }
     } catch (err) {
         console.error('Erro ao alternar visibilidade:', err);
-        alert('Erro ao alternar a visibilidade do culto.');
+        mostrarToast('Erro ao alternar a visibilidade do culto.', 'erro');
     }
 }

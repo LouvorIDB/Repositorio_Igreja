@@ -41,3 +41,42 @@ function obterLinkYoutube(ytDado, nomeMusica) {
     if (ytDado.startsWith('http')) return ytDado;
     return `https://www.youtube.com/results?search_query=${encodeURIComponent(ytDado || nomeMusica)}`;
 }
+
+function mostrarToast(mensagem, tipo = 'info') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'fixed top-5 right-5 z-[200] flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4 sm:px-0';
+        document.body.appendChild(container);
+    }
+
+    const cores = {
+        sucesso: 'bg-emerald-600 border-emerald-500 text-white',
+        erro: 'bg-red-600 border-red-500 text-white',
+        aviso: 'bg-amber-600 border-amber-500 text-white',
+        info: 'bg-slate-800 border-slate-700 text-slate-100 shadow-xl'
+    };
+
+    const corClasse = cores[tipo] || cores.info;
+    const toast = document.createElement('div');
+    toast.className = `pointer-events-auto flex items-center justify-between px-4 py-3 rounded-xl border shadow-2xl transition-all duration-300 transform translate-y-[-10px] opacity-0 text-sm font-medium ${corClasse}`;
+
+    toast.innerHTML = `
+        <span class="flex-1 mr-2">${mensagem}</span>
+        <button onclick="this.parentElement.remove()" class="text-white/70 hover:text-white text-base leading-none font-bold">&times;</button>
+    `;
+
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-[-10px]', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+    });
+
+    setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-[-10px]', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+    }, 3500);
+}

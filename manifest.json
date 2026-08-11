@@ -1,0 +1,16 @@
+{
+  "name": "Repertório - Louvor IDB",
+  "short_name": "Repertório Louvor",
+  "description": "Organizador de Repertório e Playlists do Ministério de Louvor IDB",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
