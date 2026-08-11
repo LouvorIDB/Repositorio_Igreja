@@ -1,6 +1,20 @@
 // ===================== ADMIN: LOGIN =====================
 
-window.addEventListener('DOMContentLoaded', () => {
+const ADMIN_EMAIL = "joao.marcos.xavier.484@gmail.com";
+
+window.addEventListener('DOMContentLoaded', async () => {
+    // Checa se já existe sessão ativa no Supabase Auth
+    if (supabaseClient) {
+        try {
+            const { data } = await supabaseClient.auth.getSession();
+            if (data && data.session) {
+                isAdmin = true;
+            }
+        } catch (err) {
+            console.warn('Erro ao checar sessão do Supabase:', err);
+        }
+    }
+
     // 1. Atalho de teclado no computador: Ctrl + Shift + A
     window.addEventListener('keydown', (e) => {
         if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
@@ -71,7 +85,7 @@ async function entrarAdmin() {
     const inputSenha = document.getElementById('input-senha-admin');
     const erroSenha = document.getElementById('erro-senha');
     const btnEntrar = document.querySelector('#modal-admin button[onclick="entrarAdmin()"]') || document.querySelector('#modal-admin button:last-child');
-    const senha = inputSenha.value.trim();
+    const senha = inputSenha ? inputSenha.value.trim() : '';
 
     if (!senha) {
         erroSenha.textContent = 'Digite a senha.';
@@ -87,13 +101,16 @@ async function entrarAdmin() {
     erroSenha.classList.add('hidden');
 
     try {
-        const response = await fetch(WEB_APP_URL, {
-            method: 'POST',
-            body: JSON.stringify({ acao: 'validarSenha', senha })
-        });
-        const resData = await response.json();
+        if (!supabaseClient) {
+            throw new Error("Cliente Supabase não inicializado.");
+        }
 
-        if (resData && resData.autorizado === true) {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: ADMIN_EMAIL,
+            password: senha
+        });
+
+        if (!error && data && (data.session || data.user)) {
             isAdmin = true;
             fecharModalAdmin();
             abrirPainelAdmin();
@@ -102,7 +119,7 @@ async function entrarAdmin() {
             erroSenha.classList.remove('hidden');
         }
     } catch (error) {
-        console.error('Erro ao validar senha:', error);
+        console.error('Erro na autenticação Supabase:', error);
         erroSenha.textContent = 'Senha incorreta.';
         erroSenha.classList.remove('hidden');
     } finally {
@@ -113,7 +130,14 @@ async function entrarAdmin() {
     }
 }
 
-function sairAdmin() {
+async function sairAdmin() {
+    try {
+        if (supabaseClient) {
+            await supabaseClient.auth.signOut();
+        }
+    } catch (err) {
+        console.warn('Erro ao deslogar do Supabase:', err);
+    }
     isAdmin = false;
     document.getElementById('painel-admin').classList.add('hidden');
 }
