@@ -6,6 +6,12 @@ window.addEventListener('DOMContentLoaded', () => {
         document.getElementById('btn-admin-wrapper').classList.remove('hidden');
     }
     carregarDados();
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
+            console.warn('Falha ao registrar Service Worker:', err);
+        });
+    }
 });
 
 async function carregarDados() {
