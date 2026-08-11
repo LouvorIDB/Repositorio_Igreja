@@ -1,5 +1,61 @@
 // ===================== ADMIN: LOGIN =====================
 
+window.addEventListener('DOMContentLoaded', () => {
+    // 1. Atalho de teclado no computador: Ctrl + Shift + A
+    window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+            e.preventDefault();
+            abrirModalAdmin();
+        }
+    });
+
+    // 2. Acionador no mobile/touch: 5 toques rápidos ou toque longo (2s) no #titulo-site
+    const tituloEl = document.getElementById('titulo-site');
+    if (tituloEl) {
+        let toqueContador = 0;
+        let toqueTimer = null;
+        let pressTimer = null;
+
+        // 5 toques rápidos
+        tituloEl.addEventListener('click', () => {
+            toqueContador++;
+            if (!toqueTimer) {
+                toqueTimer = setTimeout(() => {
+                    toqueContador = 0;
+                    toqueTimer = null;
+                }, 2000);
+            }
+            if (toqueContador >= 5) {
+                clearTimeout(toqueTimer);
+                toqueContador = 0;
+                toqueTimer = null;
+                abrirModalAdmin();
+            }
+        });
+
+        // Toque longo (2s)
+        const iniciarLongPress = () => {
+            pressTimer = setTimeout(() => {
+                abrirModalAdmin();
+            }, 2000);
+        };
+
+        const cancelarLongPress = () => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+        };
+
+        tituloEl.addEventListener('touchstart', iniciarLongPress, { passive: true });
+        tituloEl.addEventListener('touchend', cancelarLongPress);
+        tituloEl.addEventListener('touchcancel', cancelarLongPress);
+        tituloEl.addEventListener('mousedown', iniciarLongPress);
+        tituloEl.addEventListener('mouseup', cancelarLongPress);
+        tituloEl.addEventListener('mouseleave', cancelarLongPress);
+    }
+});
+
 function abrirModalAdmin() {
     document.getElementById('modal-admin').classList.remove('hidden');
     document.getElementById('input-senha-admin').value = '';
