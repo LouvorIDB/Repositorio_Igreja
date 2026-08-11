@@ -876,6 +876,8 @@ function doPost(e) {
         novoValor
       );
 
+      SpreadsheetApp.flush();
+
       return respostaJSON({
         status: 'sucesso',
         novoValor: novoValor
