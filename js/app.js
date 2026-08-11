@@ -40,21 +40,143 @@ async function carregarDados() {
         }
     }
 
-    // 2. Revalidação em segundo plano via fetch
+    // 2. Revalidação em segundo plano via Supabase
     try {
-        const response = await fetch(WEB_APP_URL);
-        const data = await response.json();
-        const dataStr = JSON.stringify(data);
+        if (!supabaseClient) {
+            throw new Error("Cliente Supabase não inicializado.");
+        }
 
-        // 3. Atualiza cache e re-renderiza apenas se houver alterações
+        // Buscar cultos ('services') ordenados por data com relacionamentos
+        const { data: servicesData, error: servicesErr } = await supabaseClient
+            .from('services')
+            .select(`
+                *,
+                service_songs (
+                    *,
+                    song_versions (
+                        *,
+                        songs (*)
+                    )
+                )
+            `)
+            .order('date', { ascending: true });
+
+        if (servicesErr) throw servicesErr;
+
+        // Buscar banco de músicas ('songs') com suas versões
+        const { data: songsData, error: songsErr } = await supabaseClient
+            .from('songs')
+            .select(`
+                *,
+                song_versions (*)
+            `)
+            .order('title', { ascending: true });
+
+        if (songsErr) throw songsErr;
+
+        // Buscar integrantes/cantores ('profiles') se a tabela existir
+        let profilesData = [];
+        try {
+            const { data: pData } = await supabaseClient.from('profiles').select('*');
+            if (pData) profilesData = pData;
+        } catch (e) {
+            console.warn('Tabela profiles não consultada ou vazia:', e);
+        }
+
+        // 3. Formatação dos resultados do Supabase no formato das matrizes dadosGlobais
+
+        // Formata Cultos
+        const cultosFormatados = [];
+        (servicesData || []).forEach(service => {
+            let tituloHeader = service.title || `CULTO DE ${(service.type || 'DOMINGO').toUpperCase()} - ${service.date || ''}`;
+            if (service.status === 'arquivado' || (service.title && service.title.toUpperCase().includes('OCULTO'))) {
+                tituloHeader = (service.title && service.title.includes('OCULTO')) ? service.title : `${tituloHeader} - OCULTO`;
+            } else if (service.is_hidden && !tituloHeader.toUpperCase().includes('OCULTO')) {
+                tituloHeader += " - OCULTO";
+            }
+            if (service.is_draft && !tituloHeader.toUpperCase().includes('EM MONTAGEM')) {
+                tituloHeader += " - EM MONTAGEM";
+            }
+
+            const escala = service.musicians_scale || (service.service_scales && service.service_scales[0]) || {
+                violao: service.guitar_player || '',
+                bateria: service.drummer || '',
+                teclado: service.keyboard_player || ''
+            };
+            const colF = typeof escala === 'string' ? escala : JSON.stringify(escala);
+            const colG = service.singers_list || service.singers || '';
+
+            cultosFormatados.push([tituloHeader, '', '', '', '', colF, colG]);
+
+            const songList = (service.service_songs || []).sort((a, b) => (a.order || 0) - (b.order || 0));
+            songList.forEach(sSong => {
+                const version = sSong.song_versions || {};
+                const song = version.songs || sSong.songs || {};
+                const nomeMusica = song.title || version.title || sSong.song_name || sSong.title || '';
+                const tom = version.key || sSong.key || sSong.tom || '';
+                const variacao = version.variation || sSong.variation || sSong.variacao || 'Original';
+                const vs = version.drive_vs_url || version.drive_url || song.drive_vs_url || song.drive_url || sSong.drive_vs_url || sSong.drive_url || sSong.vs || '';
+                const yt = version.youtube_url || sSong.youtube_url || sSong.yt || '';
+                const cantoresMusica = sSong.singers_list || sSong.singers || '';
+
+                cultosFormatados.push([nomeMusica, tom, variacao, vs, yt, '', cantoresMusica]);
+            });
+        });
+
+        // Formata Banco, Repertorio e Novas
+        const headerMusicas = ["Música", "Tom", "Variação", "VS", "YouTube"];
+        const bancoFormatado = [headerMusicas];
+        const repertorioFormatado = [headerMusicas];
+        const novasFormatadas = [headerMusicas];
+
+        (songsData || []).forEach(song => {
+            const version = (song.song_versions && song.song_versions[0]) || {};
+            const nomeMusica = song.title || '';
+            const tom = version.key || song.key || '';
+            const variacao = version.variation || song.variation || 'Original';
+            const vs = version.drive_vs_url || version.drive_url || song.drive_vs_url || song.drive_url || '';
+            const yt = version.youtube_url || song.youtube_url || '';
+
+            const linhaMusica = [nomeMusica, tom, variacao, vs, yt];
+            bancoFormatado.push(linhaMusica);
+
+            if (song.status === 'nova') {
+                novasFormatadas.push(linhaMusica);
+            } else {
+                repertorioFormatado.push(linhaMusica);
+            }
+        });
+
+        // Formata Cantores
+        const cantoresFormatados = [["Nome", "Telefone", "Instrumentos"]];
+        (profilesData || []).forEach(profile => {
+            const nome = profile.name || '';
+            const telefone = profile.phone || '';
+            const inst = Array.isArray(profile.instruments)
+                ? profile.instruments.join(', ')
+                : (profile.instruments || profile.role || '');
+            cantoresFormatados.push([nome, telefone, inst]);
+        });
+
+        const dataObj = {
+            cultos: cultosFormatados,
+            repertorio: repertorioFormatado,
+            banco: bancoFormatado,
+            cantores: cantoresFormatados,
+            novas: novasFormatadas
+        };
+
+        const dataStr = JSON.stringify(dataObj);
+
+        // 4. Atualiza cache e re-renderiza apenas se houver alterações
         if (dataStr !== dadosExibidosStr) {
             localStorage.setItem(CACHE_KEY, dataStr);
 
-            dadosGlobais.cultos = data.cultos || [];
-            dadosGlobais.repertorio = data.repertorio || [];
-            dadosGlobais.banco = data.banco || [];
-            dadosGlobais.cantores = data.cantores || [];
-            dadosGlobais.novas = data.novas || [];
+            dadosGlobais.cultos = dataObj.cultos;
+            dadosGlobais.repertorio = dataObj.repertorio;
+            dadosGlobais.banco = dataObj.banco;
+            dadosGlobais.cantores = dataObj.cantores;
+            dadosGlobais.novas = dataObj.novas;
 
             renderizarCultos(dadosGlobais.cultos);
             renderizarRepertorio(dadosGlobais.repertorio);
@@ -62,9 +184,9 @@ async function carregarDados() {
             if (isAdmin) renderizarAdminListaCultos();
         }
     } catch (error) {
-        console.error("Erro ao carregar dados do servidor:", error);
+        console.error("Erro ao carregar dados do Supabase:", error);
         if (!dadosExibidosStr) {
-            document.getElementById('secao-cultos').innerHTML = '<p class="text-red-400 text-center">Erro ao conectar com a planilha.</p>';
+            document.getElementById('secao-cultos').innerHTML = '<p class="text-red-400 text-center">Erro ao conectar com o banco de dados.</p>';
         }
     }
 }

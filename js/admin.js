@@ -171,17 +171,48 @@ function renderizarAdminListaCultos() {
 
 async function toggleOcultoCulto(startIndex) {
     try {
-        const response = await fetch(WEB_APP_URL, {
-            method: 'POST',
-            body: JSON.stringify({ acao: 'toggleOculto', startIndex })
-        });
-        const resData = await response.json();
-        if (resData && resData.status === 'sucesso') {
-            limparCacheLocal();
-            await carregarDados();
-        } else {
-            mostrarToast((resData && resData.message) ? resData.message : 'Erro ao alternar a visibilidade do culto.', 'erro');
+        if (!supabaseClient) {
+            throw new Error("Cliente Supabase não inicializado.");
         }
+
+        const rows = dadosGlobais.cultos;
+        if (!rows || !rows[startIndex]) {
+            throw new Error("Culto não encontrado.");
+        }
+
+        const tituloAtual = rows[startIndex][0] ? rows[startIndex][0].toString() : '';
+        const estaOculto = tituloAtual.toUpperCase().includes('OCULTO');
+        const tituloLimpo = tituloAtual.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim();
+
+        const novoStatus = estaOculto ? 'confirmado' : 'arquivado';
+        const novoTitulo = estaOculto 
+            ? tituloAtual.replace(/ - OCULTO/i, '').trim() 
+            : (tituloAtual.includes('OCULTO') ? tituloAtual : `${tituloAtual} - OCULTO`);
+
+        // Atualiza no Supabase pela correspondência do título atual ou do título limpo
+        const { error } = await supabaseClient
+            .from('services')
+            .update({ 
+                status: novoStatus, 
+                is_hidden: !estaOculto,
+                title: novoTitulo 
+            })
+            .or(`title.eq.${tituloAtual},title.eq.${tituloLimpo}`);
+
+        if (error) {
+            const { error: err2 } = await supabaseClient
+                .from('services')
+                .update({ 
+                    status: novoStatus, 
+                    is_hidden: !estaOculto 
+                })
+                .eq('title', tituloLimpo);
+            if (err2) throw err2;
+        }
+
+        limparCacheLocal();
+        await carregarDados();
+        mostrarToast('Visibilidade do culto atualizada!', 'sucesso');
     } catch (err) {
         console.error('Erro ao alternar visibilidade:', err);
         mostrarToast('Erro ao alternar a visibilidade do culto.', 'erro');
