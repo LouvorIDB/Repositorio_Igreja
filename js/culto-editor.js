@@ -104,6 +104,27 @@ function toggleCantorCulto(nome) {
 
 // ===================== ADMIN: MÚSICAS =====================
 
+let dragMusicaIndex = null;
+
+function onDragStartMusica(e, idx) {
+    dragMusicaIndex = idx;
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOverMusica(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+}
+
+function onDropMusica(e, targetIdx) {
+    e.preventDefault();
+    if (dragMusicaIndex === null || dragMusicaIndex === targetIdx) return;
+    const [moved] = musicasCultoAtual.splice(dragMusicaIndex, 1);
+    musicasCultoAtual.splice(targetIdx, 0, moved);
+    dragMusicaIndex = null;
+    renderizarMusicasCulto();
+}
+
 function renderizarMusicasCulto() {
     const container = document.getElementById('culto-musicas-lista');
     if (musicasCultoAtual.length === 0) {
@@ -124,15 +145,14 @@ function renderizarMusicasCulto() {
             }).join('');
 
         return `
-            <div class="bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg space-y-2">
+            <div draggable="true" ondragstart="onDragStartMusica(event, ${idx})" ondragover="onDragOverMusica(event)" ondrop="onDropMusica(event, ${idx})" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg space-y-2 cursor-move">
                 <div class="flex items-center justify-between gap-2">
+                    <span class="text-slate-500 hover:text-slate-300 font-bold select-none text-base cursor-grab mr-1">⣿</span>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm text-white font-medium truncate">${m.nome}</p>
                         <p class="text-xs text-emerald-300">${m.tom} ${m.variacao ? '('+m.variacao+')' : ''}</p>
                     </div>
                     <div class="flex gap-1 shrink-0">
-                        <button onclick="moverMusica(${idx}, -1)" class="text-slate-400 hover:text-white px-1.5 py-1 rounded text-xs">▲</button>
-                        <button onclick="moverMusica(${idx}, 1)" class="text-slate-400 hover:text-white px-1.5 py-1 rounded text-xs">▼</button>
                         <button onclick="removerMusica(${idx})" class="text-red-400 hover:text-red-300 px-1.5 py-1 rounded text-xs">✕</button>
                     </div>
                 </div>
@@ -244,36 +264,121 @@ async function salvarCulto() {
     statusEl.classList.add('hidden');
     erroEl.classList.add('hidden');
 
-    const payload = {
-        acao: 'salvarCulto',
-        titulo,
-        instrumentos: escalaInstrumentos,   // col F (JSON)
-        cantoresCulto: cantoresCultoAtual,   // col G
-        musicas: musicasCultoAtual,           // cada uma com .cantores em col G da linha
-        editandoIndex: cultoEditandoIndex
-    };
-
     try {
-        const response = await fetch(WEB_APP_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-        const resData = await response.json();
-
-        if (resData && resData.status === 'sucesso') {
-            limparCacheLocal();
-            statusEl.classList.remove('hidden');
-            await carregarDados();
-        } else {
-            erroEl.textContent = (resData && resData.message) ? resData.message : 'Erro ao salvar. Tente novamente.';
-            erroEl.classList.remove('hidden');
+        if (!supabaseClient) {
+            throw new Error("Cliente Supabase não inicializado.");
         }
+
+        // 1. Buscar a igreja tenant principal na tabela 'churches'
+        let churchId = null;
+        try {
+            const { data: churches } = await supabaseClient.from('churches').select('id').limit(1);
+            if (churches && churches.length > 0) {
+                churchId = churches[0].id;
+            }
+        } catch (e) {
+            console.warn('Tabela churches não consultada:', e);
+        }
+
+        const serviceData = {
+            title: titulo,
+            status: oculto ? 'arquivado' : (emMontagem ? 'aberto' : 'confirmado'),
+            notes: JSON.stringify({
+                escala: escalaInstrumentos,
+                cantores: cantoresCultoAtual
+            })
+        };
+        if (cultoEditandoIndex === null) {
+            serviceData.date = new Date().toISOString();
+        }
+        if (churchId) serviceData.church_id = churchId;
+
+        let serviceId = null;
+
+        // 2. Edição vs Novo Culto
+        if (cultoEditandoIndex !== null && dadosGlobais.cultos && dadosGlobais.cultos[cultoEditandoIndex]) {
+            const tituloAnterior = dadosGlobais.cultos[cultoEditandoIndex][0] ? dadosGlobais.cultos[cultoEditandoIndex][0].toString() : '';
+            const tituloLimpo = tituloAnterior.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim();
+
+            const { data: existing } = await supabaseClient
+                .from('services')
+                .select('id')
+                .or(`title.eq.${tituloAnterior},title.eq.${tituloLimpo}`)
+                .maybeSingle();
+
+            if (existing && existing.id) {
+                serviceId = existing.id;
+                const { error: updateErr } = await supabaseClient
+                    .from('services')
+                    .update(serviceData)
+                    .eq('id', serviceId);
+                if (updateErr) throw updateErr;
+
+                // Remove músicas associadas antigas para recriar com a nova ordem/cantores
+                await supabaseClient.from('service_songs').delete().eq('service_id', serviceId);
+            }
+        }
+
+        // Se for Novo Culto ou se não encontrou o ID existente para atualizar
+        if (!serviceId) {
+            const { data: newService, error: insertErr } = await supabaseClient
+                .from('services')
+                .insert([serviceData])
+                .select('id')
+                .single();
+            if (insertErr) throw insertErr;
+            serviceId = newService.id;
+        }
+
+        // 3. Inserir itens associados em 'service_songs'
+        if (musicasCultoAtual && musicasCultoAtual.length > 0 && serviceId) {
+            for (let idx = 0; idx < musicasCultoAtual.length; idx++) {
+                const m = musicasCultoAtual[idx];
+                let vId = m.song_version_id || m.version_id || null;
+
+                if (!vId && m.nome) {
+                    try {
+                        const { data: sData } = await supabaseClient
+                            .from('songs')
+                            .select('id, song_versions(id)')
+                            .eq('title', m.nome)
+                            .maybeSingle();
+
+                        if (sData && sData.song_versions && sData.song_versions.length > 0) {
+                            vId = sData.song_versions[0].id;
+                        }
+                    } catch (errSearch) {
+                        console.warn('Erro ao buscar song_version_id para:', m.nome, errSearch);
+                    }
+                }
+
+                if (vId) {
+                    const { error: songInsertErr } = await supabaseClient
+                        .from('service_songs')
+                        .insert({
+                            service_id: serviceId,
+                            song_version_id: vId,
+                            song_order: idx + 1,
+                            singers_list: Array.isArray(m.cantores) ? m.cantores.join(', ') : (m.cantores || '')
+                        });
+                    if (songInsertErr) {
+                        console.warn('Aviso ao inserir service_song:', songInsertErr);
+                    }
+                }
+            }
+        }
+
+        // 4. Pós-gravação
+        limparCacheLocal();
+        fecharModalCulto();
+        await carregarDados();
+        mostrarToast('Culto e músicas salvos com sucesso no Supabase!', 'sucesso');
     } catch (err) {
-        console.error('Erro ao salvar culto:', err);
+        console.error('Erro ao salvar culto no Supabase:', err);
         erroEl.textContent = 'Erro ao salvar. Tente novamente.';
         erroEl.classList.remove('hidden');
     } finally {
-        btn.textContent = 'Salvar na Planilha';
+        btn.textContent = 'Salvar Culto';
         btn.disabled = false;
     }
 }

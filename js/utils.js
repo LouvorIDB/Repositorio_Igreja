@@ -1,9 +1,14 @@
+function removerAcentos(str) {
+    return (str || '').toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
 // Retorna lista de nomes que têm o instrumento na coluna C
 function cantoresPorInstrumento(instrumento) {
+    const termoBuscado = removerAcentos(instrumento);
     return dadosGlobais.cantores.slice(1)
         .filter(row => {
-            const instrumentos = (row[2] || '').toString().split(',').map(s => s.trim().toLowerCase());
-            return instrumentos.includes(instrumento.toLowerCase());
+            const lista = removerAcentos(row[2] || '').split(',').map(s => s.trim());
+            return lista.some(inst => inst.includes(termoBuscado) || termoBuscado.includes(inst));
         })
         .map(row => row[0] ? row[0].toString().trim() : '')
         .filter(Boolean);

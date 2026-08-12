@@ -36,31 +36,200 @@
     <!-- ===================== PAINEL ADMIN ===================== -->
     <div id="painel-admin" class="hidden fixed inset-0 bg-slate-900 z-[90] overflow-y-auto">
         <div class="container mx-auto px-4 py-8 max-w-4xl pb-20">
-            <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center justify-between mb-6">
                 <div>
                     <h1 class="text-2xl font-bold text-emerald-400">⚙️ Painel Admin</h1>
-                    <p class="text-slate-400 text-sm mt-1">Gerencie cultos e playlists</p>
+                    <p class="text-slate-400 text-sm mt-1">Gerencie cultos, playlists e equipe</p>
                 </div>
                 <button onclick="sairAdmin()"
                     class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">← Voltar ao
                     site</button>
             </div>
-            <div class="flex gap-3 mb-6 flex-wrap">
-                <button onclick="mostrarFormCulto(null)"
-                    class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-medium text-sm">+
-                    Novo Culto</button>
-                <button onclick="moverMusicasNovasParaBanco()" id="btn-mover-novas"
-                    class="bg-violet-600 hover:bg-violet-500 text-white px-5 py-2.5 rounded-xl font-medium text-sm">🌟
-                    Mover Músicas Novas → Banco</button>
+
+            <!-- Navegação por Abas no Admin -->
+            <div class="flex gap-2 mb-6 border-b border-slate-700 pb-3 flex-wrap">
+                <button id="btn-admin-aba-cultos" onclick="mudarAbaAdmin('cultos')"
+                    class="px-4 py-2 rounded-xl text-sm font-medium bg-emerald-600 text-white shadow">📅 Cultos</button>
+                <button id="btn-admin-aba-equipe" onclick="mudarAbaAdmin('equipe')"
+                    class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">👥 Equipe</button>
+                <button id="btn-admin-aba-repertorio" onclick="mudarAbaAdmin('repertorio')"
+                    class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">🎼 Repertório Geral</button>
+                <button id="btn-admin-aba-novas" onclick="mudarAbaAdmin('novas')"
+                    class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">🌟 Músicas Novas</button>
+                <button id="btn-admin-aba-solicitacoes" onclick="mudarAbaAdmin('solicitacoes')"
+                    class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">💬 Solicitações</button>
             </div>
-            <div id="status-mover-novas"
-                class="hidden mb-6 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-emerald-400">
-            </div>
-            <div>
-                <h2 class="text-base font-semibold text-slate-300 mb-3">Cultos na planilha</h2>
-                <div id="admin-lista-cultos" class="space-y-2">
-                    <p class="text-slate-500 text-sm">Carregando...</p>
+
+            <!-- ABA 1: CULTOS -->
+            <div id="admin-aba-cultos">
+                <div class="flex gap-3 mb-6 flex-wrap">
+                    <button onclick="mostrarFormCulto(null)"
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-medium text-sm">+
+                        Novo Culto</button>
                 </div>
+                <div>
+                    <h2 class="text-base font-semibold text-slate-300 mb-3">Cultos cadastrados</h2>
+                    <div id="admin-lista-cultos" class="space-y-2">
+                        <p class="text-slate-500 text-sm">Carregando...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 2: EQUIPE -->
+            <div id="admin-aba-equipe" class="hidden space-y-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-base font-semibold text-slate-300">Integrantes da Equipe</h2>
+                    <button onclick="abrirModalEquipe(null)"
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-medium text-sm">+ Novo Integrante</button>
+                </div>
+                <div id="admin-lista-equipe" class="space-y-3">
+                    <p class="text-slate-500 text-sm">Carregando equipe...</p>
+                </div>
+            </div>
+
+            <!-- ABA 3: REPERTÓRIO GERAL -->
+            <div id="admin-aba-repertorio" class="hidden space-y-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-base font-semibold text-slate-300">Repertório Geral de Músicas</h2>
+                    <button onclick="abrirModalMusicaAdmin()"
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-medium text-sm">+ Adicionar Música</button>
+                </div>
+                <div class="mb-4">
+                    <input type="text" id="admin-search-repertorio" oninput="filtrarAdminRepertorio()" placeholder="Buscar música no banco..."
+                        class="w-full bg-slate-800 border border-slate-700 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div id="admin-lista-repertorio" class="space-y-3">
+                    <p class="text-slate-500 text-sm">Carregando repertório...</p>
+                </div>
+            </div>
+
+            <!-- ABA 4: MÚSICAS NOVAS -->
+            <div id="admin-aba-novas" class="hidden space-y-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-base font-semibold text-slate-300">Músicas Novas Aguardando Aprovação</h2>
+                    <button onclick="abrirModalMusicaAdmin()"
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-medium text-sm">+ Adicionar Música</button>
+                </div>
+                <div id="admin-lista-novas" class="space-y-3">
+                    <p class="text-slate-500 text-sm">Carregando músicas novas...</p>
+                </div>
+            </div>
+
+            <!-- ABA 5: SOLICITAÇÕES -->
+            <div id="admin-aba-solicitacoes" class="hidden space-y-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-base font-semibold text-slate-300">Solicitações de Ajustes e Tons</h2>
+                </div>
+                <div id="admin-lista-solicitacoes" class="space-y-3">
+                    <p class="text-slate-500 text-sm">Carregando solicitações...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== MODAL DE INTEGRANTE DA EQUIPE ===================== -->
+    <div id="modal-equipe"
+        class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center overflow-y-auto py-8 px-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl space-y-4 p-6">
+            <h2 id="modal-equipe-titulo" class="text-lg font-bold text-emerald-400">Novo Integrante</h2>
+
+            <div>
+                <label class="text-xs text-slate-400 mb-1 block">Nome Completo</label>
+                <input type="text" id="equipe-nome" placeholder="Ex: João Marcos"
+                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xs text-slate-400 mb-1 block">E-mail</label>
+                    <input type="email" id="equipe-email" placeholder="email@exemplo.com"
+                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-1 block">Telefone / WhatsApp</label>
+                    <input type="text" id="equipe-telefone" placeholder="(11) 99999-9999"
+                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs text-slate-400 mb-1 block">Funções / Instrumentos</label>
+                <div id="equipe-instrumentos-chips" class="flex flex-wrap gap-2 pt-1">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs text-slate-400 mb-1 block">Nível de Acesso</label>
+                <select id="equipe-role"
+                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <option value="volunteer">Voluntário</option>
+                    <option value="admin">Administrador</option>
+                    <option value="member">Membro</option>
+                </select>
+            </div>
+
+            <input type="hidden" id="equipe-id" value="">
+
+            <div class="flex gap-2 pt-3 border-t border-slate-700">
+                <button onclick="fecharModalEquipe()"
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Cancelar</button>
+                <button onclick="salvarIntegranteEquipe()" id="btn-salvar-equipe"
+                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Integrante</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== MODAL DE NOVA MÚSICA (ADMIN) ===================== -->
+    <div id="modal-musica-admin"
+        class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center overflow-y-auto py-8 px-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl space-y-4 p-6">
+            <h2 class="text-lg font-bold text-emerald-400">Adicionar Música ao Banco</h2>
+
+            <div>
+                <label class="text-xs text-slate-400 mb-1 block">Título da Música</label>
+                <input type="text" id="admin-musica-titulo" placeholder="Ex: O Nome de Jesus"
+                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xs text-slate-400 mb-1 block">Tom</label>
+                    <input type="text" id="admin-musica-tom" placeholder="Ex: G, C, Dm"
+                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-1 block">Variação</label>
+                    <input type="text" id="admin-musica-variacao" placeholder="Ex: Original, Tom Abaixo"
+                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs text-slate-400 mb-1 block">Link do VS (Google Drive)</label>
+                <input type="text" id="admin-musica-vs" placeholder="https://drive.google.com/..."
+                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div>
+                <label class="text-xs text-slate-400 mb-1 block">Link do YouTube</label>
+                <input type="text" id="admin-musica-yt" placeholder="https://youtube.com/watch?v=..."
+                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div>
+                <label class="text-xs text-slate-400 mb-1 block">Status Inicial</label>
+                <select id="admin-musica-status"
+                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <option value="ativo">Ativa (Repertório Geral)</option>
+                    <option value="nova">Em Aprendizado (Música Nova)</option>
+                </select>
+            </div>
+
+            <div class="flex gap-2 pt-3 border-t border-slate-700">
+                <button onclick="fecharModalMusicaAdmin()"
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Cancelar</button>
+                <button onclick="salvarMusicaAdmin()" id="btn-salvar-musica-admin"
+                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Música</button>
             </div>
         </div>
     </div>
@@ -162,10 +331,9 @@
             <!-- Ações -->
             <div class="flex gap-3 pt-2">
                 <button onclick="fecharModalCulto()"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2.5 rounded-lg text-sm">Cancelar</button>
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2.5 rounded-lg text-sm">Fechar</button>
                 <button onclick="salvarCulto()" id="btn-salvar-culto"
-                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium">Salvar
-                    na Planilha</button>
+                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium">Salvar</button>
             </div>
             <p id="status-salvar-culto" class="text-xs text-center text-emerald-400 hidden">Salvo com sucesso!</p>
             <p id="erro-salvar-culto" class="text-xs text-center text-red-400 hidden">Erro ao salvar. Tente novamente.

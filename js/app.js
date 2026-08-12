@@ -98,13 +98,17 @@ async function carregarDados() {
                 tituloHeader += " - EM MONTAGEM";
             }
 
-            const escala = service.musicians_scale || (service.service_scales && service.service_scales[0]) || {
-                violao: service.guitar_player || '',
-                bateria: service.drummer || '',
-                teclado: service.keyboard_player || ''
-            };
-            const colF = typeof escala === 'string' ? escala : JSON.stringify(escala);
-            const colG = service.singers_list || service.singers || '';
+            let escala = { violao: '', bateria: '', teclado: '' };
+            let cantoresCultoStr = service.singers_list || service.singers || '';
+            if (service.notes) {
+                try {
+                    const parsedNotes = JSON.parse(service.notes);
+                    if (parsedNotes.escala) escala = parsedNotes.escala;
+                    if (parsedNotes.cantores && Array.isArray(parsedNotes.cantores)) cantoresCultoStr = parsedNotes.cantores.join(', ');
+                } catch(e){}
+            }
+            const colF = JSON.stringify(escala);
+            const colG = cantoresCultoStr;
 
             cultosFormatados.push([tituloHeader, '', '', '', '', colF, colG]);
 
@@ -152,9 +156,13 @@ async function carregarDados() {
         (profilesData || []).forEach(profile => {
             const nome = profile.name || '';
             const telefone = profile.phone || '';
-            const inst = Array.isArray(profile.instruments)
-                ? profile.instruments.join(', ')
-                : (profile.instruments || profile.role || '');
+            let inst = '';
+            if (Array.isArray(profile.instruments)) {
+                inst = profile.instruments.join(', ');
+            } else if (typeof profile.instruments === 'string') {
+                inst = profile.instruments.replace(/[\[\]"]/g, '').split(',').map(s => s.trim()).filter(Boolean).join(', ');
+            }
+            if (!inst) inst = profile.role || '';
             cantoresFormatados.push([nome, telefone, inst]);
         });
 
@@ -302,7 +310,7 @@ function renderizarCultos(rows) {
                             </div>
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                            ${vsCelular ? `<button onclick="playDriveAudio('${musica.toString().replace(/'/g, "\\'")}','${fileId}','${vsCelular}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">▶ Ouvir VS</button>` : ''}
+                            ${vsCelular ? `<button onclick="playDriveAudio('${musica.toString().replace(/'/g, "\\'")}','${fileId}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">▶ Ouvir VS</button>` : ''}
                             ${linkYoutubeFinal ? `<button onclick="playYoutubeAudio('${musica.toString().replace(/'/g, "\\'")}','${linkYoutubeFinal}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">📺 YouTube</button>` : ''}
                             <button onclick="toggleComentario('culto-${contadorCard}')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition">💬 Pedir Ajuste</button>
                         </div>
@@ -344,7 +352,7 @@ function renderizarRepertorio(rows) {
                     </div>
                 </div>
                 <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                    ${vsCelular ? `<button onclick="playDriveAudio('${musica.toString().replace(/'/g, "\\'")}','${fileId}','${vsCelular}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition">▶ Ouvir VS</button>` : ''}
+                    ${vsCelular ? `<button onclick="playDriveAudio('${musica.toString().replace(/'/g, "\\'")}','${fileId}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition">▶ Ouvir VS</button>` : ''}
                     ${linkYoutubeFinal ? `<button onclick="playYoutubeAudio('${musica.toString().replace(/'/g, "\\'")}','${linkYoutubeFinal}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">📺 YouTube</button>` : ''}
                     <button onclick="toggleComentario('${cardId}')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition">💬 Pedir Ajuste / Tom</button>
                 </div>
@@ -386,7 +394,7 @@ function renderizarMusicasNovas(rows) {
                     </div>
                 </div>
                 <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                    ${vsCelular ? `<button onclick="playDriveAudio('${musica.toString().replace(/'/g, "\\'")}','${fileId}','${vsCelular}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition">▶ Ouvir VS</button>` : ''}
+                    ${vsCelular ? `<button onclick="playDriveAudio('${musica.toString().replace(/'/g, "\\'")}','${fileId}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition">▶ Ouvir VS</button>` : ''}
                     ${linkYoutubeFinal ? `<button onclick="playYoutubeAudio('${musica.toString().replace(/'/g, "\\'")}','${linkYoutubeFinal}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">📺 YouTube</button>` : ''}
                     <button onclick="toggleComentario('${cardId}')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition">💬 Pedir Ajuste / Tom</button>
                 </div>
@@ -401,49 +409,6 @@ function renderizarMusicasNovas(rows) {
             </div>
         `;
         container.appendChild(card);
-    }
-}
-
-async function moverMusicasNovasParaBanco() {
-    const btn = document.getElementById('btn-mover-novas');
-    const statusDiv = document.getElementById('status-mover-novas');
-
-    if (dadosGlobais.novas.length <= 1) {
-        statusDiv.textContent = '⚠️ Nenhuma música nova encontrada na planilha.';
-        statusDiv.classList.remove('hidden');
-        return;
-    }
-
-    if (!confirm(`Mover ${dadosGlobais.novas.length - 1} música(s) da aba "Músicas Novas" para o Banco_Musicas e ordenar A-Z?\n\nEsta ação não pode ser desfeita.`)) return;
-
-    btn.textContent = 'Movendo...';
-    btn.disabled = true;
-    statusDiv.classList.add('hidden');
-
-    try {
-        const response = await fetch(WEB_APP_URL, {
-            method: 'POST',
-            body: JSON.stringify({ acao: 'moverMusicasNovas' })
-        });
-        const resData = await response.json();
-
-        if (resData && resData.status === 'sucesso') {
-            limparCacheLocal();
-            statusDiv.textContent = '✅ Músicas movidas para o Banco com sucesso! A planilha foi ordenada A-Z. Recarregue o site para ver as mudanças.';
-            statusDiv.classList.remove('hidden');
-            await carregarDados();
-        } else {
-            const msgErro = (resData && resData.message) ? resData.message : 'Erro ao mover músicas. Tente novamente.';
-            statusDiv.textContent = '❌ Erro: ' + msgErro;
-            statusDiv.classList.remove('hidden');
-        }
-    } catch (err) {
-        console.error('Erro ao mover músicas:', err);
-        statusDiv.textContent = '❌ Erro ao mover músicas. Tente novamente.';
-        statusDiv.classList.remove('hidden');
-    } finally {
-        btn.textContent = '🌟 Mover Músicas Novas → Banco';
-        btn.disabled = false;
     }
 }
 
@@ -469,7 +434,7 @@ function filtrarMusicas() {
                     </div>
                 </div>
                 <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                    ${vsCelular ? `<button onclick="playDriveAudio('${musica.toString().replace(/'/g, "\\'")}','${fileId}','${vsCelular}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition">▶ Ouvir VS</button>` : ''}
+                    ${vsCelular ? `<button onclick="playDriveAudio('${musica.toString().replace(/'/g, "\\'")}','${fileId}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition">▶ Ouvir VS</button>` : ''}
                     ${linkYoutubeFinal ? `<button onclick="playYoutubeAudio('${musica.toString().replace(/'/g, "\\'")}','${linkYoutubeFinal}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">📺 YouTube</button>` : ''}
                     <button onclick="toggleComentario('${cardId}')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition">💬 Pedir Ajuste / Tom</button>
                 </div>
@@ -504,17 +469,23 @@ async function enviarComentario(musica, idAutor, idTexto, idStatus, categoria = 
     statusEl.textContent = 'Enviando...';
     statusEl.classList.remove('hidden');
     try {
-        const response = await fetch(WEB_APP_URL, {
-            method: 'POST',
-            body: JSON.stringify({ musica, autor, texto, categoria })
-        });
-        const resData = await response.json();
-        if (resData && resData.status === 'sucesso') {
+        if (!supabaseClient) {
+            throw new Error("Cliente Supabase não inicializado.");
+        }
+
+        const { error } = await supabaseClient
+            .from('availability_comments')
+            .insert({
+                category: categoria || 'Ajuste de Tom',
+                comment_text: `${musica} - (${autor}): ${texto}`
+            });
+
+        if (!error) {
             statusEl.textContent = 'Enviado!';
             document.getElementById(idTexto).value = '';
             setTimeout(() => statusEl.classList.add('hidden'), 4000);
         } else {
-            statusEl.textContent = (resData && resData.message) ? resData.message : 'Erro ao enviar.';
+            statusEl.textContent = 'Erro ao enviar.';
         }
     } catch (error) {
         console.error('Erro ao enviar comentário:', error);
