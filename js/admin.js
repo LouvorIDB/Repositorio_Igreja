@@ -582,19 +582,26 @@ function filtrarAdminRepertorio() {
     }
 
     container.innerHTML = filtradas.map(song => {
-        const v = (song.song_versions && song.song_versions[0]) || {};
-        const tom = v.key || 'N/A';
-        const variacao = v.variation || 'Original';
+        let versoesHtml = '';
+        if (song.song_versions && song.song_versions.length > 0) {
+            versoesHtml = song.song_versions.map((v, index) => {
+                const tom = v.key || 'N/A';
+                const variacao = v.variation || 'Original';
+                return `<div class="mt-2 text-xs text-slate-400">🎵 Tom: <span class="text-emerald-300 font-semibold">${tom} (${variacao})</span></div>`;
+            }).join('');
+        }
 
         return `
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl border border-slate-700 bg-slate-800/60 gap-3">
-                <div>
+            <div class="flex flex-col p-4 rounded-xl border border-slate-700 bg-slate-800/60 gap-3 mb-2">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <h3 class="font-bold text-white text-base">${song.title || 'Sem Título'}</h3>
-                    <p class="text-xs text-slate-400 mt-1">🎵 Tom: <span class="text-emerald-300 font-semibold">${tom} (${variacao})</span></p>
+                    <div class="flex gap-2 shrink-0">
+                        <button onclick="abrirModalEditarMusicaAdmin('${song.id}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-amber-300 px-2 py-1.5 rounded transition">✏️ Editar</button>
+                        <button onclick="abrirModalNovaVersao('${song.id}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-emerald-400 px-2 py-1.5 rounded transition">+ Versão</button>
+                        <button onclick="excluirMusicaAdmin('${song.id}')" class="bg-slate-700 hover:bg-red-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs transition">🗑️ Excluir</button>
+                    </div>
                 </div>
-                <div class="flex gap-2 shrink-0">
-                    <button onclick="excluirMusicaAdmin('${song.id}')" class="bg-slate-700 hover:bg-red-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs transition">🗑️ Excluir</button>
-                </div>
+                <div>${versoesHtml}</div>
             </div>
         `;
     }).join('');
@@ -643,23 +650,30 @@ async function renderizarAdminListaNovas() {
         }
 
         container.innerHTML = novas.map(song => {
-            const v = (song.song_versions && song.song_versions[0]) || {};
-            const tom = v.key || 'N/A';
-            const variacao = v.variation || 'Original';
+            let versoesHtml = '';
+            if (song.song_versions && song.song_versions.length > 0) {
+                versoesHtml = song.song_versions.map((v, index) => {
+                    const tom = v.key || 'N/A';
+                    const variacao = v.variation || 'Original';
+                    return `<div class="mt-2 text-xs text-slate-400">🎵 Tom: <span class="text-emerald-300 font-semibold">${tom} (${variacao})</span></div>`;
+                }).join('');
+            }
 
             return `
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl border border-violet-700/50 bg-violet-900/20 gap-3">
-                    <div>
+                <div class="flex flex-col p-4 rounded-xl border border-violet-700/50 bg-violet-900/20 gap-3 mb-2">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div class="flex items-center gap-2">
                             <h3 class="font-bold text-white text-base">${song.title || 'Sem Título'}</h3>
                             <span class="bg-violet-800/60 text-violet-300 text-xs px-2 py-0.5 rounded font-medium">🌟 Nova</span>
                         </div>
-                        <p class="text-xs text-slate-400 mt-1">🎵 Tom: <span class="text-emerald-300 font-semibold">${tom} (${variacao})</span></p>
+                        <div class="flex gap-2 shrink-0">
+                            <button onclick="abrirModalEditarMusicaAdmin('${song.id}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-amber-300 px-2 py-1.5 rounded transition">✏️ Editar</button>
+                            <button onclick="abrirModalNovaVersao('${song.id}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-emerald-400 px-2 py-1.5 rounded transition">+ Versão</button>
+                            <button onclick="aprovarMusicaNovaAdmin('${song.id}')" class="bg-violet-600 hover:bg-violet-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">🌟 Aprovar</button>
+                            <button onclick="excluirMusicaAdmin('${song.id}')" class="bg-slate-700 hover:bg-red-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs transition">🗑️ Excluir</button>
+                        </div>
                     </div>
-                    <div class="flex gap-2 shrink-0">
-                        <button onclick="aprovarMusicaNovaAdmin('${song.id}')" class="bg-violet-600 hover:bg-violet-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">🌟 Aprovar ➔ Mover p/ Banco</button>
-                        <button onclick="excluirMusicaAdmin('${song.id}')" class="bg-slate-700 hover:bg-red-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs transition">🗑️ Excluir</button>
-                    </div>
+                    <div>${versoesHtml}</div>
                 </div>
             `;
         }).join('');
@@ -853,5 +867,237 @@ async function salvarMusicaAdmin() {
         mostrarToast('Erro ao adicionar música no Supabase.', 'erro');
     } finally {
         if (btn) { btn.disabled = false; btn.textContent = 'Salvar Música'; }
+    }
+}
+
+// ===================== ADMIN: NOVA VERSÃO DA MÚSICA =====================
+
+function abrirModalNovaVersao(songId) {
+    if (!songId) return;
+    
+    let musica = null;
+    const repertorio = dadosGlobais.repertorio || [];
+    const novas = dadosGlobais.novas || [];
+    
+    musica = repertorio.find(m => m.id === songId) || novas.find(m => m.id === songId);
+    
+    if (!musica) {
+        mostrarToast('Música não encontrada no cache.', 'erro');
+        return;
+    }
+
+    document.getElementById('versao-admin-song-id').value = songId;
+    document.getElementById('versao-admin-musica-titulo').textContent = musica.title;
+    
+    document.getElementById('versao-admin-tom').value = '';
+    document.getElementById('versao-admin-variacao').value = '';
+    document.getElementById('versao-admin-vs').value = '';
+    document.getElementById('versao-admin-yt').value = '';
+    
+    const btn = document.getElementById('btn-salvar-versao-admin');
+    if(btn) { btn.disabled = false; btn.textContent = 'Salvar Versão'; }
+
+    document.getElementById('modal-versao-admin').classList.remove('hidden');
+}
+
+function fecharModalNovaVersao() {
+    document.getElementById('modal-versao-admin').classList.add('hidden');
+}
+
+async function salvarNovaVersao() {
+    const songId = document.getElementById('versao-admin-song-id').value;
+    const tom = document.getElementById('versao-admin-tom').value.trim();
+    const variacao = document.getElementById('versao-admin-variacao').value.trim() || 'Original';
+    const vsUrl = document.getElementById('versao-admin-vs').value.trim();
+    const ytUrl = document.getElementById('versao-admin-yt').value.trim();
+
+    if (!songId || !tom) {
+        mostrarToast('Informe o tom da nova versão.', 'aviso');
+        return;
+    }
+
+    const btn = document.getElementById('btn-salvar-versao-admin');
+    if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+
+    try {
+        if (!supabaseClient) throw new Error("Cliente Supabase não inicializado.");
+
+        const { error: versionErr } = await supabaseClient
+            .from('song_versions')
+            .insert({
+                song_id: songId,
+                key: tom,
+                variation: variacao,
+                drive_vs_url: vsUrl,
+                youtube_url: ytUrl
+            });
+
+        if (versionErr) throw versionErr;
+
+        limparCacheLocal();
+        fecharModalNovaVersao();
+        await carregarDados();
+        mostrarToast('Versão adicionada com sucesso!', 'sucesso');
+        
+    } catch (err) {
+        console.error("Erro ao salvar versão:", err);
+        mostrarToast('Erro ao salvar versão.', 'erro');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Salvar Versão'; }
+    }
+}
+
+
+// ===================== ADMIN: EDITAR MÚSICA E VERSÕES =====================
+
+async function abrirModalEditarMusicaAdmin(songId) {
+    if (!songId) return;
+
+    let song = null;
+    try {
+        if (supabaseClient) {
+            const { data, error } = await supabaseClient
+                .from('songs')
+                .select('id, title, status, song_versions(id, key, variation, drive_vs_url, youtube_url)')
+                .eq('id', songId)
+                .single();
+            if (!error && data) song = data;
+        }
+    } catch (e) {}
+
+    if (!song) {
+        const rep = adminSongsCache.find(s => s.id === songId);
+        if (rep) song = rep;
+    }
+
+    if (!song) {
+        mostrarToast('Música não encontrada.', 'erro');
+        return;
+    }
+
+    document.getElementById('edit-admin-song-id').value = song.id;
+    document.getElementById('edit-admin-musica-titulo').value = song.title || '';
+    document.getElementById('edit-admin-musica-status').value = song.status || 'ativo';
+
+    const containerVersoes = document.getElementById('edit-admin-lista-versoes');
+    const versoes = song.song_versions || [];
+
+    if (versoes.length === 0) {
+        containerVersoes.innerHTML = '<p class="text-slate-500 text-xs">Nenhuma versão cadastrada ainda.</p>';
+    } else {
+        containerVersoes.innerHTML = versoes.map((v, i) => `
+            <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2" data-version-id="${v.id}">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-semibold text-emerald-400">Versão ${i + 1}</span>
+                    ${versoes.length > 1 ? `<button type="button" onclick="excluirVersaoAdmin('${v.id}')" class="text-xs text-red-400 hover:text-red-300">🗑️ Excluir Versão</button>` : ''}
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[10px] text-slate-400 block">Tom</label>
+                        <input type="text" id="edit-v-tom-${v.id}" value="${v.key || ''}" placeholder="Ex: G"
+                            class="w-full bg-slate-800 border border-slate-700 px-2 py-1 rounded text-xs text-white">
+                    </div>
+                    <div>
+                        <label class="text-[10px] text-slate-400 block">Variação</label>
+                        <input type="text" id="edit-v-var-${v.id}" value="${v.variation || 'Original'}" placeholder="Ex: Original"
+                            class="w-full bg-slate-800 border border-slate-700 px-2 py-1 rounded text-xs text-white">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block">Link do VS (Google Drive)</label>
+                    <input type="text" id="edit-v-vs-${v.id}" value="${v.drive_vs_url || ''}" placeholder="https://drive.google.com/..."
+                        class="w-full bg-slate-800 border border-slate-700 px-2 py-1 rounded text-xs text-white">
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-400 block">Links do YouTube (Separe múltiplos por vírgula ou linha)</label>
+                    <textarea id="edit-v-yt-${v.id}" rows="2" placeholder="https://youtube.com/...
+https://youtube.com/..."
+                        class="w-full bg-slate-800 border border-slate-700 px-2 py-1 rounded text-xs text-white">${v.youtube_url || ''}</textarea>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    const btn = document.getElementById('btn-salvar-edit-musica-admin');
+    if (btn) { btn.disabled = false; btn.textContent = 'Salvar Alterações'; }
+
+    document.getElementById('modal-editar-musica-admin').classList.remove('hidden');
+}
+
+function fecharModalEditarMusicaAdmin() {
+    document.getElementById('modal-editar-musica-admin').classList.add('hidden');
+}
+
+async function salvarEdicaoMusicaAdmin() {
+    const songId = document.getElementById('edit-admin-song-id').value;
+    const titulo = document.getElementById('edit-admin-musica-titulo').value.trim();
+    const status = document.getElementById('edit-admin-musica-status').value;
+
+    if (!songId || !titulo) {
+        mostrarToast('Informe o título da música.', 'aviso');
+        return;
+    }
+
+    const btn = document.getElementById('btn-salvar-edit-musica-admin');
+    if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+
+    try {
+        if (!supabaseClient) throw new Error("Cliente Supabase não inicializado.");
+
+        const { error: songErr } = await supabaseClient
+            .from('songs')
+            .update({ title: titulo, status: status })
+            .eq('id', songId);
+
+        if (songErr) throw songErr;
+
+        const versionElements = document.querySelectorAll('#edit-admin-lista-versoes [data-version-id]');
+        for (const el of versionElements) {
+            const vId = el.getAttribute('data-version-id');
+            const tom = document.getElementById(`edit-v-tom-${vId}`)?.value.trim() || '';
+            const variacao = document.getElementById(`edit-v-var-${vId}`)?.value.trim() || 'Original';
+            const vsUrl = document.getElementById(`edit-v-vs-${vId}`)?.value.trim() || '';
+            const ytUrl = document.getElementById(`edit-v-yt-${vId}`)?.value.trim() || '';
+
+            await supabaseClient
+                .from('song_versions')
+                .update({
+                    key: tom,
+                    variation: variacao,
+                    drive_vs_url: vsUrl,
+                    youtube_url: ytUrl
+                })
+                .eq('id', vId);
+        }
+
+        limparCacheLocal();
+        fecharModalEditarMusicaAdmin();
+        await carregarDados();
+        await renderizarAdminListaRepertorio();
+        await renderizarAdminListaNovas();
+        mostrarToast('Música atualizada com sucesso!', 'sucesso');
+
+    } catch (err) {
+        console.error('Erro ao editar música:', err);
+        mostrarToast('Erro ao salvar alterações.', 'erro');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Salvar Alterações'; }
+    }
+}
+
+async function excluirVersaoAdmin(versionId) {
+    if (!confirm('Deseja excluir esta versão da música?')) return;
+    try {
+        if (supabaseClient && versionId) {
+            const { error } = await supabaseClient.from('song_versions').delete().eq('id', versionId);
+            if (error) throw error;
+        }
+        
+        mostrarToast('Versão removida!', 'sucesso');
+        const songId = document.getElementById('edit-admin-song-id').value;
+        await abrirModalEditarMusicaAdmin(songId);
+    } catch (err) {
+        console.error('Erro ao excluir versão:', err);
+        mostrarToast('Erro ao excluir versão.', 'erro');
     }
 }

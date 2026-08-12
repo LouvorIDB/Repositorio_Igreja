@@ -26,7 +26,7 @@
             <p id="erro-senha" class="text-red-400 text-xs hidden">Senha incorreta.</p>
             <div class="flex gap-2">
                 <button onclick="fecharModalAdmin()"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Cancelar</button>
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
                 <button onclick="entrarAdmin()"
                     class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Entrar</button>
             </div>
@@ -172,7 +172,7 @@
 
             <div class="flex gap-2 pt-3 border-t border-slate-700">
                 <button onclick="fecharModalEquipe()"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Cancelar</button>
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
                 <button onclick="salvarIntegranteEquipe()" id="btn-salvar-equipe"
                     class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Integrante</button>
             </div>
@@ -227,14 +227,97 @@
 
             <div class="flex gap-2 pt-3 border-t border-slate-700">
                 <button onclick="fecharModalMusicaAdmin()"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Cancelar</button>
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
                 <button onclick="salvarMusicaAdmin()" id="btn-salvar-musica-admin"
                     class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Música</button>
             </div>
         </div>
     </div>
 
-    <!-- ===================== MODAL DE EDIÇÃO DE CULTO ===================== -->
+        <!-- ===================== MODAL DE EDIÇÃO DE MÚSICA ===================== -->
+    <div id="modal-editar-musica-admin" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-emerald-400">✏️ Editar Música</h2>
+                <button onclick="fecharModalEditarMusicaAdmin()" class="text-slate-400 hover:text-white text-sm">✕</button>
+            </div>
+            
+            <input type="hidden" id="edit-admin-song-id">
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="sm:col-span-2">
+                    <label class="text-xs text-slate-400 mb-1 block">Título da Música</label>
+                    <input type="text" id="edit-admin-musica-titulo"
+                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-1 block">Status</label>
+                    <select id="edit-admin-musica-status"
+                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <option value="ativo">Ativa (Repertório)</option>
+                        <option value="nova">Em Aprendizado (Nova)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-700 pt-3">
+                <h3 class="text-sm font-semibold text-slate-300 mb-2">Versões da Música</h3>
+                <div id="edit-admin-lista-versoes" class="space-y-4">
+                    <!-- Preenchido via JS com os campos de cada versão -->
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-3 border-t border-slate-700">
+                <button onclick="fecharModalEditarMusicaAdmin()"
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
+                <button onclick="salvarEdicaoMusicaAdmin()" id="btn-salvar-edit-musica-admin"
+                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== MODAL NOVA VERSÃO ===================== -->
+    <div id="modal-versao-admin" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
+            <h2 class="text-lg font-bold text-emerald-400">Adicionar Nova Versão</h2>
+            <p id="versao-admin-musica-titulo" class="text-sm text-slate-300 font-medium"></p>
+            <input type="hidden" id="versao-admin-song-id">
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xs text-slate-400 mb-1 block">Tom</label>
+                    <input type="text" id="versao-admin-tom" placeholder="Ex: G, C, Dm"
+                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-1 block">Variação</label>
+                    <input type="text" id="versao-admin-variacao" placeholder="Ex: Tom Abaixo"
+                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs text-slate-400 mb-1 block">Link do VS (Google Drive)</label>
+                <input type="text" id="versao-admin-vs" placeholder="https://drive.google.com/..."
+                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div>
+                <label class="text-xs text-slate-400 mb-1 block">Link do YouTube</label>
+                <input type="text" id="versao-admin-yt" placeholder="https://youtube.com/watch?v=..."
+                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div class="flex gap-2 pt-3 border-t border-slate-700">
+                <button onclick="fecharModalNovaVersao()"
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
+                <button onclick="salvarNovaVersao()" id="btn-salvar-versao-admin"
+                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Versão</button>
+            </div>
+        </div>
+    </div>
+
+<!-- ===================== MODAL DE EDIÇÃO DE CULTO ===================== -->
     <div id="modal-culto"
         class="hidden fixed inset-0 bg-black/70 z-[100] flex items-start justify-center overflow-y-auto py-8 px-4">
         <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl space-y-5 p-6">
@@ -344,8 +427,8 @@
     <!-- ===================== SITE PRINCIPAL ===================== -->
     <div class="container mx-auto px-4 py-8 max-w-4xl pb-60">
         <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-emerald-400" id="titulo-site">Repertório</h1>
-            <p class="text-slate-400 text-sm mt-1">Organizem-se previamente para os ensaios e cultos.</p>
+            <h1 class="text-3xl font-bold text-emerald-400 select-none cursor-default" id="titulo-site">Repertório</h1>
+            <p class="text-slate-400 text-sm mt-1 select-none">Organizem-se previamente para os ensaios e cultos.</p>
 
             <div class="flex justify-center gap-3 mt-6 flex-wrap">
                 <button onclick="mudarAba('cultos')" id="btn-cultos"
@@ -385,10 +468,7 @@
                 <p id="sugestao-nova-status" class="text-xs text-emerald-400 hidden">Sugestão enviada!</p>
             </div>
 
-            <div id="btn-admin-wrapper" class="hidden mt-4">
-                <button onclick="abrirModalAdmin()" class="text-xs text-slate-600 hover:text-slate-400 transition">⚙
-                    Admin</button>
-            </div>
+            
         </header>
 
         <div id="secao-cultos" class="space-y-6">

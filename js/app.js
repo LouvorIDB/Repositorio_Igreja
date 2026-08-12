@@ -129,25 +129,51 @@ async function carregarDados() {
 
         // Formata Banco, Repertorio e Novas
         const headerMusicas = ["Música", "Tom", "Variação", "VS", "YouTube"];
-        const bancoFormatado = [headerMusicas];
-        const repertorioFormatado = [headerMusicas];
-        const novasFormatadas = [headerMusicas];
+        const bancoFormatado = [headerMusicas]; // Mantém plano para o Culto Editor
+        
+        // Arrays estruturados para Repertório e Novas
+        const repertorioFormatado = [];
+        const novasFormatadas = [];
 
         (songsData || []).forEach(song => {
-            const version = (song.song_versions && song.song_versions[0]) || {};
             const nomeMusica = song.title || '';
-            const tom = version.key || song.key || '';
-            const variacao = version.variation || song.variation || 'Original';
-            const vs = version.drive_vs_url || version.drive_url || song.drive_vs_url || song.drive_url || '';
-            const yt = version.youtube_url || song.youtube_url || '';
+            const status = song.status || 'ativo';
+            const songId = song.id || '';
 
-            const linhaMusica = [nomeMusica, tom, variacao, vs, yt];
-            bancoFormatado.push(linhaMusica);
+            // Se não tiver versão, cria um array com dados vazios para não quebrar
+            const versoes = (song.song_versions && song.song_versions.length > 0) 
+                ? song.song_versions 
+                : [{ id: 'fake', key: song.key || '', variation: song.variation || 'Original', drive_vs_url: song.drive_vs_url || song.drive_url || '', youtube_url: song.youtube_url || '' }];
 
-            if (song.status === 'nova') {
-                novasFormatadas.push(linhaMusica);
+            // Para o Editor de Culto (adiciona cada versão como linha plana)
+            versoes.forEach(v => {
+                bancoFormatado.push([
+                    nomeMusica, 
+                    v.key || '', 
+                    v.variation || 'Original', 
+                    v.drive_vs_url || v.drive_url || '', 
+                    v.youtube_url || ''
+                ]);
+            });
+
+            // Estrutura agrupada para a Interface de Repertório/Novas
+            const objMusica = {
+                id: songId,
+                title: nomeMusica,
+                status: status,
+                versions: versoes.map(v => ({
+                    id: v.id,
+                    key: v.key || '',
+                    variation: v.variation || 'Original',
+                    vs: v.drive_vs_url || v.drive_url || '',
+                    yt: v.youtube_url || ''
+                }))
+            };
+
+            if (status === 'nova') {
+                novasFormatadas.push(objMusica);
             } else {
-                repertorioFormatado.push(linhaMusica);
+                repertorioFormatado.push(objMusica);
             }
         });
 
@@ -332,84 +358,85 @@ function renderizarCultos(rows) {
     container.innerHTML = htmlCultos || '<p class="text-center text-slate-500 py-10">Nenhum culto agendado encontrado na planilha.</p>';
 }
 
+function gerarHtmlCardMusica(musicaObj, prefix) {
+    const isAdminMode = typeof isAdmin !== 'undefined' && isAdmin;
+    let htmlVersoes = '';
+    
+    if (musicaObj.versions && musicaObj.versions.length > 0) {
+        musicaObj.versions.forEach((v, index) => {
+            const fileId = extrairIdDrive(v.vs);
+            const linksYt = obterLinksYoutubeArray(v.yt, musicaObj.title);
+            const itemId = `${prefix}-${musicaObj.id}-v${index}`;
+            
+            const ytButtonsHtml = linksYt.map(item => 
+                `<button onclick="playYoutubeAudio('${musicaObj.title.replace(/'/g, "\\'")}', '${item.url}')" class="bg-red-600 hover:bg-red-500 text-white px-2 py-1.5 rounded-lg text-xs font-medium transition">${item.label}</button>`
+            ).join('');
+
+            htmlVersoes += `
+                <div class="mt-3 pt-3 border-t border-slate-700/50">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-slate-700 px-2 py-0.5 rounded text-emerald-300 text-xs font-semibold">Tom: ${v.key} (${v.variation || 'Original'})</span>
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+                            ${v.vs ? `<button onclick="playDriveAudio('${musicaObj.title.replace(/'/g, "\\'")}', '${fileId}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1.5 rounded-lg text-xs font-medium transition">▶ Ouvir VS</button>` : ''}
+                            ${ytButtonsHtml}
+                            <button onclick="toggleComentario('${itemId}')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1.5 rounded-lg text-xs font-medium transition">💬 Pedir Ajuste</button>
+                        </div>
+                    </div>
+                    <div id="${itemId}" class="hidden pt-2 mt-2 space-y-2">
+                        <div class="flex gap-2">
+                            <input type="text" id="autor-${itemId}" placeholder="Seu nome" class="w-1/3 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+                            <input type="text" id="comentario-${itemId}" placeholder="Ex: Mudar tom para C..." class="w-2/3 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-emerald-500">
+                            <button onclick="enviarComentario('${musicaObj.title.replace(/'/g, "\\'")}', 'autor-${itemId}', 'comentario-${itemId}', 'status-${itemId}', 'Ajuste de Tom')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-medium">Enviar</button>
+                        </div>
+                        <p id="status-${itemId}" class="text-xs text-emerald-400 hidden">Solicitação enviada com sucesso!</p>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    return `
+        <div class="bg-slate-800 p-4 rounded-xl border ${musicaObj.status === 'nova' ? 'border-violet-700/30 hover:border-violet-600/50' : 'border-slate-700 hover:border-slate-600'} transition mb-3">
+            <div class="flex items-center justify-between">
+                <h3 class="font-bold text-lg text-white">${musicaObj.title}</h3>
+            </div>
+            ${htmlVersoes}
+        </div>
+    `;
+}
+
 function renderizarRepertorio(rows) {
     const container = document.getElementById('musicList');
     container.innerHTML = '';
-    for (let i = 1; i < rows.length; i++) {
-        const [musica, tom, variacaoTom, vsCelular, ytDado] = rows[i];
-        if (!musica) continue;
-        const fileId = extrairIdDrive(vsCelular);
-        const linkYoutubeFinal = obterLinkYoutube(ytDado, musica);
-        const cardId = `rep-${i}`;
-        const card = document.createElement('div');
-        card.className = "bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3 hover:border-slate-600 transition";
-        card.innerHTML = `
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h3 class="font-bold text-lg text-white">${musica}</h3>
-                    <div class="flex items-center gap-2 mt-1 text-sm text-slate-400">
-                        <span class="bg-slate-700 px-2 py-0.5 rounded text-emerald-300 font-semibold">Tom: ${tom} (${variacaoTom || 'Original'})</span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                    ${vsCelular ? `<button onclick="playDriveAudio('${musica.toString().replace(/'/g, "\\'")}','${fileId}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition">▶ Ouvir VS</button>` : ''}
-                    ${linkYoutubeFinal ? `<button onclick="playYoutubeAudio('${musica.toString().replace(/'/g, "\\'")}','${linkYoutubeFinal}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">📺 YouTube</button>` : ''}
-                    <button onclick="toggleComentario('${cardId}')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition">💬 Pedir Ajuste / Tom</button>
-                </div>
-            </div>
-            <div id="${cardId}" class="hidden pt-3 border-t border-slate-700 mt-3 space-y-2">
-                <div class="flex gap-2">
-                    <input type="text" id="autor-${i}" placeholder="Seu nome" class="w-1/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-emerald-500">
-                    <input type="text" id="comentario-${i}" placeholder="Ex: Mudar tom para C..." class="w-2/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-emerald-500">
-                    <button onclick="enviarComentario('${musica.toString().replace(/'/g, "\\'")}','autor-${i}','comentario-${i}','status-${i}','Ajuste de Tom')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded text-sm font-medium">Enviar</button>
-                </div>
-                <p id="status-${i}" class="text-xs text-emerald-400 hidden">Solicitação enviada com sucesso!</p>
-            </div>
-        `;
-        container.appendChild(card);
+    if (!rows || rows.length === 0) {
+        container.innerHTML = '<p class="text-center text-slate-500 py-10">Repertório vazio.</p>';
+        return;
     }
+    
+    let html = '';
+    rows.forEach((musicaObj, i) => {
+        if (!musicaObj || !musicaObj.title) return;
+        html += gerarHtmlCardMusica(musicaObj, 'rep');
+    });
+    container.innerHTML = html;
 }
 
 function renderizarMusicasNovas(rows) {
     const container = document.getElementById('novasList');
     container.innerHTML = '';
-    if (!rows || rows.length <= 1) {
+    if (!rows || rows.length === 0) {
         container.innerHTML = '<p class="text-center text-slate-500 py-10">Nenhuma música nova cadastrada ainda.</p>';
         return;
     }
-    for (let i = 1; i < rows.length; i++) {
-        const [musica, tom, variacaoTom, vsCelular, ytDado] = rows[i];
-        if (!musica) continue;
-        const fileId = extrairIdDrive(vsCelular);
-        const linkYoutubeFinal = obterLinkYoutube(ytDado, musica);
-        const cardId = `nova-${i}`;
-        const card = document.createElement('div');
-        card.className = "bg-slate-800 p-4 rounded-xl border border-violet-700/30 space-y-3 hover:border-violet-600/50 transition";
-        card.innerHTML = `
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h3 class="font-bold text-lg text-white">${musica}</h3>
-                    <div class="flex items-center gap-2 mt-1 text-sm text-slate-400">
-                        <span class="bg-slate-700 px-2 py-0.5 rounded text-emerald-300 font-semibold">Tom: ${tom} (${variacaoTom || 'Original'})</span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                    ${vsCelular ? `<button onclick="playDriveAudio('${musica.toString().replace(/'/g, "\\'")}','${fileId}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition">▶ Ouvir VS</button>` : ''}
-                    ${linkYoutubeFinal ? `<button onclick="playYoutubeAudio('${musica.toString().replace(/'/g, "\\'")}','${linkYoutubeFinal}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">📺 YouTube</button>` : ''}
-                    <button onclick="toggleComentario('${cardId}')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition">💬 Pedir Ajuste / Tom</button>
-                </div>
-            </div>
-            <div id="${cardId}" class="hidden pt-3 border-t border-slate-700 mt-3 space-y-2">
-                <div class="flex gap-2">
-                    <input type="text" id="autor-n-${i}" placeholder="Seu nome" class="w-1/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-emerald-500">
-                    <input type="text" id="comentario-n-${i}" placeholder="Ex: Mudar tom para C..." class="w-2/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-emerald-500">
-                    <button onclick="enviarComentario('${musica.toString().replace(/'/g, "\\'")}','autor-n-${i}','comentario-n-${i}','status-n-${i}','Ajuste de Tom')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded text-sm font-medium">Enviar</button>
-                </div>
-                <p id="status-n-${i}" class="text-xs text-emerald-400 hidden">Solicitação enviada com sucesso!</p>
-            </div>
-        `;
-        container.appendChild(card);
-    }
+    
+    let html = '';
+    rows.forEach((musicaObj, i) => {
+        if (!musicaObj || !musicaObj.title) return;
+        html += gerarHtmlCardMusica(musicaObj, 'nova');
+    });
+    container.innerHTML = html;
 }
 
 function filtrarMusicas() {
@@ -417,38 +444,18 @@ function filtrarMusicas() {
     const rows = dadosGlobais.repertorio;
     const container = document.getElementById('musicList');
     container.innerHTML = '';
-    for (let i = 1; i < rows.length; i++) {
-        const [musica, tom, variacaoTom, vsCelular, ytDado] = rows[i];
-        if (!musica || !musica.toString().toLowerCase().includes(termo)) continue;
-        const fileId = extrairIdDrive(vsCelular);
-        const linkYoutubeFinal = obterLinkYoutube(ytDado, musica);
-        const cardId = `rep-filtrado-${i}`;
-        const card = document.createElement('div');
-        card.className = "bg-slate-800 p-4 rounded-xl border border-slate-700 space-y-3 hover:border-slate-600 transition";
-        card.innerHTML = `
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h3 class="font-bold text-lg text-white">${musica}</h3>
-                    <div class="flex items-center gap-2 mt-1 text-sm text-slate-400">
-                        <span class="bg-slate-700 px-2 py-0.5 rounded text-emerald-300 font-semibold">Tom: ${tom} (${variacaoTom || 'Original'})</span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                    ${vsCelular ? `<button onclick="playDriveAudio('${musica.toString().replace(/'/g, "\\'")}','${fileId}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-lg text-sm font-medium transition">▶ Ouvir VS</button>` : ''}
-                    ${linkYoutubeFinal ? `<button onclick="playYoutubeAudio('${musica.toString().replace(/'/g, "\\'")}','${linkYoutubeFinal}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">📺 YouTube</button>` : ''}
-                    <button onclick="toggleComentario('${cardId}')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-sm font-medium transition">💬 Pedir Ajuste / Tom</button>
-                </div>
-            </div>
-            <div id="${cardId}" class="hidden pt-3 border-t border-slate-700 mt-3 space-y-2">
-                <div class="flex gap-2">
-                    <input type="text" id="autor-f-${i}" placeholder="Seu nome" class="w-1/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-emerald-500">
-                    <input type="text" id="comentario-f-${i}" placeholder="Ex: Mudar tom para C..." class="w-2/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-emerald-500">
-                    <button onclick="enviarComentario('${musica.toString().replace(/'/g, "\\'")}','autor-f-${i}','comentario-f-${i}','status-f-${i}','Ajuste de Tom')" class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded text-sm font-medium">Enviar</button>
-                </div>
-                <p id="status-f-${i}" class="text-xs text-emerald-400 hidden">Solicitação enviada com sucesso!</p>
-            </div>
-        `;
-        container.appendChild(card);
+    
+    let html = '';
+    rows.forEach((musicaObj, i) => {
+        if (!musicaObj || !musicaObj.title) return;
+        if (!musicaObj.title.toLowerCase().includes(termo)) return;
+        html += gerarHtmlCardMusica(musicaObj, 'filtrado');
+    });
+    
+    if (!html) {
+        container.innerHTML = '<p class="text-center text-slate-500 py-10">Nenhuma música encontrada.</p>';
+    } else {
+        container.innerHTML = html;
     }
 }
 

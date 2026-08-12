@@ -43,8 +43,24 @@ function extrairIdYoutube(url) {
 
 function obterLinkYoutube(ytDado, nomeMusica) {
     if (!ytDado) return '';
-    if (ytDado.startsWith('http')) return ytDado;
-    return `https://www.youtube.com/results?search_query=${encodeURIComponent(ytDado || nomeMusica)}`;
+    const firstLink = ytDado.split(/[\n,]+/)[0].trim();
+    if (firstLink.startsWith('http')) return firstLink;
+    return `https://www.youtube.com/results?search_query=${encodeURIComponent(firstLink || nomeMusica)}`;
+}
+
+function obterLinksYoutubeArray(ytDado, nomeMusica) {
+    if (!ytDado) return [];
+    const rawLinks = ytDado.split(/[\n,]+/).map(s => s.trim()).filter(Boolean);
+    return rawLinks.map((link, idx) => {
+        let finalUrl = link;
+        if (!link.startsWith('http')) {
+            finalUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(link || nomeMusica)}`;
+        }
+        return {
+            url: finalUrl,
+            label: rawLinks.length > 1 ? `📺 YouTube (${idx + 1})` : `📺 YouTube`
+        };
+    });
 }
 
 function mostrarToast(mensagem, tipo = 'info') {
