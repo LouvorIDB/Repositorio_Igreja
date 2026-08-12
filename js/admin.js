@@ -1719,14 +1719,36 @@ async function buscarCifraAutomaticaAdmin() {
         }
 
         if (!cifraEncontrada) {
-            // Buscar letra salva da música para mesclar se existir
             const cachedSong = (adminSongsCache || []).find(s => s.id === songId);
             const letraBase = (cachedSong && cachedSong.lyrics) ? cachedSong.lyrics : '';
-            const linhasLetra = letraBase.split('\n').filter(l => l.trim().length > 0);
+            const linhasLetra = letraBase.split('\n');
 
-            // Gerar estrutura de cifra inteligente no tom ALVO correto
-            const baseG = `Tom: [G]\nIntro: [G] [D/F#] [Em7] [C9]\n\n[G] ${titulo}\n[D/F#] ${linhasLetra[0] || 'Vem com Tua glória'}\n[Em7] ${linhasLetra[1] || 'Santo é o Teu nome'}\n[C9] ${linhasLetra[2] || 'Eternamente amém'}`;
-            
+            const sequenciaAcordesG = ['[G]', '[D/F#]', '[Em7]', '[C9]', '[Am7]', '[Bm7]'];
+            const linhasCifradas = [];
+
+            linhasCifradas.push(`Tom: [G]`);
+            linhasCifradas.push(`Intro: [G] [D/F#] [Em7] [C9]\n`);
+
+            if (linhasLetra.length > 0 && letraBase.trim()) {
+                let chordIdx = 0;
+                linhasLetra.forEach(linha => {
+                    const textoLinha = linha.trim();
+                    if (textoLinha) {
+                        const acorde = sequenciaAcordesG[chordIdx % sequenciaAcordesG.length];
+                        linhasCifradas.push(`${acorde} ${textoLinha}`);
+                        chordIdx++;
+                    } else {
+                        linhasCifradas.push('');
+                    }
+                });
+            } else {
+                linhasCifradas.push(`[G] ${titulo}`);
+                linhasCifradas.push(`[D/F#] Vem com Tua glória`);
+                linhasCifradas.push(`[Em7] Santo é o Teu nome`);
+                linhasCifradas.push(`[C9] Eternamente amém`);
+            }
+
+            const baseG = linhasCifradas.join('\n');
             cifraEncontrada = typeof transporCifra === 'function' ? transporCifra(baseG, 'G', tomAlvo) : baseG;
         }
 
