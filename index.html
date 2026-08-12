@@ -89,10 +89,14 @@
 
             <!-- ABA 3: REPERTÓRIO GERAL -->
             <div id="admin-aba-repertorio" class="hidden space-y-4">
-                <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
                     <h2 class="text-base font-semibold text-slate-300">Repertório Geral de Músicas</h2>
-                    <button onclick="abrirModalMusicaAdmin()"
-                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-medium text-sm">+ Adicionar Música</button>
+                    <div class="flex gap-2">
+                        <button onclick="abrirModalImportarHolyrics()"
+                            class="bg-slate-700 hover:bg-slate-600 text-emerald-300 border border-slate-600 px-3 py-2 rounded-xl font-medium text-sm transition">📥 Importar Holyrics (JSON)</button>
+                        <button onclick="abrirModalMusicaAdmin()"
+                            class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-medium text-sm transition">+ Adicionar Música</button>
+                    </div>
                 </div>
                 <div class="mb-4">
                     <input type="text" id="admin-search-repertorio" oninput="filtrarAdminRepertorio()" placeholder="Buscar música no banco..."
@@ -123,6 +127,188 @@
                 <div id="admin-lista-solicitacoes" class="space-y-3">
                     <p class="text-slate-500 text-sm">Carregando solicitações...</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== MODAL DE LETRA PÚBLICA ===================== -->
+    <div id="modal-letra-publica" class="hidden fixed inset-0 bg-black/80 z-[120] flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl p-6 space-y-4 max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <div>
+                    <h2 id="letra-publica-titulo" class="text-lg font-bold text-emerald-400"></h2>
+                    <p id="letra-publica-subtitulo" class="text-xs text-slate-400"></p>
+                </div>
+                <button onclick="fecharModalLetraPublica()" class="text-slate-400 hover:text-white text-lg font-bold p-1">✕</button>
+            </div>
+            <div id="letra-publica-conteudo" class="overflow-y-auto pr-2 text-sm text-slate-200 leading-relaxed whitespace-pre-wrap flex-1 space-y-3 font-sans">
+                <!-- Conteúdo da letra -->
+            </div>
+            <div class="pt-2 border-t border-slate-700 text-right">
+                <button onclick="fecharModalLetraPublica()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg text-sm font-medium">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== MODAL IMPORTAR HOLYRICS ===================== -->
+    <div id="modal-importar-holyrics-admin" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h2 class="text-lg font-bold text-emerald-400">📥 Importar Letras do Holyrics (.json)</h2>
+                <button onclick="fecharModalImportarHolyrics()" class="text-slate-400 hover:text-white text-sm">✕</button>
+            </div>
+            
+            <p class="text-xs text-slate-300 leading-normal">
+                Selecione o arquivo <code class="bg-slate-900 px-1 py-0.5 rounded text-emerald-300">.json</code> exportado do aplicativo Holyrics. O sistema irá vincular automaticamente as letras às músicas cadastradas no seu banco de dados.
+            </p>
+
+            <div class="border-2 border-dashed border-slate-700 hover:border-emerald-500 rounded-xl p-6 text-center transition cursor-pointer bg-slate-900/50" onclick="document.getElementById('input-holyrics-json').click()">
+                <input type="file" id="input-holyrics-json" accept=".json" class="hidden" onchange="processarArquivoHolyrics(event)">
+                <span class="text-2xl block mb-1">📄</span>
+                <span class="text-xs text-slate-300 font-medium block">Clique para selecionar o arquivo JSON</span>
+                <span id="holyrics-file-name" class="text-[11px] text-emerald-400 mt-1 block"></span>
+            </div>
+
+            <div id="holyrics-resultado-previa" class="hidden space-y-2 bg-slate-900 p-3 rounded-xl border border-slate-700 text-xs">
+                <p id="holyrics-resumo-texto" class="font-medium text-slate-200"></p>
+                <div id="holyrics-lista-correspondencias" class="max-h-40 overflow-y-auto space-y-1 text-slate-400 divide-y divide-slate-800"></div>
+            </div>
+
+            <div class="flex gap-2 pt-3 border-t border-slate-700">
+                <button onclick="fecharModalImportarHolyrics()"
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
+                <button onclick="confirmarImportacaoHolyrics()" id="btn-confirmar-holyrics" disabled
+                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Confirmar e Importar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== MODAL DE EDIÇÃO DE MÚSICA ===================== -->
+    <div id="modal-editar-musica-admin" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-bold text-emerald-400">✏️ Editar Música</h2>
+                <button onclick="fecharModalEditarMusicaAdmin()" class="text-slate-400 hover:text-white text-sm">✕</button>
+            </div>
+            
+            <input type="hidden" id="edit-admin-song-id">
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="sm:col-span-2">
+                    <label class="text-xs text-slate-400 mb-1 block">Título da Música</label>
+                    <input type="text" id="edit-admin-musica-titulo"
+                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-1 block">Status</label>
+                    <select id="edit-admin-musica-status"
+                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <option value="ativo">Ativa (Repertório)</option>
+                        <option value="nova">Em Aprendizado (Nova)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-700 pt-3">
+                <h3 class="text-sm font-semibold text-slate-300 mb-2">Versões da Música</h3>
+                <div id="edit-admin-lista-versoes" class="space-y-4">
+                    <!-- Preenchido via JS com os campos de cada versão -->
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-3 border-t border-slate-700">
+                <button onclick="fecharModalEditarMusicaAdmin()"
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
+                <button onclick="salvarEdicaoMusicaAdmin()" id="btn-salvar-edit-musica-admin"
+                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== MODAL EDITAR LETRA (ADMIN) ===================== -->
+    <div id="modal-editar-letra-admin" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-emerald-400">📝 Editar Letra da Música</h2>
+                    <p id="edit-letra-admin-titulo-musica" class="text-xs text-slate-400"></p>
+                </div>
+                <button onclick="fecharModalEditarLetraAdmin()" class="text-slate-400 hover:text-white text-sm">✕</button>
+            </div>
+
+            <input type="hidden" id="edit-letra-admin-song-id">
+
+            <!-- 1. Letra Padrão (Original) -->
+            <div>
+                <label class="text-xs font-semibold text-slate-300 mb-1 block">📜 Letra Padrão (Original)</label>
+                <textarea id="edit-letra-admin-padrao" rows="6" placeholder="Cole ou edite a letra padrão da música aqui..."
+                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500 font-sans"></textarea>
+            </div>
+
+            <!-- 2 & 3. Letras de Outras Versões -->
+            <div class="border-t border-slate-700 pt-3 space-y-3">
+                <div>
+                    <label class="text-xs font-semibold text-slate-300 mb-1 block">🎶 Outras Versões</label>
+                    <p class="text-xs text-slate-400 mb-2">Selecione uma versão abaixo para editar sua letra personalizada:</p>
+                    <div id="edit-letra-admin-botoes-versoes" class="flex flex-wrap gap-2">
+                        <!-- Botões das versões gerados dinamicamente via JS -->
+                    </div>
+                </div>
+
+                <div id="edit-letra-admin-versao-container" class="hidden space-y-1">
+                    <label id="edit-letra-admin-versao-label" class="text-xs text-emerald-300 block font-medium">Letra da Versão Selecionada</label>
+                    <textarea id="edit-letra-admin-versao-conteudo" rows="6" placeholder="Insira a letra específica para esta versão..."
+                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500 font-sans"></textarea>
+                </div>
+            </div>
+
+            <!-- 4. Botões de Ação -->
+            <div class="flex gap-2 pt-3 border-t border-slate-700">
+                <button onclick="fecharModalEditarLetraAdmin()"
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
+                <button onclick="salvarEdicaoLetraAdmin()" id="btn-salvar-edit-letra-admin"
+                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Letras</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== MODAL NOVA VERSÃO ===================== -->
+    <div id="modal-versao-admin" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
+            <h2 class="text-lg font-bold text-emerald-400">Adicionar Nova Versão</h2>
+            <p id="versao-admin-musica-titulo" class="text-sm text-slate-300 font-medium"></p>
+            <input type="hidden" id="versao-admin-song-id">
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-xs text-slate-400 mb-1 block">Tom</label>
+                    <input type="text" id="versao-admin-tom" placeholder="Ex: G, C, Dm"
+                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-400 mb-1 block">Variação</label>
+                    <input type="text" id="versao-admin-variacao" placeholder="Ex: Tom Abaixo"
+                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs text-slate-400 mb-1 block">Link do VS (Google Drive)</label>
+                <input type="text" id="versao-admin-vs" placeholder="https://drive.google.com/..."
+                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div>
+                <label class="text-xs text-slate-400 mb-1 block">Link do YouTube</label>
+                <input type="text" id="versao-admin-yt" placeholder="https://youtube.com/watch?v=..."
+                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div class="flex gap-2 pt-3 border-t border-slate-700">
+                <button onclick="fecharModalNovaVersao()"
+                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
+                <button onclick="salvarNovaVersao()" id="btn-salvar-versao-admin"
+                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Versão</button>
             </div>
         </div>
     </div>
@@ -512,12 +698,12 @@
         </div>
     </div>
 
-    <script src="js/config.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/player.js"></script>
-    <script src="js/admin.js"></script>
-    <script src="js/culto-editor.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/config.js?v=2.4"></script>
+    <script src="js/utils.js?v=2.4"></script>
+    <script src="js/player.js?v=2.4"></script>
+    <script src="js/admin.js?v=2.4"></script>
+    <script src="js/culto-editor.js?v=2.4"></script>
+    <script src="js/app.js?v=2.4"></script>
 </body>
 
 </html>

@@ -101,3 +101,37 @@ function mostrarToast(mensagem, tipo = 'info') {
         setTimeout(() => toast.remove(), 300);
     }, 3500);
 }
+
+// ===================== MODAL DE LETRA PÚBLICA / GLOBAL =====================
+
+function abrirModalLetraPublica(titulo, subtitulo, lyricsEncoded) {
+    const tituloEl = document.getElementById('letra-publica-titulo');
+    const subtituloEl = document.getElementById('letra-publica-subtitulo');
+    const conteudoEl = document.getElementById('letra-publica-conteudo');
+
+    if (tituloEl) tituloEl.textContent = titulo || 'Letra da Música';
+    if (subtituloEl) subtituloEl.textContent = subtitulo || '';
+    
+    let lyricsText = '';
+    try {
+        lyricsText = decodeURIComponent(lyricsEncoded || '');
+    } catch(e) {
+        lyricsText = lyricsEncoded || '';
+    }
+
+    if (conteudoEl) {
+        conteudoEl.textContent = lyricsText || 'Letra não disponível.';
+    }
+
+    const modal = document.getElementById('modal-letra-publica');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function fecharModalLetraPublica() {
+    const modal = document.getElementById('modal-letra-publica');
+    if (modal) modal.classList.add('hidden');
+}
+
+window.abrirModalLetraPublica = abrirModalLetraPublica;
+window.fecharModalLetraPublica = fecharModalLetraPublica;
+

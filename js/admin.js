@@ -548,7 +548,7 @@ async function renderizarAdminListaRepertorio() {
         if (supabaseClient) {
             const { data, error } = await supabaseClient
                 .from('songs')
-                .select('id, title, status, song_versions(id, key, variation, drive_vs_url, youtube_url)')
+                .select('id, title, status, lyrics, song_versions(id, key, variation, drive_vs_url, youtube_url, lyrics)')
                 .neq('status', 'nova')
                 .order('title', { ascending: true });
 
@@ -596,6 +596,7 @@ function filtrarAdminRepertorio() {
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <h3 class="font-bold text-white text-base">${song.title || 'Sem Título'}</h3>
                     <div class="flex gap-2 shrink-0">
+                        ${song.lyrics ? `<button onclick="abrirModalLetraPublica('${(song.title||'').replace(/'/g, "\\'")}', '', '${encodeURIComponent(song.lyrics||'')}')" class="text-xs bg-indigo-700 hover:bg-indigo-600 text-white px-2 py-1.5 rounded transition">📜 Letra</button>` : ''}
                         <button onclick="abrirModalEditarMusicaAdmin('${song.id}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-amber-300 px-2 py-1.5 rounded transition">✏️ Editar</button>
                         <button onclick="abrirModalNovaVersao('${song.id}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-emerald-400 px-2 py-1.5 rounded transition">+ Versão</button>
                         <button onclick="excluirMusicaAdmin('${song.id}')" class="bg-slate-700 hover:bg-red-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs transition">🗑️ Excluir</button>
@@ -637,7 +638,7 @@ async function renderizarAdminListaNovas() {
         if (supabaseClient) {
             const { data, error } = await supabaseClient
                 .from('songs')
-                .select('id, title, status, song_versions(id, key, variation)')
+                .select('id, title, status, lyrics, song_versions(id, key, variation)')
                 .eq('status', 'nova')
                 .order('title', { ascending: true });
 
@@ -1099,5 +1100,386 @@ async function excluirVersaoAdmin(versionId) {
     } catch (err) {
         console.error('Erro ao excluir versão:', err);
         mostrarToast('Erro ao excluir versão.', 'erro');
+    }
+}
+
+// ===================== ADMIN: IMPORTADOR HOLYRICS (JSON) =====================
+
+let holyricsImportData = [];
+
+function abrirModalImportarHolyrics() {
+    holyricsImportData = [];
+    document.getElementById('input-holyrics-json').value = '';
+    document.getElementById('holyrics-file-name').textContent = '';
+    document.getElementById('holyrics-resultado-previa').classList.add('hidden');
+    document.getElementById('btn-confirmar-holyrics').disabled = true;
+
+    const modal = document.getElementById('modal-importar-holyrics-admin');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function fecharModalImportarHolyrics() {
+    const modal = document.getElementById('modal-importar-holyrics-admin');
+    if (modal) modal.classList.add('hidden');
+}
+
+function normalizarTexto(txt) {
+    if (!txt) return '';
+    return txt.toString()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, '')
+        .trim();
+}
+
+function extrairTituloBase(titulo) {
+    if (!titulo) return '';
+    return titulo.split(/[-–—(/[]/)[0].trim();
+}
+
+function extrairTextoLetraHolyrics(obj) {
+    if (!obj) return '';
+    if (typeof obj === 'string') return obj;
+    
+    // Holyrics especifique structure: obj.lyrics -> { full_text: "...", paragraphs: [...] }
+    if (obj.lyrics && typeof obj.lyrics === 'object') {
+        if (typeof obj.lyrics.full_text === 'string' && obj.lyrics.full_text.trim()) {
+            return obj.lyrics.full_text.trim();
+        }
+        if (Array.isArray(obj.lyrics.paragraphs)) {
+            return obj.lyrics.paragraphs
+                .map(p => p.text || '')
+                .filter(t => t.trim())
+                .join('\n\n');
+        }
+    }
+
+    if (typeof obj.lyric === 'string') return obj.lyric;
+    if (typeof obj.lyrics === 'string') return obj.lyrics;
+    if (typeof obj.text === 'string') return obj.text;
+    if (typeof obj.texto === 'string') return obj.texto;
+    if (typeof obj.letra === 'string') return obj.letra;
+    if (typeof obj.content === 'string') return obj.content;
+    
+    if (obj.song) {
+        const sub = extrairTextoLetraHolyrics(obj.song);
+        if (sub) return sub;
+    }
+    
+    const arr = obj.verses || obj.paragraphs || obj.estrofes || obj.lines || obj.sections;
+    if (Array.isArray(arr)) {
+        return arr.map(item => {
+            if (typeof item === 'string') return item;
+            if (!item) return '';
+            return item.text || item.lyric || item.lyrics || item.content || item.texto || item.letra || '';
+        }).filter(Boolean).join('\n\n');
+    }
+
+    return '';
+}
+
+function processarArquivoHolyrics(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    document.getElementById('holyrics-file-name').textContent = `Arquivo: ${file.name}`;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const raw = JSON.parse(e.target.result);
+            let rawList = [];
+
+            if (Array.isArray(raw)) {
+                rawList = raw;
+            } else if (typeof raw === 'object' && raw !== null) {
+                const possibleArrays = [raw.songs, raw.musicas, raw.data, raw.items, raw.list, raw.songList];
+                const foundArr = possibleArrays.find(a => Array.isArray(a));
+                if (foundArr) {
+                    rawList = foundArr;
+                } else {
+                    rawList = Object.values(raw).filter(v => typeof v === 'object' && v !== null);
+                }
+            }
+
+            let supabaseSongs = [];
+            if (supabaseClient) {
+                const { data } = await supabaseClient.from('songs').select('id, title');
+                if (data && data.length > 0) supabaseSongs = data;
+            }
+            if (supabaseSongs.length === 0 && typeof adminSongsCache !== 'undefined' && adminSongsCache.length > 0) {
+                supabaseSongs = adminSongsCache;
+            }
+
+            holyricsImportData = [];
+            let encontradasCount = 0;
+            const listaHtml = [];
+
+            rawList.forEach((item) => {
+                let itemObj = item;
+                if (item && item.song) itemObj = item.song;
+
+                const titulo = itemObj.title || itemObj.name || itemObj.titulo || itemObj.nome || itemObj.song_name || itemObj.songTitle || '';
+                const letra = extrairTextoLetraHolyrics(itemObj);
+
+                if (!titulo) return;
+
+                const normItemFull = normalizarTexto(titulo);
+                const normItemBase = normalizarTexto(extrairTituloBase(titulo));
+
+                let match = supabaseSongs.find(s => {
+                    const normDb = normalizarTexto(s.title);
+                    const normDbBase = normalizarTexto(extrairTituloBase(s.title));
+
+                    if (normDb === normItemFull || normDb === normItemBase) return true;
+                    if (normDbBase.length > 2 && normDbBase === normItemBase) return true;
+                    if (normDb.length > 3 && normItemFull.includes(normDb)) return true;
+                    if (normItemBase.length > 3 && normDb.includes(normItemBase)) return true;
+                    if (normDb.length >= 7 && normItemBase.length >= 7 && normDb.slice(0, 8) === normItemBase.slice(0, 8)) return true;
+
+                    return false;
+                });
+
+                if (match && letra) {
+                    encontradasCount++;
+                    holyricsImportData.push({ song_id: match.id, title: match.title, lyrics: letra });
+                    listaHtml.push(`<div class="py-1 flex justify-between items-center text-xs"><span>✅ <strong class="text-white">${match.title}</strong> <span class="text-slate-400">(${titulo})</span></span><span class="text-emerald-400 font-semibold shrink-0 ml-2">Combinado</span></div>`);
+                } else if (match && !letra) {
+                    listaHtml.push(`<div class="py-1 flex justify-between items-center text-xs text-amber-400"><span>⚠️ ${titulo}</span><span class="shrink-0 ml-2">Sem letra</span></div>`);
+                } else {
+                    listaHtml.push(`<div class="py-1 flex justify-between items-center text-xs text-slate-500"><span>❓ ${titulo}</span><span class="shrink-0 ml-2">Não cadastrada no banco</span></div>`);
+                }
+            });
+
+            const resumoEl = document.getElementById('holyrics-resumo-texto');
+            const listaEl = document.getElementById('holyrics-lista-correspondencias');
+            const previaBox = document.getElementById('holyrics-resultado-previa');
+            const btnConfirmar = document.getElementById('btn-confirmar-holyrics');
+
+            if (resumoEl) resumoEl.textContent = `Músicas associadas: ${encontradasCount} de ${rawList.length} itens do arquivo.`;
+            if (listaEl) listaEl.innerHTML = listaHtml.join('');
+            if (previaBox) previaBox.classList.remove('hidden');
+
+            if (btnConfirmar) {
+                btnConfirmar.disabled = encontradasCount === 0;
+            }
+
+        } catch (err) {
+            console.error("Erro ao ler JSON do Holyrics:", err);
+            mostrarToast("Arquivo JSON inválido ou incompatível.", "erro");
+        }
+    };
+    reader.readAsText(file);
+}
+
+async function confirmarImportacaoHolyrics() {
+    if (!holyricsImportData || holyricsImportData.length === 0) return;
+
+    const btn = document.getElementById('btn-confirmar-holyrics');
+    if (btn) { btn.disabled = true; btn.textContent = 'Importando...'; }
+
+    try {
+        if (!supabaseClient) throw new Error("Cliente Supabase não inicializado.");
+
+        let sucessos = 0;
+        for (const item of holyricsImportData) {
+            const { error } = await supabaseClient
+                .from('songs')
+                .update({ lyrics: item.lyrics })
+                .eq('id', item.song_id);
+
+            if (!error) sucessos++;
+        }
+
+        limparCacheLocal();
+        fecharModalImportarHolyrics();
+        await carregarDados();
+        mostrarToast(`Sucesso! ${sucessos} letras foram importadas e salvas.`, 'sucesso');
+
+    } catch (err) {
+        console.error("Erro ao salvar letras:", err);
+        mostrarToast("Erro ao importar letras.", "erro");
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Confirmar e Importar'; }
+    }
+}
+
+// ===================== ADMIN: GERENCIADOR DEDICADO DE LETRAS =====================
+
+let stateModalLetras = {
+    songId: null,
+    songTitle: '',
+    songLyrics: '',
+    versions: [],
+    activeVersionId: null
+};
+
+async function abrirModalEditarLetraAdmin(songId) {
+    if (!songId) return;
+
+    let songData = null;
+    try {
+        if (supabaseClient) {
+            const { data, error } = await supabaseClient
+                .from('songs')
+                .select('id, title, lyrics, song_versions(id, key, variation, lyrics)')
+                .eq('id', songId)
+                .single();
+            if (!error && data) songData = data;
+        }
+    } catch (e) {
+        console.warn("Erro ao carregar letra do Supabase:", e);
+    }
+
+    if (!songData) {
+        mostrarToast('Música não encontrada.', 'erro');
+        return;
+    }
+
+    const versions = (songData.song_versions || []).map(v => ({
+        id: v.id,
+        key: v.key || '',
+        variation: v.variation || 'Original',
+        lyrics: v.lyrics || ''
+    }));
+
+    stateModalLetras = {
+        songId: songData.id,
+        songTitle: songData.title || 'Sem Título',
+        songLyrics: songData.lyrics || '',
+        versions: versions,
+        activeVersionId: null
+    };
+
+    document.getElementById('edit-letra-admin-song-id').value = songData.id;
+    const titleEl = document.getElementById('edit-letra-admin-titulo-musica');
+    if (titleEl) titleEl.textContent = songData.title || '';
+
+    const padraoEl = document.getElementById('edit-letra-admin-padrao');
+    if (padraoEl) padraoEl.value = songData.lyrics || '';
+
+    renderizarBotoesVersoesLetraAdmin();
+
+    const containerVersao = document.getElementById('edit-letra-admin-versao-container');
+    if (containerVersao) containerVersao.classList.add('hidden');
+
+    const modal = document.getElementById('modal-editar-letra-admin');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function fecharModalEditarLetraAdmin() {
+    const modal = document.getElementById('modal-editar-letra-admin');
+    if (modal) modal.classList.add('hidden');
+}
+
+function renderizarBotoesVersoesLetraAdmin() {
+    const container = document.getElementById('edit-letra-admin-botoes-versoes');
+    if (!container) return;
+
+    const outrasVersoes = stateModalLetras.versions.filter(v => 
+        v.variation && v.variation.toLowerCase() !== 'original'
+    );
+
+    const listaVersoes = outrasVersoes.length > 0 ? outrasVersoes : stateModalLetras.versions.slice(1);
+
+    if (listaVersoes.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500 italic">Esta música não possui outras versões cadastradas.</p>';
+        return;
+    }
+
+    container.innerHTML = listaVersoes.map(v => {
+        const ativo = stateModalLetras.activeVersionId === v.id;
+        const cls = ativo
+            ? 'bg-emerald-600 text-white font-semibold border-emerald-500 shadow'
+            : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border-slate-600';
+
+        const label = `${v.variation || 'Versão'} (${v.key || 'Tom N/A'})`;
+
+        return `
+            <button type="button" onclick="selecionarVersaoLetraAdmin('${v.id}')"
+                class="px-3 py-1.5 rounded-lg text-xs border transition ${cls}">
+                🎵 ${label}
+            </button>
+        `;
+    }).join('');
+}
+
+function selecionarVersaoLetraAdmin(versionId) {
+    if (stateModalLetras.activeVersionId) {
+        const conteudoEl = document.getElementById('edit-letra-admin-versao-conteudo');
+        const vAntiga = stateModalLetras.versions.find(v => v.id === stateModalLetras.activeVersionId);
+        if (vAntiga && conteudoEl) {
+            vAntiga.lyrics = conteudoEl.value;
+        }
+    }
+
+    stateModalLetras.activeVersionId = versionId;
+    const vNova = stateModalLetras.versions.find(v => v.id === versionId);
+
+    renderizarBotoesVersoesLetraAdmin();
+
+    const container = document.getElementById('edit-letra-admin-versao-container');
+    const label = document.getElementById('edit-letra-admin-versao-label');
+    const conteudo = document.getElementById('edit-letra-admin-versao-conteudo');
+
+    if (container && vNova) {
+        container.classList.remove('hidden');
+        if (label) label.textContent = `Letra da Versão: ${vNova.variation || ''} (${vNova.key || ''})`;
+        if (conteudo) conteudo.value = vNova.lyrics || '';
+    }
+}
+
+async function salvarEdicaoLetraAdmin() {
+    return await salvarLetrasAdmin();
+}
+
+async function salvarLetrasAdmin() {
+    const songId = stateModalLetras.songId || document.getElementById('edit-letra-admin-song-id')?.value;
+    if (!songId) {
+        mostrarToast('Música não selecionada.', 'aviso');
+        return;
+    }
+
+    if (stateModalLetras.activeVersionId) {
+        const conteudoEl = document.getElementById('edit-letra-admin-versao-conteudo');
+        const vAtiva = stateModalLetras.versions.find(v => v.id === stateModalLetras.activeVersionId);
+        if (vAtiva && conteudoEl) {
+            vAtiva.lyrics = conteudoEl.value;
+        }
+    }
+
+    const padraoEl = document.getElementById('edit-letra-admin-padrao');
+    const lyricsPadrao = padraoEl ? padraoEl.value : '';
+
+    const btn = document.getElementById('btn-salvar-edit-letra-admin');
+    if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+
+    try {
+        if (!supabaseClient) throw new Error("Cliente Supabase não inicializado.");
+
+        const { error: songErr } = await supabaseClient
+            .from('songs')
+            .update({ lyrics: lyricsPadrao })
+            .eq('id', songId);
+
+        if (songErr) throw songErr;
+
+        for (const v of stateModalLetras.versions) {
+            await supabaseClient
+                .from('song_versions')
+                .update({ lyrics: v.lyrics })
+                .eq('id', v.id);
+        }
+
+        limparCacheLocal();
+        fecharModalEditarLetraAdmin();
+        await carregarDados();
+        mostrarToast('Letras salvas com sucesso no Supabase!', 'sucesso');
+    } catch (err) {
+        console.error('Erro ao salvar letras:', err);
+        mostrarToast('Erro ao salvar letras no Supabase.', 'erro');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Salvar Letras'; }
     }
 }

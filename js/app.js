@@ -122,8 +122,9 @@ async function carregarDados() {
                 const vs = version.drive_vs_url || version.drive_url || song.drive_vs_url || song.drive_url || sSong.drive_vs_url || sSong.drive_url || sSong.vs || '';
                 const yt = version.youtube_url || sSong.youtube_url || sSong.yt || '';
                 const cantoresMusica = sSong.singers_list || sSong.singers || '';
+                const lyrics = version.lyrics || song.lyrics || sSong.lyrics || '';
 
-                cultosFormatados.push([nomeMusica, tom, variacao, vs, yt, '', cantoresMusica]);
+                cultosFormatados.push([nomeMusica, tom, variacao, vs, yt, '', cantoresMusica, lyrics]);
             });
         });
 
@@ -161,12 +162,14 @@ async function carregarDados() {
                 id: songId,
                 title: nomeMusica,
                 status: status,
+                lyrics: song.lyrics || '',
                 versions: versoes.map(v => ({
                     id: v.id,
                     key: v.key || '',
                     variation: v.variation || 'Original',
                     vs: v.drive_vs_url || v.drive_url || '',
-                    yt: v.youtube_url || ''
+                    yt: v.youtube_url || '',
+                    lyrics: v.lyrics || song.lyrics || ''
                 }))
             };
 
@@ -328,9 +331,13 @@ function renderizarCultos(rows) {
             const vsCelular = linha[3] || '';
             const ytDado = linha[4] || '';
             const cantoresMusica = linha[6] ? linha[6].toString().trim() : '';
+            const lyricsTexto = linha[7] ? linha[7].toString().trim() : '';
 
             const fileId = extrairIdDrive(vsCelular);
             const linkYoutubeFinal = obterLinkYoutube(ytDado, musica);
+            const btnLetraCulto = lyricsTexto
+                ? `<button onclick="abrirModalLetraPublica('${musica.toString().replace(/'/g, "\\'")}', 'Tom: ${tom}', '${encodeURIComponent(lyricsTexto)}')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">📜 Letra</button>`
+                : '';
             contadorCard++;
 
             htmlCultos += `
@@ -345,6 +352,7 @@ function renderizarCultos(rows) {
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
                             ${vsCelular ? `<button onclick="playDriveAudio('${musica.toString().replace(/'/g, "\\'")}','${fileId}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">▶ Ouvir VS</button>` : ''}
+                            ${btnLetraCulto}
                             ${linkYoutubeFinal ? `<button onclick="playYoutubeAudio('${musica.toString().replace(/'/g, "\\'")}','${linkYoutubeFinal}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">📺 YouTube</button>` : ''}
                             <button onclick="toggleComentario('culto-${contadorCard}')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition">💬 Pedir Ajuste</button>
                         </div>
@@ -374,6 +382,10 @@ function gerarHtmlCardMusica(musicaObj, prefix) {
         musicaObj.versions.forEach((v, index) => {
             const fileId = extrairIdDrive(v.vs);
             const linksYt = obterLinksYoutubeArray(v.yt, musicaObj.title);
+            const versionLyrics = v.lyrics || musicaObj.lyrics || '';
+            const btnLetraCard = versionLyrics.trim() 
+                ? `<button onclick="abrirModalLetraPublica('${musicaObj.title.replace(/'/g, "\\'")}', 'Tom: ${v.key}', '${encodeURIComponent(versionLyrics)}')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1.5 rounded-lg text-xs font-medium transition">📜 Letra</button>`
+                : '';
             const itemId = `${prefix}-${musicaObj.id}-v${index}`;
             
             const ytButtonsHtml = linksYt.map(item => 
@@ -388,6 +400,7 @@ function gerarHtmlCardMusica(musicaObj, prefix) {
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
                             ${v.vs ? `<button onclick="playDriveAudio('${musicaObj.title.replace(/'/g, "\\'")}', '${fileId}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1.5 rounded-lg text-xs font-medium transition">▶ Ouvir VS</button>` : ''}
+                            ${btnLetraCard}
                             ${ytButtonsHtml}
                             <button onclick="toggleComentario('${itemId}')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1.5 rounded-lg text-xs font-medium transition">💬 Pedir Ajuste</button>
                         </div>
