@@ -278,9 +278,17 @@ function renderizarCultos(rows) {
 
             // Monta linha de escala de instrumentos + cantores
             const partsEscala = [];
-            if (instrObj.violao) partsEscala.push(`🎸 ${instrObj.violao}`);
-            if (instrObj.bateria) partsEscala.push(`🥁 ${instrObj.bateria}`);
-            if (instrObj.teclado) partsEscala.push(`🎹 ${instrObj.teclado}`);
+            if (instrObj.violao) partsEscala.push(`🎸 Violão: <span class="text-emerald-300 font-medium">${instrObj.violao}</span>`);
+            if (instrObj.bateria) partsEscala.push(`🥁 Bateria: <span class="text-emerald-300 font-medium">${instrObj.bateria}</span>`);
+            if (instrObj.teclado) partsEscala.push(`🎹 Teclado: <span class="text-emerald-300 font-medium">${instrObj.teclado}</span>`);
+            
+            Object.keys(instrObj).forEach(key => {
+                if (!['violao', 'bateria', 'teclado'].includes(key.toLowerCase()) && instrObj[key]) {
+                    const nomeFormato = key.charAt(0).toUpperCase() + key.slice(1);
+                    partsEscala.push(`🎵 ${nomeFormato}: <span class="text-emerald-300 font-medium">${instrObj[key]}</span>`);
+                }
+            });
+
             const linhaInstrumentos = partsEscala.length > 0
                 ? `<div class="px-4 py-1.5 text-xs text-slate-300 bg-slate-900/40 border-b border-slate-700/30 flex flex-wrap gap-3">${partsEscala.join('<span class="text-slate-600">|</span>')}</div>`
                 : '';
