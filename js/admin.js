@@ -1721,31 +1721,37 @@ async function buscarCifraAutomaticaAdmin() {
         if (!cifraEncontrada) {
             const cachedSong = (adminSongsCache || []).find(s => s.id === songId);
             const letraBase = (cachedSong && cachedSong.lyrics) ? cachedSong.lyrics : '';
-            const linhasLetra = letraBase.split('\n');
+            const linhasLetra = letraBase.split('\n').filter(l => l.trim().length > 0);
 
             const sequenciaAcordesG = ['[G]', '[D/F#]', '[Em7]', '[C9]', '[Am7]', '[Bm7]'];
             const linhasCifradas = [];
 
             linhasCifradas.push(`Tom: [G]`);
-            linhasCifradas.push(`Intro: [G] [D/F#] [Em7] [C9]\n`);
+            linhasCifradas.push(`\n[Intro] [G] [D/F#] [Em7] [C9]\n`);
+            linhasCifradas.push(`[Primeira Parte]`);
 
-            if (linhasLetra.length > 0 && letraBase.trim()) {
+            if (linhasLetra.length > 0) {
                 let chordIdx = 0;
-                linhasLetra.forEach(linha => {
+                const metade = Math.floor(linhasLetra.length / 2);
+                linhasLetra.forEach((linha, idx) => {
                     const textoLinha = linha.trim();
-                    if (textoLinha) {
-                        const acorde = sequenciaAcordesG[chordIdx % sequenciaAcordesG.length];
-                        linhasCifradas.push(`${acorde} ${textoLinha}`);
-                        chordIdx++;
-                    } else {
-                        linhasCifradas.push('');
+                    if (idx === metade) {
+                        linhasCifradas.push(`\n[Refrão]`);
                     }
+                    const acorde = sequenciaAcordesG[chordIdx % sequenciaAcordesG.length];
+                    linhasCifradas.push(`${acorde}`);
+                    linhasCifradas.push(`  ${textoLinha}\n`);
+                    chordIdx++;
                 });
             } else {
-                linhasCifradas.push(`[G] ${titulo}`);
-                linhasCifradas.push(`[D/F#] Vem com Tua glória`);
-                linhasCifradas.push(`[Em7] Santo é o Teu nome`);
-                linhasCifradas.push(`[C9] Eternamente amém`);
+                linhasCifradas.push(`[G]`);
+                linhasCifradas.push(`  ${titulo}\n`);
+                linhasCifradas.push(`[D/F#]`);
+                linhasCifradas.push(`  Vem com Tua glória\n`);
+                linhasCifradas.push(`[Em7]`);
+                linhasCifradas.push(`  Santo é o Teu nome\n`);
+                linhasCifradas.push(`[C9]`);
+                linhasCifradas.push(`  Eternamente amém`);
             }
 
             const baseG = linhasCifradas.join('\n');

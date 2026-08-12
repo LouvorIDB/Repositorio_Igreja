@@ -291,13 +291,37 @@ function renderizarCifraPublica() {
         stateCifraPublica.tomAtual
     );
 
-    const cifraHtml = (cifraTransposta || 'Cifra não disponível.')
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\[([^\]]+)\]/g, '<span class="text-emerald-400 font-bold bg-slate-900 px-1 py-0.5 rounded border border-emerald-500/40">[$1]</span>');
+    if (!cifraTransposta) {
+        conteudoEl.innerHTML = '<p class="text-slate-400 text-sm">Cifra não disponível.</p>';
+        return;
+    }
 
-    conteudoEl.innerHTML = cifraHtml;
+    const linhas = cifraTransposta.split('\n');
+    const htmlFormatado = linhas.map(linha => {
+        const txt = linha;
+        
+        // Seções Cifra Club ex: [Intro], [Primeira Parte], [Refrão], [Ponte]
+        if (/^\s*\[(Intro|Primeira Parte|Segunda Parte|Refrão|Ponte|Final|Solo|Interlúdio|Pré-Refrão)[^\]]*\]/i.test(txt)) {
+            return `<div class="text-emerald-400 font-bold text-sm mt-4 mb-2 tracking-wide font-sans">${txt}</div>`;
+        }
+
+        // Linha com marcadores de acorde [C], [G/B]
+        if (/\[([^\]]+)\]/.test(txt)) {
+            const linhaTratada = txt.replace(/\[([^\]]+)\]/g, '<span class="text-amber-400 font-bold font-mono text-sm inline-block mr-1">[$1]</span>');
+            return `<div class="py-0.5">${linhaTratada}</div>`;
+        }
+
+        // Linha de acordes soltos do Cifra Club
+        const eLinhaDeAcordes = /^\s*([A-G][#b]?(m|maj|min|dim|aug|sus|[0-9])?(\/[A-G][#b]?)?\s*)+$/i.test(txt);
+        if (eLinhaDeAcordes && txt.trim()) {
+            return `<div class="text-amber-400 font-bold font-mono text-sm whitespace-pre">${txt}</div>`;
+        }
+
+        // Linha normal de letra
+        return `<div class="text-slate-200 text-sm font-sans py-0.5 whitespace-pre-wrap">${txt}</div>`;
+    }).join('');
+
+    conteudoEl.innerHTML = `<div class="font-mono text-sm leading-relaxed space-y-1 select-text bg-slate-900/90 p-4 rounded-xl border border-slate-800">${htmlFormatado}</div>`;
 }
 
 window.abrirModalCifraPublica = abrirModalCifraPublica;
