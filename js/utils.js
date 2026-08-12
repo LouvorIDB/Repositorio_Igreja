@@ -135,3 +135,175 @@ function fecharModalLetraPublica() {
 window.abrirModalLetraPublica = abrirModalLetraPublica;
 window.fecharModalLetraPublica = fecharModalLetraPublica;
 
+// ===================== TRANSPOSITOR DE CIFRAS =====================
+
+const NOTAS_SEMITONS_MAP = {
+    'C': 0, 'C#': 1, 'DB': 1,
+    'D': 2, 'D#': 3, 'EB': 3,
+    'E': 4, 'FB': 4, 'E#': 5,
+    'F': 5, 'F#': 6, 'GB': 6,
+    'G': 7, 'G#': 8, 'AB': 8,
+    'A': 9, 'A#': 10, 'BB': 10,
+    'B': 11, 'CB': 11, 'B#': 0
+};
+
+const ESCALA_NOTAS_SUSTENIDOS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const ESCALA_NOTAS_BEMOIS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+function extrairNotaRaiz(tomStr) {
+    if (!tomStr) return null;
+    const match = tomStr.trim().match(/^([A-G][#b]?)/i);
+    return match ? match[1].toUpperCase() : null;
+}
+
+function transporNotaIndividual(acorde, diferenca, escalaAlvo) {
+    if (!acorde) return '';
+    const match = acorde.match(/^([A-G][#b]?)(.*)$/i);
+    if (!match) return acorde;
+
+    const notaBase = match[1].toUpperCase();
+    const sufixo = match[2] || '';
+
+    const semitomAtual = NOTAS_SEMITONS_MAP[notaBase];
+    if (semitomAtual === undefined) return acorde;
+
+    const novoSemitom = (semitomAtual + diferenca + 12) % 12;
+    const novaNota = escalaAlvo[novoSemitom];
+
+    return novaNota + sufixo;
+}
+
+function transporAcorde(acordeStr, diferenca, escalaAlvo) {
+    if (!acordeStr) return '';
+    if (acordeStr.includes('/')) {
+        const partes = acordeStr.split('/');
+        return partes.map(p => transporNotaIndividual(p.trim(), diferenca, escalaAlvo)).join('/');
+    }
+    return transporNotaIndividual(acordeStr.trim(), diferenca, escalaAlvo);
+}
+
+function transporCifra(textoCifra, tomOrigem, tomDestino) {
+    if (!textoCifra || typeof textoCifra !== 'string') return textoCifra || '';
+    if (!tomOrigem || !tomDestino) return textoCifra;
+
+    const raizOrigem = extrairNotaRaiz(tomOrigem);
+    const raizDestino = extrairNotaRaiz(tomDestino);
+
+    if (!raizOrigem || !raizDestino) return textoCifra;
+
+    const semitomOrigem = NOTAS_SEMITONS_MAP[raizOrigem];
+    const semitomDestino = NOTAS_SEMITONS_MAP[raizDestino];
+
+    if (semitomOrigem === undefined || semitomDestino === undefined) return textoCifra;
+
+    const diferenca = (semitomDestino - semitomOrigem + 12) % 12;
+    if (diferenca === 0) return textoCifra;
+
+    const usarBemois = /b/i.test(tomDestino) || tomDestino.trim().toUpperCase() === 'F';
+    const escalaAlvo = usarBemois ? ESCALA_NOTAS_BEMOIS : ESCALA_NOTAS_SUSTENIDOS;
+
+    return textoCifra.replace(/\[([^\]]+)\]/g, (match, acordeInterno) => {
+        const acordeTransposto = transporAcorde(acordeInterno, diferenca, escalaAlvo);
+        return `[${acordeTransposto}]`;
+    });
+}
+
+window.transporCifra = transporCifra;
+
+// ===================== MODAL DE CIFRA PÚBLICA / GLOBAL =====================
+
+let stateCifraPublica = {
+    titulo: '',
+    tomOriginal: 'C',
+    tomAtual: 'C',
+    cifraBruta: ''
+};
+
+function abrirModalCifraPublica(titulo, tomOriginal, chordsEncoded) {
+    let chordsText = '';
+    try {
+        chordsText = decodeURIComponent(chordsEncoded || '');
+    } catch(e) {
+        chordsText = chordsEncoded || '';
+    }
+
+    const tomInicial = tomOriginal || 'C';
+
+    stateCifraPublica = {
+        titulo: titulo || 'Cifra da Música',
+        tomOriginal: tomInicial,
+        tomAtual: tomInicial,
+        cifraBruta: chordsText
+    };
+
+    const tituloEl = document.getElementById('cifra-publica-titulo');
+    if (tituloEl) tituloEl.textContent = stateCifraPublica.titulo;
+
+    renderizarCifraPublica();
+
+    const modal = document.getElementById('modal-cifra-publica');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function fecharModalCifraPublica() {
+    const modal = document.getElementById('modal-cifra-publica');
+    if (modal) modal.classList.add('hidden');
+}
+
+function alterarTomCifraPublica(semitones) {
+    if (!stateCifraPublica.tomAtual) return;
+
+    const raizAtual = extrairNotaRaiz(stateCifraPublica.tomAtual);
+    if (!raizAtual) return;
+
+    const semitomAtual = NOTAS_SEMITONS_MAP[raizAtual];
+    if (semitomAtual === undefined) return;
+
+    const novoSemitom = (semitomAtual + semitones + 12) % 12;
+    const usarBemois = /b/i.test(stateCifraPublica.tomAtual) || stateCifraPublica.tomAtual.trim().toUpperCase() === 'F';
+    const escalaAlvo = usarBemois ? ESCALA_NOTAS_BEMOIS : ESCALA_NOTAS_SUSTENIDOS;
+    const novaRaiz = escalaAlvo[novoSemitom];
+
+    const sufixoTom = stateCifraPublica.tomAtual.replace(/^([A-G][#b]?)/i, '');
+    stateCifraPublica.tomAtual = novaRaiz + sufixoTom;
+
+    renderizarCifraPublica();
+}
+
+function restaurarTomCifraPublica() {
+    stateCifraPublica.tomAtual = stateCifraPublica.tomOriginal;
+    renderizarCifraPublica();
+}
+
+function renderizarCifraPublica() {
+    const subtituloEl = document.getElementById('cifra-publica-subtitulo');
+    const conteudoEl = document.getElementById('cifra-publica-conteudo');
+
+    if (subtituloEl) {
+        subtituloEl.textContent = `Tom Original: ${stateCifraPublica.tomOriginal} | Tom Exibido: ${stateCifraPublica.tomAtual}`;
+    }
+
+    if (!conteudoEl) return;
+
+    const cifraTransposta = transporCifra(
+        stateCifraPublica.cifraBruta,
+        stateCifraPublica.tomOriginal,
+        stateCifraPublica.tomAtual
+    );
+
+    const cifraHtml = (cifraTransposta || 'Cifra não disponível.')
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\[([^\]]+)\]/g, '<span class="text-emerald-400 font-bold bg-slate-900 px-1 py-0.5 rounded border border-emerald-500/40">[$1]</span>');
+
+    conteudoEl.innerHTML = cifraHtml;
+}
+
+window.abrirModalCifraPublica = abrirModalCifraPublica;
+window.fecharModalCifraPublica = fecharModalCifraPublica;
+window.alterarTomCifraPublica = alterarTomCifraPublica;
+window.restaurarTomCifraPublica = restaurarTomCifraPublica;
+
+
+
