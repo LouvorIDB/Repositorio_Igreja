@@ -52,6 +52,8 @@
                     class="px-4 py-2 rounded-xl text-sm font-medium bg-emerald-600 text-white shadow">📅 Cultos</button>
                 <button id="btn-admin-aba-equipe" onclick="mudarAbaAdmin('equipe')"
                     class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">👥 Equipe</button>
+                <button onclick="mudarAbaAdmin('ministerios')" id="tab-admin-ministerios"
+                    class="tab-admin-btn px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:text-white">🏢 Ministérios & Equipes</button>
                 <button id="btn-admin-aba-repertorio" onclick="mudarAbaAdmin('repertorio')"
                     class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">🎼 Repertório Geral</button>
                 <button id="btn-admin-aba-novas" onclick="mudarAbaAdmin('novas')"
@@ -85,6 +87,18 @@
                 </div>
                 <div id="admin-lista-equipe" class="space-y-3">
                     <p class="text-slate-500 text-sm">Carregando equipe...</p>
+                </div>
+            </div>
+
+            <!-- ABA MINISTÉRIOS & EQUIPES -->
+            <div id="admin-aba-ministerios" class="hidden space-y-4">
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <h2 class="text-base font-semibold text-slate-300">Ministérios & Equipes</h2>
+                    <button onclick="abrirModalMinisterioAdmin(null)"
+                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-medium text-sm transition">➕ Novo Ministério</button>
+                </div>
+                <div id="container-admin-ministerios" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <p class="text-slate-500 text-sm">Carregando ministérios...</p>
                 </div>
             </div>
 
@@ -768,12 +782,75 @@
         </div>
     </div>
 
-    <script src="js/config.js?v=2.9"></script>
-    <script src="js/utils.js?v=2.9"></script>
-    <script src="js/player.js?v=2.9"></script>
-    <script src="js/admin.js?v=2.9"></script>
-    <script src="js/culto-editor.js?v=2.9"></script>
-    <script src="js/app.js?v=2.9"></script>
+    <!-- ===================== MODAL NOVO/EDITAR MINISTÉRIO ===================== -->
+    <div id="modal-ministerio-admin" class="hidden fixed inset-0 bg-black/80 z-[110] flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 id="modal-ministerio-titulo" class="text-lg font-bold text-emerald-400">🏢 Novo Ministério</h3>
+                <button onclick="fecharModalMinisterioAdmin()" class="text-slate-400 hover:text-white text-sm">✕</button>
+            </div>
+            <input type="hidden" id="ministerio-admin-id">
+            <div>
+                <label class="block text-xs text-slate-300 mb-1">Nome do Ministério</label>
+                <input type="text" id="ministerio-admin-nome" required placeholder="Ex: Louvor & Adoração" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+                <label class="block text-xs text-slate-300 mb-1">Descrição</label>
+                <textarea id="ministerio-admin-descricao" rows="2" placeholder="Descrição ou atribuições..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">Ícone (Emoji)</label>
+                    <input type="text" id="ministerio-admin-icone" placeholder="🎸, 🎥, 🎤" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">Cor do Card</label>
+                    <select id="ministerio-admin-cor" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <option value="emerald">Emerald (Verde)</option>
+                        <option value="blue">Blue (Azul)</option>
+                        <option value="amber">Amber (Amarelo)</option>
+                        <option value="purple">Purple (Roxo)</option>
+                        <option value="rose">Rose (Rosa)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-2 pt-3 border-t border-slate-700">
+                <button onclick="fecharModalMinisterioAdmin()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
+                <button onclick="salvarMinisterioAdmin()" id="btn-salvar-ministerio-admin" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Ministério</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== MODAL NOVA FUNÇÃO DE MINISTÉRIO ===================== -->
+    <div id="modal-funcao-admin" class="hidden fixed inset-0 bg-black/80 z-[110] flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <h3 class="text-lg font-bold text-emerald-400">➕ Nova Função no Ministério</h3>
+                <button onclick="fecharModalFuncaoAdmin()" class="text-slate-400 hover:text-white text-sm">✕</button>
+            </div>
+            <div>
+                <label class="block text-xs text-slate-300 mb-1">Ministério</label>
+                <select id="funcao-admin-ministerio-id" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                    <option value="">Selecione um ministério...</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs text-slate-300 mb-1">Nome da Nova Função</label>
+                <input type="text" id="funcao-admin-nome" required placeholder="Ex: Operador de Luz, Câmera 2" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div class="flex gap-2 pt-3 border-t border-slate-700">
+                <button onclick="fecharModalFuncaoAdmin()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
+                <button onclick="salvarFuncaoAdmin()" id="btn-salvar-funcao-admin" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Função</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js?v=4.4"></script>
+    <script src="js/utils.js?v=4.4"></script>
+    <script src="js/player.js?v=4.4"></script>
+    <script src="js/admin.js?v=4.4"></script>
+    <script src="js/culto-editor.js?v=4.4"></script>
+    <script src="js/app.js?v=4.4"></script>
 </body>
 
 </html>

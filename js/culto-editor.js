@@ -369,7 +369,6 @@ async function salvarCulto() {
         }
 
         // 4. Pós-gravação
-        limparCacheLocal();
         fecharModalCulto();
         await carregarDados();
         mostrarToast('Culto e músicas salvos com sucesso no Supabase!', 'sucesso');

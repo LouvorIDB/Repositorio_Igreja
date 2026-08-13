@@ -1,3 +1,71 @@
+
+function sanitizarTextoCifraClub(texto) {
+    if (!texto || typeof texto !== 'string') return texto || '';
+
+    let limpo = texto
+        .replace(/<[^>]*>/g, '')
+        .replace(/["']?>([A-G][#b]?(m|maj|min|dim|aug|sus|[0-9])?(\/[A-G][#b]?)?)/gi, '$1')
+        .replace(/^["']+/gm, '')
+        .replace(/^\s*"+/gm, '');
+
+    const rawLinhas = limpo.split('\n');
+    const regexAcordeToken = /^([A-G][#b]?(m|maj|min|dim|aug|sus|[0-9])?(\/[A-G][#b]?)?)$/i;
+
+    function isChordLine(l) {
+        if (!l || !l.trim()) return false;
+        if (/^\s*\[.*\]\s*$/.test(l)) return false;
+        const tokens = l.trim().split(/\s+/);
+        return tokens.every(tok => regexAcordeToken.test(tok));
+    }
+
+    const resultado = [];
+    let i = 0;
+
+    while (i < rawLinhas.length) {
+        let curr = rawLinhas[i];
+
+        if (!curr.trim() || /^\s*\[.*\]\s*$/.test(curr)) {
+            resultado.push(curr.trim());
+            i++;
+            continue;
+        }
+
+        if (isChordLine(curr) && (i + 3 < rawLinhas.length)) {
+            const chord1 = curr;
+            const lyric1 = rawLinhas[i + 1];
+            const chord2 = rawLinhas[i + 2];
+            const lyric2 = rawLinhas[i + 3];
+
+            if (isChordLine(chord2) && lyric1.trim() && lyric1.trim() === lyric2.trim()) {
+                const padLength = Math.max(14, lyric1.indexOf('te') > 0 ? lyric1.indexOf('te') : 14);
+                const chord1Padded = chord1.trim().padEnd(padLength, ' ');
+                const mergedChordLine = chord1Padded + chord2.trim();
+
+                resultado.push(mergedChordLine);
+                resultado.push(lyric1);
+                i += 4;
+                continue;
+            }
+        }
+
+        resultado.push(curr);
+        i++;
+    }
+
+    const finalLines = [];
+    for (let j = 0; j < resultado.length; j++) {
+        const line = resultado[j];
+        const last = finalLines.length > 0 ? finalLines[finalLines.length - 1] : null;
+        if (line.trim() && last && line.trim() === last.trim() && !isChordLine(line)) {
+            continue;
+        }
+        finalLines.push(line);
+    }
+
+    return finalLines.join('\n');
+}
+window.sanitizarTextoCifraClub = sanitizarTextoCifraClub;
+
 function removerAcentos(str) {
     return (str || '').toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
@@ -182,8 +250,27 @@ function transporAcorde(acordeStr, diferenca, escalaAlvo) {
     return transporNotaIndividual(acordeStr.trim(), diferenca, escalaAlvo);
 }
 
+const REGEX_ACORDE_TOKEN = /^([A-G][#b]?(m|maj|min|dim|aug|sus|[0-9]|°|ø|\(|\)|b|\+|-)*(\/[A-G][#b]?)?)$/i;
+
+function eLinhaDeAcordesCifraClub(linha) {
+    if (!linha || !linha.trim()) return false;
+    if (/^\s*\[(Intro|Primeira Parte|Segunda Parte|Refrão|Ponte|Final|Solo|Interlúdio|Pré-Refrão)[^\]]*\]/i.test(linha)) {
+        return false;
+    }
+    const tokens = linha.trim().split(/\s+/);
+    return tokens.every(tok => REGEX_ACORDE_TOKEN.test(tok));
+}
+
+function transporLinhaCifraClub(linha, diferenca, escalaAlvo) {
+    const regexAcordeGlobal = /\b([A-G][#b]?(m|maj|min|dim|aug|sus|[0-9]|°|ø|\(|\)|b|\+|-)*(\/[A-G][#b]?)?)\b/g;
+    return linha.replace(regexAcordeGlobal, (match) => {
+        return transporAcorde(match, diferenca, escalaAlvo);
+    });
+}
+
 function transporCifra(textoCifra, tomOrigem, tomDestino) {
     if (!textoCifra || typeof textoCifra !== 'string') return textoCifra || '';
+    textoCifra = sanitizarTextoCifraClub(textoCifra);
     if (!tomOrigem || !tomDestino) return textoCifra;
 
     const raizOrigem = extrairNotaRaiz(tomOrigem);
@@ -202,10 +289,20 @@ function transporCifra(textoCifra, tomOrigem, tomDestino) {
     const usarBemois = /b/i.test(tomDestino) || tomDestino.trim().toUpperCase() === 'F';
     const escalaAlvo = usarBemois ? ESCALA_NOTAS_BEMOIS : ESCALA_NOTAS_SUSTENIDOS;
 
-    return textoCifra.replace(/\[([^\]]+)\]/g, (match, acordeInterno) => {
-        const acordeTransposto = transporAcorde(acordeInterno, diferenca, escalaAlvo);
-        return `[${acordeTransposto}]`;
+    const linhas = textoCifra.split('\n');
+    const linhasTranspostas = linhas.map(linha => {
+        if (/\[([^\]]+)\]/.test(linha)) {
+            return linha.replace(/\[([^\]]+)\]/g, (match, acordeInterno) => {
+                return `[${transporAcorde(acordeInterno, diferenca, escalaAlvo)}]`;
+            });
+        }
+        if (eLinhaDeAcordesCifraClub(linha)) {
+            return transporLinhaCifraClub(linha, diferenca, escalaAlvo);
+        }
+        return linha;
     });
+
+    return linhasTranspostas.join('\n');
 }
 
 window.transporCifra = transporCifra;
@@ -300,28 +397,23 @@ function renderizarCifraPublica() {
     const htmlFormatado = linhas.map(linha => {
         const txt = linha;
         
-        // Seções Cifra Club ex: [Intro], [Primeira Parte], [Refrão], [Ponte]
         if (/^\s*\[(Intro|Primeira Parte|Segunda Parte|Refrão|Ponte|Final|Solo|Interlúdio|Pré-Refrão)[^\]]*\]/i.test(txt)) {
             return `<div class="text-emerald-400 font-bold text-sm mt-4 mb-2 tracking-wide font-sans">${txt}</div>`;
         }
 
-        // Linha com marcadores de acorde [C], [G/B]
         if (/\[([^\]]+)\]/.test(txt)) {
             const linhaTratada = txt.replace(/\[([^\]]+)\]/g, '<span class="text-amber-400 font-bold font-mono text-sm inline-block mr-1">[$1]</span>');
             return `<div class="py-0.5">${linhaTratada}</div>`;
         }
 
-        // Linha de acordes soltos do Cifra Club
-        const eLinhaDeAcordes = /^\s*([A-G][#b]?(m|maj|min|dim|aug|sus|[0-9])?(\/[A-G][#b]?)?\s*)+$/i.test(txt);
-        if (eLinhaDeAcordes && txt.trim()) {
+        if (eLinhaDeAcordesCifraClub(txt)) {
             return `<div class="text-amber-400 font-bold font-mono text-sm whitespace-pre">${txt}</div>`;
         }
 
-        // Linha normal de letra
-        return `<div class="text-slate-200 text-sm font-sans py-0.5 whitespace-pre-wrap">${txt}</div>`;
+        return `<div class="text-slate-100 font-mono text-sm py-0.5 whitespace-pre">${txt}</div>`;
     }).join('');
 
-    conteudoEl.innerHTML = `<div class="font-mono text-sm leading-relaxed space-y-1 select-text bg-slate-900/90 p-4 rounded-xl border border-slate-800">${htmlFormatado}</div>`;
+    conteudoEl.innerHTML = `<div class="font-mono text-sm leading-relaxed select-text bg-slate-950 p-6 rounded-xl border border-slate-800 shadow-inner overflow-x-auto">${htmlFormatado}</div>`;
 }
 
 window.abrirModalCifraPublica = abrirModalCifraPublica;

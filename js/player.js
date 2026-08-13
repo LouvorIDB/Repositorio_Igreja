@@ -15,7 +15,7 @@ function playDriveAudio(title, fileId) {
                 <button onclick="fecharPlayer()" class="shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white transition text-sm">✕</button>
             </div>`;
     } else {
-        pc.innerHTML = '<span class="text-xs text-yellow-400">Insira o link do Drive na planilha.</span>';
+        pc.innerHTML = '<span class="text-xs text-yellow-400">Insira o link do Drive na edição da música.</span>';
     }
 }
 

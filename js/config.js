@@ -10,13 +10,10 @@ if (window.supabase) {
     }
 }
 
-let dadosGlobais = { cultos: [], repertorio: [], banco: [], cantores: [] };
+let dadosGlobais = { cultos: [], repertorio: [], novas: [], voluntarios: [], ministries: [] };
 let musicasCultoAtual = [];
 let cantoresCultoAtual = []; // cantores selecionados para cantar no culto
 let escalaInstrumentos = { violao: '', bateria: '', teclado: '' };
 let cultoEditandoIndex = null;
 let isAdmin = false;
-
-function limparCacheLocal() {
-    localStorage.removeItem('dadosGlobaisCache');
-}
+let usuarioLogado = null;

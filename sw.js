@@ -44,7 +44,7 @@ self.addEventListener('fetch', (event) => {
     // Ignora requisições POST / não-GET
     if (event.request.method !== 'GET') return;
 
-    // Ignora requisições externas (Google Apps Script API, Tailwind CDN, etc.)
+    // Ignora requisições externas (Supabase API, CDN, etc.)
     const url = new URL(event.request.url);
     if (url.origin !== location.origin) return;
 

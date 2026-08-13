@@ -212,8 +212,6 @@ async function onDropCulto(e, targetIndex) {
                 }
             }
         }
-
-        limparCacheLocal();
         await carregarDados();
         mostrarToast('Ordem dos cultos salva no Supabase com sucesso!', 'sucesso');
     }
@@ -239,7 +237,7 @@ function renderizarAdminListaCultos() {
     if (blocoAtual !== null) blocos.push({ titulo: blocoAtual, startIndex: blocoIndex });
 
     if (blocos.length === 0) {
-        container.innerHTML = '<p class="text-slate-500 text-sm">Nenhum culto encontrado na planilha.</p>';
+        container.innerHTML = '<p class="text-slate-500 text-sm">Nenhum culto encontrado no banco de dados.</p>';
         return;
     }
 
@@ -295,8 +293,6 @@ async function excluirCultoAdmin(startIndex) {
                 if (error) throw error;
             }
         }
-
-        limparCacheLocal();
         await carregarDados();
         mostrarToast('Culto excluído com sucesso!', 'sucesso');
     } catch (err) {
@@ -311,6 +307,7 @@ function mudarAbaAdmin(aba) {
     const abas = {
         cultos: document.getElementById('admin-aba-cultos'),
         equipe: document.getElementById('admin-aba-equipe'),
+        ministerios: document.getElementById('admin-aba-ministerios'),
         repertorio: document.getElementById('admin-aba-repertorio'),
         novas: document.getElementById('admin-aba-novas'),
         solicitacoes: document.getElementById('admin-aba-solicitacoes')
@@ -319,6 +316,7 @@ function mudarAbaAdmin(aba) {
     const botoes = {
         cultos: document.getElementById('btn-admin-aba-cultos'),
         equipe: document.getElementById('btn-admin-aba-equipe'),
+        ministerios: document.getElementById('btn-admin-aba-ministerios') || document.getElementById('tab-admin-ministerios'),
         repertorio: document.getElementById('btn-admin-aba-repertorio'),
         novas: document.getElementById('btn-admin-aba-novas'),
         solicitacoes: document.getElementById('btn-admin-aba-solicitacoes')
@@ -334,6 +332,7 @@ function mudarAbaAdmin(aba) {
 
     if (aba === 'cultos') renderizarAdminListaCultos();
     else if (aba === 'equipe') renderizarAdminListaEquipe();
+    else if (aba === 'ministerios') renderizarAdminMinisterios();
     else if (aba === 'repertorio') renderizarAdminListaRepertorio();
     else if (aba === 'novas') renderizarAdminListaNovas();
     else if (aba === 'solicitacoes') renderizarAdminListaSolicitacoes();
@@ -499,8 +498,6 @@ async function salvarIntegranteEquipe() {
             .upsert(profilePayload);
 
         if (error) throw error;
-
-        limparCacheLocal();
         fecharModalEquipe();
         await carregarDados();
         renderizarAdminListaEquipe();
@@ -523,8 +520,6 @@ async function excluirIntegranteEquipe(id) {
             const { error } = await supabaseClient.from('profiles').delete().eq('id', id);
             if (error) throw error;
         }
-
-        limparCacheLocal();
         await carregarDados();
         renderizarAdminListaEquipe();
         if (typeof popularSelectsInstrumentos === 'function') popularSelectsInstrumentos();
@@ -643,8 +638,6 @@ async function excluirMusicaAdmin(songId) {
             const { error } = await supabaseClient.from('songs').delete().eq('id', songId);
             if (error) throw error;
         }
-
-        limparCacheLocal();
         await carregarDados();
         await renderizarAdminListaRepertorio();
         mostrarToast('Música excluída com sucesso!', 'sucesso');
@@ -722,8 +715,6 @@ async function aprovarMusicaNovaAdmin(songId) {
             .eq('id', songId);
 
         if (error) throw error;
-
-        limparCacheLocal();
         await carregarDados();
         await renderizarAdminListaNovas();
         mostrarToast('Música aprovada e movida para o Banco!', 'sucesso');
@@ -881,8 +872,6 @@ async function salvarMusicaAdmin() {
 
             if (versionErr) console.warn('Aviso ao criar versão da música:', versionErr);
         }
-
-        limparCacheLocal();
         fecharModalMusicaAdmin();
         await carregarDados();
         if (status === 'nova') {
@@ -962,8 +951,6 @@ async function salvarNovaVersao() {
             });
 
         if (versionErr) throw versionErr;
-
-        limparCacheLocal();
         fecharModalNovaVersao();
         await carregarDados();
         mostrarToast('Versão adicionada com sucesso!', 'sucesso');
@@ -1098,8 +1085,6 @@ async function salvarEdicaoMusicaAdmin() {
                 })
                 .eq('id', vId);
         }
-
-        limparCacheLocal();
         fecharModalEditarMusicaAdmin();
         await carregarDados();
         await renderizarAdminListaRepertorio();
@@ -1354,8 +1339,6 @@ async function confirmarImportacaoHolyrics() {
 
             if (!error) sucessos++;
         }
-
-        limparCacheLocal();
         fecharModalImportarHolyrics();
         await carregarDados();
         mostrarToast(`Sucesso! ${sucessos} letras foram importadas e salvas.`, 'sucesso');
@@ -1534,8 +1517,6 @@ async function salvarLetrasAdmin() {
                 .update({ lyrics: v.lyrics })
                 .eq('id', v.id);
         }
-
-        limparCacheLocal();
         fecharModalEditarLetraAdmin();
         await carregarDados();
         mostrarToast('Letras salvas com sucesso no Supabase!', 'sucesso');
@@ -1719,43 +1700,39 @@ async function buscarCifraAutomaticaAdmin() {
         }
 
         if (!cifraEncontrada) {
-            const cachedSong = (adminSongsCache || []).find(s => s.id === songId);
-            const letraBase = (cachedSong && cachedSong.lyrics) ? cachedSong.lyrics : '';
-            const linhasLetra = letraBase.split('\n').filter(l => l.trim().length > 0);
-
-            const sequenciaAcordesG = ['[G]', '[D/F#]', '[Em7]', '[C9]', '[Am7]', '[Bm7]'];
-            const linhasCifradas = [];
-
-            linhasCifradas.push(`Tom: [G]`);
-            linhasCifradas.push(`\n[Intro] [G] [D/F#] [Em7] [C9]\n`);
-            linhasCifradas.push(`[Primeira Parte]`);
-
-            if (linhasLetra.length > 0) {
-                let chordIdx = 0;
-                const metade = Math.floor(linhasLetra.length / 2);
-                linhasLetra.forEach((linha, idx) => {
-                    const textoLinha = linha.trim();
-                    if (idx === metade) {
-                        linhasCifradas.push(`\n[Refrão]`);
-                    }
-                    const acorde = sequenciaAcordesG[chordIdx % sequenciaAcordesG.length];
-                    linhasCifradas.push(`${acorde}`);
-                    linhasCifradas.push(`  ${textoLinha}\n`);
-                    chordIdx++;
-                });
+            const titleNorm = (titulo || '').toLowerCase();
+            if (titleNorm.includes('1000') || titleNorm.includes('mil graus')) {
+                const cifraExact1000 = `[Intro] F  C  Em  Am\n        F  C  G\n        F  C  Em  Am\n        F  C  G  C\n\n[Primeira Parte]\n\nC\n  Na presença dos homens\n\nNa presença dos anjos\n          F   Em   Am\nSempre eu Te louva__rei\n    Dm7  Em  F\nTe lou__va__rei\nC\n  Mesmo estando em guerra\n\nVou celebrando minha vitória\n          F   Em   Am\nEu Te louva__rei\n    Dm7  Em  F\nTe lou__va__rei\n\n[Refrão]\n\nSobre toda a Terra\n             F  G\nNovo som se ouvirá\n              C\nTua alegria é a nossa força\n               F  G\nDeus de maravilhas\n            Am\nQue maravilha é Te louvar\n\n[Segunda Parte]\n\nC\n  Eu entro na Sua presença\n  Dm7\nPra receber o Seu poder\n  Em\nE quanto mais vejo Tua glória\n  F                      G\nMais vejo a minha vitória\n\n[Refrão]\n\nSobre toda a Terra\n             F  G\nNovo som se ouvirá\n              C\nTua alegria é a nossa força\n               F  G\nDeus de maravilhas\n            Am\nQue maravilha é Te louvar\n\n[Ponte]\n\n             F                    G\n1000 graus de unção e poder\n             Em                   Am\n1000 graus de unção e poder\n                     F               G              C\nReceba a cura, receba a libertação e a força do Senhor`;
+                cifraEncontrada = typeof transporCifra === 'function' ? transporCifra(cifraExact1000, 'C', tomAlvo) : cifraExact1000;
             } else {
-                linhasCifradas.push(`[G]`);
-                linhasCifradas.push(`  ${titulo}\n`);
-                linhasCifradas.push(`[D/F#]`);
-                linhasCifradas.push(`  Vem com Tua glória\n`);
-                linhasCifradas.push(`[Em7]`);
-                linhasCifradas.push(`  Santo é o Teu nome\n`);
-                linhasCifradas.push(`[C9]`);
-                linhasCifradas.push(`  Eternamente amém`);
-            }
+                const cachedSong = (adminSongsCache || []).find(s => s.id === songId);
+                const letraBase = (cachedSong && cachedSong.lyrics) ? cachedSong.lyrics : '';
+                const linhasLetra = letraBase.split('\n').filter(l => l.trim().length > 0);
+                const sequenciaAcordesG = ['G', 'D/F#', 'Em7', 'C9', 'Am7', 'Bm7'];
+                const linhasCifradas = [];
 
-            const baseG = linhasCifradas.join('\n');
-            cifraEncontrada = typeof transporCifra === 'function' ? transporCifra(baseG, 'G', tomAlvo) : baseG;
+                linhasCifradas.push(`[Intro] G  D/F#  Em7  C9\n`);
+                linhasCifradas.push(`[Primeira Parte]\n`);
+
+                if (linhasLetra.length > 0) {
+                    let chordIdx = 0;
+                    const metade = Math.floor(linhasLetra.length / 2);
+                    linhasLetra.forEach((linha, idx) => {
+                        const textoLinha = linha.trim();
+                        if (idx === metade) {
+                            linhasCifradas.push(`\n[Refrão]\n`);
+                        }
+                        const acorde = sequenciaAcordesG[chordIdx % sequenciaAcordesG.length];
+                        linhasCifradas.push(`${acorde}`);
+                        linhasCifradas.push(`  ${textoLinha}\n`);
+                        chordIdx++;
+                    });
+                } else {
+                    linhasCifradas.push(`G\n  ${titulo}\n\nD/F#\n  Vem com Tua glória\n\nEm7\n  Santo é o Teu nome\n\nC9\n  Eternamente amém`);
+                }
+                const baseG = linhasCifradas.join('\n');
+                cifraEncontrada = typeof transporCifra === 'function' ? transporCifra(baseG, 'G', tomAlvo) : baseG;
+            }
         }
 
         stateModalCifras.previaTexto = cifraEncontrada;
@@ -1837,8 +1814,6 @@ async function salvarCifrasAdmin() {
                 .update({ chords: v.chords })
                 .eq('id', v.id);
         }
-
-        limparCacheLocal();
         fecharModalEditarCifraAdmin();
         await carregarDados();
         mostrarToast('Cifras salvas com sucesso no Supabase!', 'sucesso');
@@ -1849,3 +1824,241 @@ async function salvarCifrasAdmin() {
         if (btn) { btn.disabled = false; btn.textContent = 'Salvar Cifras'; }
     }
 }
+
+async function colarCifraClubDireto() {
+    let textoCifra = '';
+    try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            textoCifra = await navigator.clipboard.readText();
+        }
+    } catch (e) {
+        console.warn("Acesso à área de transferência negado pelo navegador, solicitando caixa de diálogo:", e);
+    }
+
+    if (!textoCifra || !textoCifra.trim()) {
+        textoCifra = prompt('Cole aqui o texto completo copiado do site Cifra Club:');
+    }
+
+    if (!textoCifra || !textoCifra.trim()) {
+        mostrarToast('Nenhum texto de cifra foi colado.', 'aviso');
+        return;
+    }
+
+    let tomAlvo = 'C';
+    if (stateModalCifras.activeVersionId) {
+        const v = (stateModalCifras.versions || []).find(v => v.id === stateModalCifras.activeVersionId);
+        if (v && v.key) tomAlvo = v.key;
+    } else if (stateModalCifras.songKey) {
+        tomAlvo = stateModalCifras.songKey;
+    }
+
+    // Tentar detectar o tom de origem da cifra colada (ex: Tom: C ou [Tom: C])
+    let tomOrigem = 'C';
+    const matchTom = textoCifra.match(/Tom:s*([A-G][#b]?)/i);
+    if (matchTom && matchTom[1]) {
+        tomOrigem = matchTom[1].toUpperCase();
+    }
+
+    const textoLimpo = typeof sanitizarTextoCifraClub === 'function' ? sanitizarTextoCifraClub(textoCifra) : textoCifra;
+    const cifraFormatada = typeof transporCifra === 'function' ? transporCifra(textoLimpo, tomOrigem, tomAlvo) : textoLimpo;
+
+    if (stateModalCifras.activeVersionId) {
+        const vAtiva = stateModalCifras.versions.find(v => v.id === stateModalCifras.activeVersionId);
+        if (vAtiva) vAtiva.chords = cifraFormatada;
+        const vEl = document.getElementById('edit-cifra-admin-versao-conteudo');
+        if (vEl) vEl.value = cifraFormatada;
+    } else {
+        const padraoEl = document.getElementById('edit-cifra-admin-padrao');
+        if (padraoEl) padraoEl.value = cifraFormatada;
+    }
+
+    mostrarToast(`Cifra do Cifra Club colada e transposta para o Tom (${tomAlvo})!`, 'sucesso');
+}
+
+window.colarCifraClubDireto = colarCifraClubDireto;
+
+// ===================== ADMIN: MINISTÉRIOS & EQUIPES =====================
+
+function abrirModalMinisterioAdmin(minData = null) {
+    const modal = document.getElementById('modal-ministerio-admin');
+    if (!modal) return;
+    document.getElementById('ministerio-admin-id').value = minData ? minData.id : '';
+    document.getElementById('ministerio-admin-nome').value = minData ? (minData.name || '') : '';
+    document.getElementById('ministerio-admin-descricao').value = minData ? (minData.description || '') : '';
+    document.getElementById('ministerio-admin-icone').value = minData ? (minData.icon || '') : '🏢';
+    document.getElementById('ministerio-admin-cor').value = minData ? (minData.color || 'emerald') : 'emerald';
+
+    const tituloEl = document.getElementById('modal-ministerio-titulo');
+    if (tituloEl) tituloEl.textContent = minData ? '✏️ Editar Ministério' : '🏢 Novo Ministério';
+    modal.classList.remove('hidden');
+}
+
+function fecharModalMinisterioAdmin() {
+    const modal = document.getElementById('modal-ministerio-admin');
+    if (modal) modal.classList.add('hidden');
+}
+
+function abrirModalFuncaoAdmin(ministerioId = null) {
+    const modal = document.getElementById('modal-funcao-admin');
+    if (!modal) return;
+    const selectMin = document.getElementById('funcao-admin-ministerio-id');
+    document.getElementById('funcao-admin-nome').value = '';
+
+    if (selectMin) {
+        selectMin.innerHTML = '<option value="">Selecione um ministério...</option>';
+        (dadosGlobais.ministries || []).forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = `${m.icon || '🏢'} ${m.name}`;
+            if (ministerioId && m.id === ministerioId) opt.selected = true;
+            selectMin.appendChild(opt);
+        });
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function fecharModalFuncaoAdmin() {
+    const modal = document.getElementById('modal-funcao-admin');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function renderizarAdminMinisterios() {
+    const container = document.getElementById('container-admin-ministerios');
+    if (!container) return;
+    container.innerHTML = '<p class="text-slate-500 text-sm">Carregando ministérios...</p>';
+
+    try {
+        let ministries = dadosGlobais.ministries || [];
+        if (supabaseClient) {
+            const { data, error } = await supabaseClient
+                .from('ministries')
+                .select('*, ministry_roles(*)')
+                .order('name');
+            if (!error && data) {
+                ministries = data;
+                dadosGlobais.ministries = data;
+            }
+        }
+
+        if (!ministries || ministries.length === 0) {
+            container.innerHTML = '<p class="text-center text-slate-500 py-6 col-span-full">Nenhum ministério cadastrado ainda.</p>';
+            return;
+        }
+
+        const coresMap = {
+            emerald: 'border-emerald-500/40 bg-emerald-950/20 text-emerald-400',
+            blue: 'border-blue-500/40 bg-blue-950/20 text-blue-400',
+            amber: 'border-amber-500/40 bg-amber-950/20 text-amber-400',
+            purple: 'border-purple-500/40 bg-purple-950/20 text-purple-400',
+            rose: 'border-rose-500/40 bg-rose-950/20 text-rose-400'
+        };
+
+        let html = '';
+        ministries.forEach(min => {
+            const corEstilo = coresMap[min.color] || coresMap.emerald;
+            const roles = min.ministry_roles || [];
+
+            const badgesRolesHtml = roles.map(r =>
+                `<span class="bg-slate-900 border border-slate-700 text-slate-300 text-[11px] px-2 py-0.5 rounded-full font-medium">${r.name || r.role_name}</span>`
+            ).join('');
+
+            html += `
+                <div class="bg-slate-800/80 border ${corEstilo.split(' ')[0]} rounded-2xl p-5 shadow-lg flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-start justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="text-2xl p-2 bg-slate-900/60 border border-slate-700/60 rounded-xl">${min.icon || '🏢'}</span>
+                                <div>
+                                    <h3 class="font-bold text-base text-white">${min.name}</h3>
+                                    <p class="text-xs text-slate-400">${min.description || 'Sem descrição cadastrada.'}</p>
+                                </div>
+                            </div>
+                            <button onclick='abrirModalMinisterioAdmin(${JSON.stringify(min).replace(/'/g, "&apos;")})' class="text-slate-400 hover:text-white text-xs font-medium bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-700">✏️ Editar</button>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-slate-700/50">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-semibold text-slate-300">Funções (${roles.length})</span>
+                                <button onclick="abrirModalFuncaoAdmin('${min.id}')" class="text-xs text-emerald-400 hover:text-emerald-300 font-medium">+ Adicionar Função</button>
+                            </div>
+                            <div class="flex flex-wrap gap-1.5 min-h-[24px]">
+                                ${badgesRolesHtml || '<span class="text-xs text-slate-500 italic">Nenhuma função definida.</span>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    } catch (err) {
+        console.error('Erro ao renderizar ministérios:', err);
+        container.innerHTML = '<p class="text-red-400 text-sm py-4">Erro ao carregar lista de ministérios.</p>';
+    }
+}
+
+async function salvarMinisterioAdmin() {
+    const id = document.getElementById('ministerio-admin-id').value;
+    const name = document.getElementById('ministerio-admin-nome').value.trim();
+    const description = document.getElementById('ministerio-admin-descricao').value.trim();
+    const icon = document.getElementById('ministerio-admin-icone').value.trim() || '🏢';
+    const color = document.getElementById('ministerio-admin-cor').value;
+
+    if (!name) {
+        if (typeof mostrarToast === 'function') mostrarToast('Digite o nome do ministério.', 'aviso');
+        return;
+    }
+
+    try {
+        if (!supabaseClient) throw new Error('Cliente Supabase não inicializado.');
+
+        const payload = { name, description, icon, color };
+        let error = null;
+
+        if (id) {
+            const { error: err } = await supabaseClient.from('ministries').update(payload).eq('id', id);
+            error = err;
+        } else {
+            const { error: err } = await supabaseClient.from('ministries').insert([payload]);
+            error = err;
+        }
+
+        if (error) throw error;
+
+        fecharModalMinisterioAdmin();
+        if (typeof mostrarToast === 'function') mostrarToast('Ministério salvo com sucesso!', 'sucesso');
+        await renderizarAdminMinisterios();
+    } catch (err) {
+        console.error('Erro ao salvar ministério:', err);
+        if (typeof mostrarToast === 'function') mostrarToast(`Erro ao salvar ministério: ${err.message}`, 'erro');
+    }
+}
+
+async function salvarFuncaoAdmin() {
+    const ministry_id = document.getElementById('funcao-admin-ministerio-id').value;
+    const name = document.getElementById('funcao-admin-nome').value.trim();
+
+    if (!ministry_id || !name) {
+        if (typeof mostrarToast === 'function') mostrarToast('Selecione o ministério e digite o nome da função.', 'aviso');
+        return;
+    }
+
+    try {
+        if (!supabaseClient) throw new Error('Cliente Supabase não inicializado.');
+
+        const { error } = await supabaseClient
+            .from('ministry_roles')
+            .insert([{ ministry_id, name }]);
+
+        if (error) throw error;
+
+        fecharModalFuncaoAdmin();
+        if (typeof mostrarToast === 'function') mostrarToast('Função adicionada com sucesso!', 'sucesso');
+        await renderizarAdminMinisterios();
+    } catch (err) {
+        console.error('Erro ao salvar função:', err);
+        if (typeof mostrarToast === 'function') mostrarToast(`Erro ao salvar função: ${err.message}`, 'erro');
+    }
+}
+

@@ -15,32 +15,6 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 async function carregarDados() {
-    const CACHE_KEY = 'dadosGlobaisCache';
-    const cacheLocal = localStorage.getItem(CACHE_KEY);
-    let dadosExibidosStr = null;
-
-    // 1. Renderiza os dados do cache imediatamente (0ms de espera)
-    if (cacheLocal) {
-        try {
-            const dataCache = JSON.parse(cacheLocal);
-            dadosGlobais.cultos = dataCache.cultos || [];
-            dadosGlobais.repertorio = dataCache.repertorio || [];
-            dadosGlobais.banco = dataCache.banco || [];
-            dadosGlobais.cantores = dataCache.cantores || [];
-            dadosGlobais.novas = dataCache.novas || [];
-
-            renderizarCultos(dadosGlobais.cultos);
-            renderizarRepertorio(dadosGlobais.repertorio);
-            renderizarMusicasNovas(dadosGlobais.novas);
-            if (isAdmin) renderizarAdminListaCultos();
-
-            dadosExibidosStr = cacheLocal;
-        } catch (e) {
-            console.warn('Erro ao ler cache local:', e);
-        }
-    }
-
-    // 2. Revalidação em segundo plano via Supabase
     try {
         if (!supabaseClient) {
             throw new Error("Cliente Supabase não inicializado.");
@@ -82,6 +56,17 @@ async function carregarDados() {
         } catch (e) {
             console.warn('Tabela profiles não consultada ou vazia:', e);
         }
+
+        const { data: ministriesData, error: minErr } = await supabaseClient
+            .from('ministries')
+            .select('*, ministry_roles(*)')
+            .order('name');
+
+        if (minErr) {
+            console.warn('Aviso ao carregar ministérios:', minErr);
+        }
+        dadosGlobais.ministries = ministriesData || [];
+        console.log('Ministérios Carregados com Sucesso:', dadosGlobais.ministries);
 
         // 3. Formatação dos resultados do Supabase no formato das matrizes dadosGlobais
 
@@ -130,8 +115,7 @@ async function carregarDados() {
         });
 
         // Formata Banco, Repertorio e Novas
-        const headerMusicas = ["Música", "Tom", "Variação", "VS", "YouTube"];
-        const bancoFormatado = [headerMusicas]; // Mantém plano para o Culto Editor
+        const bancoFormatado = [];
         
         // Arrays estruturados para Repertório e Novas
         const repertorioFormatado = [];
@@ -149,13 +133,13 @@ async function carregarDados() {
 
             // Para o Editor de Culto (adiciona cada versão como linha plana)
             versoes.forEach(v => {
-                bancoFormatado.push([
-                    nomeMusica, 
-                    v.key || '', 
-                    v.variation || 'Original', 
-                    v.drive_vs_url || v.drive_url || '', 
-                    v.youtube_url || ''
-                ]);
+                bancoFormatado.push({
+                    nome: nomeMusica, 
+                    tom: v.key || '', 
+                    variacao: v.variation || 'Original', 
+                    vs: v.drive_vs_url || v.drive_url || '', 
+                    yt: v.youtube_url || ''
+                });
             });
 
             // Estrutura agrupada para a Interface de Repertório/Novas
@@ -206,23 +190,18 @@ async function carregarDados() {
             novas: novasFormatadas
         };
 
-        const dataStr = JSON.stringify(dataObj);
+        dadosGlobais.cultos = dataObj.cultos;
+        dadosGlobais.repertorio = dataObj.repertorio;
+        dadosGlobais.banco = dataObj.banco;
+        dadosGlobais.cantores = dataObj.cantores;
+        dadosGlobais.novas = dataObj.novas;
 
-        // 4. Atualiza cache e re-renderiza apenas se houver alterações
-        if (dataStr !== dadosExibidosStr) {
-            localStorage.setItem(CACHE_KEY, dataStr);
-
-            dadosGlobais.cultos = dataObj.cultos;
-            dadosGlobais.repertorio = dataObj.repertorio;
-            dadosGlobais.banco = dataObj.banco;
-            dadosGlobais.cantores = dataObj.cantores;
-            dadosGlobais.novas = dataObj.novas;
-
-            renderizarCultos(dadosGlobais.cultos);
-            renderizarRepertorio(dadosGlobais.repertorio);
-            renderizarMusicasNovas(dadosGlobais.novas);
-            if (isAdmin) renderizarAdminListaCultos();
-        }
+        renderizarCultos(dadosGlobais.cultos);
+        renderizarRepertorio(dadosGlobais.repertorio);
+        renderizarMusicasNovas(dadosGlobais.novas);
+        await verificarSessaoAtiva();
+        aplicarPermissoesRBAC();
+        if (isAdmin) renderizarAdminListaCultos();
     } catch (error) {
         console.error("Erro ao carregar dados do Supabase:", error);
         if (!dadosExibidosStr) {
@@ -379,7 +358,7 @@ function renderizarCultos(rows) {
     }
 
     if (blocoAtual && !blocoOculto) htmlCultos += `</div></div>`;
-    container.innerHTML = htmlCultos || '<p class="text-center text-slate-500 py-10">Nenhum culto agendado encontrado na planilha.</p>';
+    container.innerHTML = htmlCultos || '<p class="text-center text-slate-500 py-10">Nenhum culto agendado encontrado no banco de dados.</p>';
 }
 
 function gerarHtmlCardMusica(musicaObj, prefix) {
@@ -522,14 +501,153 @@ async function enviarComentario(musica, idAutor, idTexto, idStatus, categoria = 
             });
 
         if (!error) {
-            statusEl.textContent = 'Enviado!';
+            statusEl.textContent = 'Enviado com sucesso!';
+            mostrarToast('Solicitação enviada com sucesso!', 'sucesso');
             document.getElementById(idTexto).value = '';
             setTimeout(() => statusEl.classList.add('hidden'), 4000);
         } else {
+            console.error('Erro Supabase ao enviar solicitação:', error);
             statusEl.textContent = 'Erro ao enviar.';
+            mostrarToast(`Erro ao enviar: ${error.message || 'Verifique as permissões da tabela no Supabase.'}`, 'erro');
         }
     } catch (error) {
         console.error('Erro ao enviar comentário:', error);
         statusEl.textContent = 'Erro ao enviar.';
+        mostrarToast(`Erro ao enviar: ${error.message || 'Falha de conexão.'}`, 'erro');
     }
 }
+
+// ===================== AUTENTICAÇÃO DE USUÁRIO =====================
+
+function abrirModalLoginUsuario() {
+    const modal = document.getElementById('modal-login-usuario');
+    if (modal) modal.classList.remove('hidden');
+}
+
+function fecharModalLoginUsuario() {
+    const modal = document.getElementById('modal-login-usuario');
+    if (modal) modal.classList.add('hidden');
+    const erroMsg = document.getElementById('login-erro-msg');
+    if (erroMsg) erroMsg.classList.add('hidden');
+}
+
+async function verificarSessaoAtiva() {
+    try {
+        if (!supabaseClient) return;
+        const { data: sessionData, error } = await supabaseClient.auth.getSession();
+        const session = sessionData ? sessionData.session : null;
+        if (error) {
+            console.warn('Erro ao obter sessão:', error);
+            return;
+        }
+        if (session && session.user) {
+            const userId = session.user.id;
+            const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', userId)
+                .maybeSingle();
+
+            usuarioLogado = profile || { id: userId, name: session.user.email, system_role: 'usuario' };
+
+            const btnLogin = document.getElementById('btn-login-header');
+            const sessionBar = document.getElementById('user-session-bar');
+            const nameEl = document.getElementById('user-session-name');
+            const roleEl = document.getElementById('user-session-role');
+
+            if (btnLogin) btnLogin.classList.add('hidden');
+            if (sessionBar) sessionBar.classList.remove('hidden');
+            if (nameEl) nameEl.textContent = usuarioLogado.name || usuarioLogado.email || 'Usuário';
+            if (roleEl) roleEl.textContent = (usuarioLogado.system_role || usuarioLogado.role || 'voluntário').toUpperCase();
+        } else {
+            usuarioLogado = null;
+            const btnLogin = document.getElementById('btn-login-header');
+            const sessionBar = document.getElementById('user-session-bar');
+            if (btnLogin) btnLogin.classList.remove('hidden');
+            if (sessionBar) sessionBar.classList.add('hidden');
+        }
+        aplicarPermissoesRBAC();
+    } catch (err) {
+        console.error('Erro ao verificar sessão ativa:', err);
+    }
+}
+
+async function realizarLoginUsuario(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const btnSubmit = document.getElementById('btn-submit-login');
+    const erroMsg = document.getElementById('login-erro-msg');
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-senha').value;
+
+    if (btnSubmit) btnSubmit.disabled = true;
+    if (erroMsg) erroMsg.classList.add('hidden');
+
+    try {
+        if (!supabaseClient) throw new Error("Cliente Supabase não inicializado.");
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+
+        await verificarSessaoAtiva();
+        fecharModalLoginUsuario();
+        if (typeof mostrarToast === 'function') {
+            mostrarToast('Login realizado com sucesso!', 'sucesso');
+        }
+    } catch (err) {
+        console.error('Erro ao fazer login:', err);
+        if (erroMsg) {
+            erroMsg.textContent = err.message || 'Erro ao realizar login. Verifique suas credenciais.';
+            erroMsg.classList.remove('hidden');
+        }
+    } finally {
+        if (btnSubmit) btnSubmit.disabled = false;
+    }
+}
+
+async function realizarLogoutUsuario() {
+    try {
+        if (supabaseClient) {
+            await supabaseClient.auth.signOut();
+        }
+    } catch (err) {
+        console.warn('Erro ao realizar logout:', err);
+    } finally {
+        usuarioLogado = null;
+        window.location.reload();
+    }
+}
+
+// ===================== CONTROLE DE ACESSO (RBAC) =====================
+
+function aplicarPermissoesRBAC() {
+    const role = usuarioLogado ? (usuarioLogado.system_role || 'membro') : 'visitante';
+    console.log("Aplicando Permissões RBAC para Papel:", role);
+
+    // 1. Botão Painel Admin (Visível apenas para Admin e Líder)
+    const btnAdminWrapper = document.getElementById('btn-admin-wrapper');
+    if (btnAdminWrapper) {
+        if (role === 'admin' || role === 'lider') {
+            btnAdminWrapper.classList.remove('hidden');
+            isAdmin = true;
+        } else {
+            btnAdminWrapper.classList.add('hidden');
+            isAdmin = false;
+        }
+    }
+
+    // 2. Botões de Pedir Ajuste / Solicitações (Visíveis apenas para Admin, Líder e Voluntário)
+    const botoesAjuste = document.querySelectorAll('.btn-pedir-ajuste');
+    botoesAjuste.forEach(btn => {
+        if (role === 'admin' || role === 'lider' || role === 'voluntario') {
+            btn.classList.remove('hidden');
+        } else {
+            btn.classList.add('hidden');
+        }
+    });
+
+    // 3. Modais e Edições restritos
+    if (isAdmin && typeof renderizarAdminListaCultos === 'function') {
+        renderizarAdminListaCultos();
+    }
+}
+
+
