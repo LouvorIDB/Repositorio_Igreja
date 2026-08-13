@@ -845,12 +845,33 @@
         </div>
     </div>
 
-    <script src="js/config.js?v=4.4"></script>
-    <script src="js/utils.js?v=4.4"></script>
-    <script src="js/player.js?v=4.4"></script>
-    <script src="js/admin.js?v=4.4"></script>
-    <script src="js/culto-editor.js?v=4.4"></script>
-    <script src="js/app.js?v=4.4"></script>
+    <!-- ===================== MODAL LOGIN USUÁRIO ===================== -->
+    <div id="modal-login-usuario" class="hidden fixed inset-0 bg-black/80 z-[110] flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative space-y-4">
+            <button onclick="fecharModalLoginUsuario()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">✕</button>
+            <h3 class="text-xl font-bold text-white mb-1">🔑 Entrar no Sistema</h3>
+            <p class="text-xs text-slate-400">Acesse com seu e-mail e senha cadastrados.</p>
+            <form onsubmit="realizarLoginUsuario(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">E-mail</label>
+                    <input type="email" id="login-email" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" placeholder="seu@email.com">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-300 mb-1">Senha</label>
+                    <input type="password" id="login-senha" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" placeholder="••••••••">
+                </div>
+                <p id="login-erro-msg" class="hidden text-xs text-red-400"></p>
+                <button type="submit" id="btn-submit-login" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-lg text-sm transition">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/config.js?v=4.5"></script>
+    <script src="js/utils.js?v=4.5"></script>
+    <script src="js/player.js?v=4.5"></script>
+    <script src="js/admin.js?v=4.5"></script>
+    <script src="js/culto-editor.js?v=4.5"></script>
+    <script src="js/app.js?v=4.5"></script>
 </body>
 
 </html>
