@@ -128,7 +128,7 @@
     <div id="painel-admin-container"></div>
 
     <!-- ===================== SITE PRINCIPAL ===================== -->
-    <div class="container mx-auto px-4 py-8 max-w-4xl pb-60">
+    <div class="container mx-auto px-4 py-8 max-w-6xl pb-60">
         
         <!-- ===================== AUTH HEADER ===================== -->
         <div id="auth-header-container" class="flex justify-end items-center gap-2 mb-6">
@@ -229,57 +229,93 @@
             </div>
         </div>
 
-        <div id="conteudo-principal-site">
-            <header class="mb-8 text-center">
-                <h1 class="text-3xl font-bold text-brand-400 select-none cursor-default" id="titulo-site">Repertório</h1>
-                <p class="text-slate-400 text-sm mt-1 select-none">Organizem-se previamente para os ensaios e cultos.</p>
+        <div id="conteudo-principal-site" class="flex flex-col md:flex-row gap-8 items-start w-full">
+            
+            <!-- MENU MOBILE TOGGLE -->
+            <div class="md:hidden w-full flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm mb-4">
+                <h1 class="text-xl font-bold text-brand-400 select-none cursor-default truncate" id="titulo-site-mobile">Menu</h1>
+                <button onclick="document.getElementById('sidebar-menu').classList.toggle('hidden')" class="text-slate-300 hover:text-white p-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+            </div>
 
-                <div class="flex justify-center gap-3 mt-6 flex-wrap">
-                    <button onclick="mudarAba('cultos')" id="btn-cultos"
-                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-brand-600 text-white shadow-lg">
-                        📅 Próximos Cultos
-                    </button>
-                    <button onclick="mudarAba('repertorio')" id="btn-repertorio"
-                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
-                        🎵 Lista Geral de Músicas
-                    </button>
-                    <button onclick="mudarAba('novas')" id="btn-novas"
-                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
-                        🌟 Músicas Novas
-                    </button>
-                    <button onclick="mudarAba('midia')" id="btn-midia"
-                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 hidden">
-                        📷 Mídias (Fotos/Vídeos)
-                    </button>
-                    <button onclick="mudarAba('agenda')" id="btn-agenda"
-                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
-                        🗓️ Agenda & Eventos
-                    </button>
-                    <button onclick="mudarAba('almoxarifado')" id="btn-almoxarifado"
-                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
-                        📦 Recursos & Wiki
-                    </button>
-                    <button onclick="mudarAba('analytics')" id="btn-analytics"
-                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
-                        📊 Analytics & Relatórios
-                    </button>
+            <!-- SIDEBAR -->
+            <aside id="sidebar-menu" class="hidden md:flex flex-col gap-6 w-full md:w-64 shrink-0 sticky top-24 z-10 bg-slate-900/95 md:bg-transparent p-4 md:p-0 rounded-2xl md:rounded-none border md:border-none border-slate-700/50 shadow-xl md:shadow-none mb-6 md:mb-0">
+                <!-- CABEÇALHO DA IGREJA -->
+                <div class="mb-2 hidden md:block px-2">
+                    <h1 class="text-2xl font-bold text-brand-400 select-none cursor-default" id="titulo-site">Repertório</h1>
                 </div>
 
-                <div class="flex justify-center mt-3 hidden gap-3 flex-wrap" id="botoes-sugestao-container">
-                    <button id="btn-holyrics-igreja-container" onclick="copiarScriptHolyricsUnico()"
-                        class="px-4 py-2 rounded-xl font-medium text-sm transition bg-cyan-700/80 hover:bg-cyan-600 text-white border border-cyan-500/50 flex items-center gap-1.5 shadow-lg">
-                        ⚡ Copiar Script Holyrics da Igreja
-                    </button>
-                    <button id="btn-sugerir-nova-container" onclick="toggleComentario('form-sugestao-nova')"
-                        class="px-4 py-2 rounded-xl font-medium text-sm transition bg-slate-700 hover:bg-slate-600 text-slate-300 hidden">
-                        💡 Sugerir Música Nova
-                    </button>
-                    <button id="btn-indisponibilidade-container" onclick="toggleComentario('form-indisponibilidade')"
-                        class="px-4 py-2 rounded-xl font-medium text-sm transition bg-slate-700 hover:bg-slate-600 text-slate-300 hidden">
-                        🗓️ Informar Indisponibilidade
-                    </button>
-                </div>
+                <nav class="flex flex-col gap-6">
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2">Geral</h3>
+                        <div class="flex flex-col gap-1">
+                            <button onclick="mudarAba('cultos'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');" id="btn-cultos"
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
+                                📅 Próximos Cultos
+                            </button>
+                            <button onclick="mudarAba('agenda'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');" id="btn-agenda"
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
+                                🗓️ Agenda & Eventos
+                            </button>
+                        </div>
+                    </div>
 
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2">Músicas & Ensaios</h3>
+                        <div class="flex flex-col gap-1">
+                            <button onclick="mudarAba('repertorio'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');" id="btn-repertorio"
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
+                                🎵 Lista Geral
+                            </button>
+                            <button onclick="mudarAba('novas'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');" id="btn-novas"
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
+                                🌟 Músicas Novas
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2">Ferramentas da Equipe</h3>
+                        <div class="flex flex-col gap-1">
+                            <button onclick="mudarAba('midia'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');" id="btn-midia"
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 items-center gap-3 hidden">
+                                📷 Mídias (Fotos/Vídeos)
+                            </button>
+                            <button onclick="mudarAba('almoxarifado'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');" id="btn-almoxarifado"
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
+                                📦 Recursos & Wiki
+                            </button>
+                            <button onclick="mudarAba('analytics'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');" id="btn-analytics"
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
+                                📊 Analytics & Relatórios
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="botoes-sugestao-container" class="hidden">
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2 pt-2 border-t border-slate-700/50">Ações Especiais</h3>
+                        <div class="flex flex-col gap-1">
+                            <button id="btn-sugerir-nova-container" onclick="toggleComentario('form-sugestao-nova'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');"
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-indigo-300 hover:bg-indigo-900/30 border border-transparent hover:border-indigo-500/30 flex items-center gap-3 hidden">
+                                💡 Sugerir Música Nova
+                            </button>
+                            <button id="btn-indisponibilidade-container" onclick="toggleComentario('form-indisponibilidade'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');"
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-rose-300 hover:bg-rose-900/30 border border-transparent hover:border-rose-500/30 flex items-center gap-3 hidden">
+                                🗓️ Informar Indisponibilidade
+                            </button>
+                            <button id="btn-holyrics-igreja-container" onclick="copiarScriptHolyricsUnico(); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');"
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-cyan-300 hover:bg-cyan-900/30 border border-transparent hover:border-cyan-500/30 flex items-center gap-3 hidden">
+                                ⚡ Copiar Script Holyrics
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+            </aside>
+            
+            <!-- MAIN CONTENT AREA -->
+            <main class="flex-1 min-w-0 w-full">
+                
                 <div id="form-sugestao-nova"
                     class="hidden mt-4 bg-slate-800 border border-slate-700 rounded-2xl p-4 max-w-lg mx-auto space-y-2">
                     <p class="text-sm text-slate-300 font-medium">Sugerir música para o repertório geral:</p>

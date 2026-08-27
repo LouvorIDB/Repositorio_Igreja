@@ -147,7 +147,7 @@ function abrirPainelAdmin() {
     const role = usuarioLogado ? (usuarioLogado.system_role || 'membro') : 'visitante';
     const isFullAdmin = (role === 'admin' || role === 'lider');
     
-    const tabsToHideIfNotAdmin = ['btn-admin-aba-cultos', 'tab-admin-ministerios', 'btn-admin-aba-repertorio', 'btn-admin-aba-novas', 'btn-admin-aba-solicitacoes'];
+    const tabsToHideIfNotAdmin = ['btn-admin-aba-cultos-eventos', 'tab-admin-ministerios', 'btn-admin-aba-repertorio', 'btn-admin-aba-novas', 'btn-admin-aba-solicitacoes'];
     
     tabsToHideIfNotAdmin.forEach(tabId => {
         const tab = document.getElementById(tabId);
@@ -157,8 +157,7 @@ function abrirPainelAdmin() {
     });
 
     if (isFullAdmin) {
-        mudarAbaAdmin('cultos');
-        renderizarAdminListaCultos();
+        mudarAbaAdmin('cultos-eventos');
     } else if (hasPermission('ver_aba_midias_upadas')) {
         mudarAbaAdmin('midia');
     }
@@ -331,31 +330,29 @@ async function excluirCultoAdmin(startIndex) {
 
 function mudarAbaAdmin(aba) {
     const abas = {
-        cultos: document.getElementById('admin-aba-cultos'),
+        'cultos-eventos': document.getElementById('admin-aba-cultos-eventos'),
         historico: document.getElementById('admin-aba-historico'),
         ministerios: document.getElementById('admin-aba-ministerios'),
         repertorio: document.getElementById('admin-aba-repertorio'),
         novas: document.getElementById('admin-aba-novas'),
         solicitacoes: document.getElementById('admin-aba-solicitacoes'),
-        agenda: document.getElementById('admin-aba-agenda'),
         igrejas: document.getElementById('admin-aba-igrejas'),
         configuracoes: document.getElementById('admin-aba-configuracoes')
     };
 
     const botoes = {
-        cultos: document.getElementById('btn-admin-aba-cultos'),
+        'cultos-eventos': document.getElementById('btn-admin-aba-cultos-eventos'),
         historico: document.getElementById('btn-admin-aba-historico'),
         ministerios: document.getElementById('tab-admin-ministerios'),
         repertorio: document.getElementById('btn-admin-aba-repertorio'),
         novas: document.getElementById('btn-admin-aba-novas'),
         solicitacoes: document.getElementById('btn-admin-aba-solicitacoes'),
-        agenda: document.getElementById('btn-admin-aba-agenda'),
         igrejas: document.getElementById('btn-admin-aba-igrejas'),
         configuracoes: document.getElementById('btn-admin-aba-configuracoes')
     };
 
-    const ativo = "px-4 py-2 rounded-xl text-sm font-medium bg-brand-600 text-white shadow";
-    const inativo = "px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700";
+    const ativo = "w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition bg-brand-600/20 text-brand-400 border border-brand-500/30 flex items-center gap-3";
+    const inativo = "w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3";
 
     const userToEvaluate = (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null) || (window.usuarioLogado || null);
     const role = userToEvaluate ? (userToEvaluate.system_role || 'membro') : 'visitante';
@@ -376,9 +373,8 @@ function mudarAbaAdmin(aba) {
         }
     });
 
-    if (aba === 'cultos') renderizarAdminListaCultos();
+    if (aba === 'cultos-eventos') { if (typeof renderizarAdminCultosEventos === 'function') renderizarAdminCultosEventos(); }
     else if (aba === 'historico') { if (typeof renderizarHistoricoCultos === 'function') renderizarHistoricoCultos(); }
-    else if (aba === 'agenda') { if (typeof renderizarAdminListaEventos === 'function') renderizarAdminListaEventos(); }
     else if (aba === 'equipe') renderizarAdminListaEquipe();
     else if (aba === 'ministerios') renderizarAdminMinisterios();
     else if (aba === 'repertorio') renderizarAdminListaRepertorio();

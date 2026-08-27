@@ -59,26 +59,56 @@ function mostrarFormCulto(startIndex) {
 
     let dataFormatar = null;
 
+    const inputTitulo = document.getElementById('culto-titulo-input');
+    const inputHora = document.getElementById('culto-hora-input');
+    const inputLocal = document.getElementById('culto-local-input');
+    const inputDesc = document.getElementById('culto-descricao-input');
+
+    if (inputTitulo) inputTitulo.value = '';
+    if (inputHora) inputHora.value = '19:30';
+    if (inputLocal) inputLocal.value = '';
+    if (inputDesc) inputDesc.value = '';
+
     if (startIndex === null) {
-        document.getElementById('modal-culto-titulo').textContent = 'Novo Culto';
+        document.getElementById('modal-culto-titulo').textContent = 'Novo Evento / Culto';
         document.getElementById('culto-em-montagem').checked = false;
         document.getElementById('culto-oculto').checked = false;
+        
+        // Check if there is a pending date from calendar click
+        if (window.pendingDataClick) {
+            const p = window.pendingDataClick.split('-');
+            if (p.length === 3) dataFormatar = `${p[2]}/${p[1]}/${p[0]}`;
+            window.pendingDataClick = null;
+        }
+
     } else {
         const rows = dadosGlobais.cultos;
         const tituloCulto = rows[startIndex][0].toString();
-        document.getElementById('modal-culto-titulo').textContent = 'Editar Culto';
+        document.getElementById('modal-culto-titulo').textContent = 'Editar Evento / Culto';
         document.getElementById('culto-em-montagem').checked = tituloCulto.toUpperCase().includes('EM MONTAGEM');
         document.getElementById('culto-oculto').checked = tituloCulto.toUpperCase().includes('OCULTO');
 
         const sTarget = (dadosGlobais.services || []).find(s => s.id === cultoEditandoId);
-        if (sTarget && sTarget.date) {
-            const dateOnly = sTarget.date.split('T')[0];
-            const p = dateOnly.split('-');
-            if (p.length === 3) dataFormatar = `${p[2]}/${p[1]}/${p[0]}`;
+        if (sTarget) {
+            if (sTarget.title) if (inputTitulo) inputTitulo.value = sTarget.title;
+            
+            if (sTarget.date) {
+                const parts = sTarget.date.split('T');
+                const dateOnly = parts[0];
+                if (parts[1] && inputHora) {
+                    inputHora.value = parts[1].substring(0, 5);
+                }
+                const p = dateOnly.split('-');
+                if (p.length === 3) dataFormatar = `${p[2]}/${p[1]}/${p[0]}`;
+            }
+            if (sTarget.location) if (inputLocal) inputLocal.value = sTarget.location;
+            if (sTarget.description) if (inputDesc) inputDesc.value = sTarget.description;
         }
+        
         if (!dataFormatar) {
             const partes = tituloCulto.split(' - ');
             dataFormatar = partes[0] || '';
+            if (inputTitulo) inputTitulo.value = tituloCulto;
         }
 
         try {
@@ -401,23 +431,31 @@ async function salvarCulto() {
     const emMontagem = document.getElementById('culto-em-montagem').checked;
     const oculto = document.getElementById('culto-oculto').checked;
 
+    const customTitle = document.getElementById('culto-titulo-input')?.value.trim();
+    const customTime = document.getElementById('culto-hora-input')?.value.trim() || '19:30';
+    const customLocation = document.getElementById('culto-local-input')?.value.trim();
+    const customDesc = document.getElementById('culto-descricao-input')?.value.trim();
+
     if (!data) { mostrarToast('Escolha a data do culto no calendário.', 'aviso'); return; }
 
+    const [hH, mM] = customTime.split(':');
     let dataFinalObj = new Date();
     const partesData = data.split('/');
     if (partesData.length === 3) {
         const dia = parseInt(partesData[0], 10);
         const mes = parseInt(partesData[1], 10) - 1;
         const ano = parseInt(partesData[2], 10);
-        dataFinalObj = new Date(ano, mes, dia, 12, 0, 0);
+        dataFinalObj = new Date(ano, mes, dia, parseInt(hH || 19), parseInt(mM || 30), 0);
     } else if (partesData.length === 2) {
         const dia = parseInt(partesData[0], 10);
         const mes = parseInt(partesData[1], 10) - 1;
-        dataFinalObj = new Date(new Date().getFullYear(), mes, dia, 12, 0, 0);
+        dataFinalObj = new Date(new Date().getFullYear(), mes, dia, parseInt(hH || 19), parseInt(mM || 30), 0);
     } else {
         const dateParsed = Date.parse(data);
         if (!isNaN(dateParsed)) {
             dataFinalObj = new Date(dateParsed);
+            dataFinalObj.setHours(parseInt(hH || 19));
+            dataFinalObj.setMinutes(parseInt(mM || 30));
         }
     }
 
@@ -430,7 +468,10 @@ async function salvarCulto() {
     const mesStr = String(dataFinalObj.getMonth() + 1).padStart(2, '0');
     const dataFormatadaTitle = `${diaStr}/${mesStr}`;
 
-    const titulo = `${dataFormatadaTitle} - CULTO DE ${tipo}${emMontagem ? ' - EM MONTAGEM' : ''}${oculto ? ' - OCULTO' : ''}`;
+    let titulo = customTitle;
+    if (!titulo) {
+        titulo = `${dataFormatadaTitle} - CULTO DE ${tipo}${emMontagem ? ' - EM MONTAGEM' : ''}${oculto ? ' - OCULTO' : ''}`;
+    }
 
     escalaInstrumentos = {};
     const inputsDinamicos = document.querySelectorAll('.escala-dinamica-input');
@@ -462,6 +503,8 @@ async function salvarCulto() {
             title: titulo,
             status: oculto ? 'arquivado' : (emMontagem ? 'aberto' : 'confirmado'),
             date: dataFinalObj.toISOString(),
+            location: customLocation,
+            description: customDesc,
             notes: JSON.stringify({
                 escala: escalaInstrumentos,
                 cantores: cantoresCultoAtual

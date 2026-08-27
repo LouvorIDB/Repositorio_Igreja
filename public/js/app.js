@@ -534,8 +534,8 @@ async function carregarDados() {
 function mudarAba(aba) {
     const secoes = { cultos: 'secao-cultos', repertorio: 'secao-repertorio', novas: 'secao-novas', midia: 'secao-midia', agenda: 'secao-agenda', almoxarifado: 'secao-almoxarifado', analytics: 'secao-analytics' };
     const botoes = { cultos: 'btn-cultos', repertorio: 'btn-repertorio', novas: 'btn-novas', midia: 'btn-midia', agenda: 'btn-agenda', almoxarifado: 'btn-almoxarifado', analytics: 'btn-analytics' };
-    const ativo = "px-5 py-2.5 rounded-xl font-medium text-sm transition bg-brand-600 text-white shadow-lg";
-    const inativo = "px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700";
+    const ativo = "w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition bg-brand-600/20 text-brand-400 border border-brand-500/30 flex items-center gap-3";
+    const inativo = "w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3";
 
     const userToEvaluate = modoSimulacaoPerfil || usuarioLogado;
     const roleToEval = userToEvaluate ? (userToEvaluate.system_role || userToEvaluate.role || 'membro') : 'visitante';
@@ -734,6 +734,21 @@ function renderizarCultos(rows) {
             blocoEmMontagem = blocoAtual.toUpperCase().includes('EM MONTAGEM');
             blocoOculto = blocoAtual.toUpperCase().includes('OCULTO');
 
+            // Filtragem por Mês Ativo (SaaS)
+            if (!blocoOculto && window.dadosGlobais?.church?.active_month) {
+                const mesAtivoTarget = window.dadosGlobais.church.active_month.split('-')[1]; // ex: '08'
+                const partesTitulo = blocoAtual.split(' - ');
+                if (partesTitulo.length > 0 && partesTitulo[0].includes('/')) {
+                    const dataPartes = partesTitulo[0].trim().split('/');
+                    if (dataPartes.length >= 2) {
+                        const mesDoCulto = dataPartes[1];
+                        if (mesDoCulto !== mesAtivoTarget) {
+                            blocoOculto = true;
+                        }
+                    }
+                }
+            }
+
             // Lê instrumentos (col F = JSON), cantores do culto (col G), e mídias (col H)
             let instrObj = {};
             try { instrObj = linha[5] ? JSON.parse(linha[5].toString()) : {}; } catch (e) { }
@@ -823,21 +838,6 @@ function renderizarCultos(rows) {
                     ${linhaMidias}
                     ${linhaInstrumentos}
                     ${linhaCantores}
-                    ${hasPermission('gerar_script_holyrics') ? `
-                    <div class="px-4 py-2 bg-slate-900/60 border-b border-slate-700/40 flex justify-between items-center flex-wrap gap-2 text-xs">
-                        <span class="text-cyan-400 font-semibold flex items-center gap-1">⚡ Automação Holyrics:</span>
-                        <div class="flex items-center gap-2">
-                            <button onclick="abrirTutorialHolyrics()" class="bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 px-2.5 py-1 rounded-lg transition font-medium flex items-center gap-1">
-                                ❓ Como Importar?
-                            </button>
-                            <button onclick="copiarScriptHolyricsServico('${blocoAtual.replace(/'/g, "\\'")}')" class="bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-200 border border-cyan-500/40 px-2.5 py-1 rounded-lg transition font-medium">
-                                📋 Copiar Script Holyrics
-                            </button>
-                            <button onclick="baixarScriptHolyricsServico('${blocoAtual.replace(/'/g, "\\'")}')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-lg transition">
-                                📥 Baixar .js
-                            </button>
-                        </div>
-                    </div>` : ''}
                     <div id="${idPlaylist}" class="hidden divide-y divide-slate-700/50">
             `;
 
