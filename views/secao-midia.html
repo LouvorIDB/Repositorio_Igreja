@@ -1,0 +1,33 @@
+<div id="secao-midia" class="hidden space-y-4">
+    <div class="bg-slate-800/60 border border-indigo-700/40 rounded-2xl p-4 mb-4">
+        <p class="text-indigo-300 text-sm font-medium">📷 Banco de Mídias</p>
+        <p class="text-slate-400 text-xs mt-1">Faça upload de fotos e vídeos, ou baixe para projeção.</p>
+    </div>
+    
+    <div class="flex items-center justify-end mb-4">
+        <label class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl font-medium text-sm cursor-pointer inline-flex items-center gap-2 transition">
+            <span>Fazer Upload</span>
+            <input type="file" id="input-upload-midia" class="hidden" multiple accept="image/*,video/*,application/pdf">
+        </label>
+    </div>
+    
+    <!-- Área de Drop -->
+    <div id="dropzone-midia" class="border-2 border-dashed border-slate-700 bg-slate-800/50 rounded-xl p-8 text-center transition hover:border-indigo-500 hover:bg-slate-800 flex flex-col items-center justify-center min-h-[160px] cursor-pointer" onclick="document.getElementById('input-upload-midia').click()">
+        <span class="text-3xl mb-2">📁</span>
+        <p class="text-slate-400 font-medium">Clique ou arraste fotos e vídeos aqui</p>
+        <p class="text-slate-500 text-xs mt-1">Arquivos são enviados diretamente para a nuvem</p>
+    </div>
+
+    <!-- Progresso e Lista -->
+    <div id="midia-upload-progress" class="hidden mt-4 bg-slate-800 p-3 rounded-lg border border-slate-700">
+        <p class="text-xs text-brand-400 mb-2 font-medium" id="midia-upload-text">Enviando arquivos...</p>
+        <div class="w-full bg-slate-900 rounded-full h-2">
+            <div id="midia-upload-bar" class="bg-brand-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6" id="lista-midias-grid">
+        <!-- Cards de mídia aparecerão aqui -->
+        <p class="text-slate-500 text-sm col-span-full">Carregando arquivos da caixa de entrada...</p>
+    </div>
+</div>

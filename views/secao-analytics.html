@@ -1,0 +1,91 @@
+<!-- SEÇÃO DASHBOARD DE ANALYTICS E RELATÓRIOS -->
+<section id="secao-analytics" class="hidden space-y-6">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+        <div>
+            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                <span>📊</span> Dashboard de Analytics & Inteligência de Dados
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">Métricas de frequência de voluntários, ranking de repertório e distribuição de escalas.</p>
+        </div>
+
+        <!-- FILTRO DE PERÍODO (DATA INÍCIO / FIM) -->
+        <div class="flex flex-wrap items-center gap-2.5 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+            <div class="flex items-center gap-1.5 text-xs text-slate-300">
+                <span class="text-slate-500">De:</span>
+                <input type="date" id="analytics-data-inicio" class="bg-slate-900 border border-slate-700 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-brand-500">
+            </div>
+            <div class="flex items-center gap-1.5 text-xs text-slate-300">
+                <span class="text-slate-500">Até:</span>
+                <input type="date" id="analytics-data-fim" class="bg-slate-900 border border-slate-700 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-brand-500">
+            </div>
+            
+            <div class="flex items-center gap-1">
+                <button onclick="definirAtalhoPeriodoAnalytics(30)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] rounded-lg border border-slate-700 transition">30d</button>
+                <button onclick="definirAtalhoPeriodoAnalytics('ano')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] rounded-lg border border-slate-700 transition">Este Ano</button>
+                <button onclick="limparFiltroPeriodoAnalytics()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] rounded-lg border border-slate-700 transition">Tudo</button>
+            </div>
+
+            <button onclick="carregarAnalytics()" class="px-3.5 py-1.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold rounded-lg transition flex items-center gap-1">
+                <span>🔍</span> Filtrar
+            </button>
+        </div>
+    </div>
+
+    <!-- CARDS DE METRICAS CHAVE (KPIs) -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-1">
+            <p class="text-xs text-slate-400 font-medium">Total de Cultos</p>
+            <p id="kpi-total-cultos" class="text-2xl font-extrabold text-white">0</p>
+            <p class="text-[10px] text-brand-400">No período selecionado</p>
+        </div>
+        <div id="kpi-card-musicas" class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-1">
+            <p class="text-xs text-slate-400 font-medium">Músicas Tocadas</p>
+            <p id="kpi-total-musicas-tocadas" class="text-2xl font-extrabold text-cyan-400">0</p>
+            <p class="text-[10px] text-cyan-500">Execuções acumuladas</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-1">
+            <p class="text-xs text-slate-400 font-medium">Voluntários Escalados</p>
+            <p id="kpi-total-voluntarios" class="text-2xl font-extrabold text-emerald-400">0</p>
+            <p class="text-[10px] text-emerald-500">Engajados nas escalas</p>
+        </div>
+        <div id="kpi-card-repertorio" class="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-1">
+            <p class="text-xs text-slate-400 font-medium">Repertório Ativo</p>
+            <p id="kpi-repertorio-ativo" class="text-2xl font-extrabold text-purple-400">0</p>
+            <p class="text-[10px] text-purple-500">Músicas no acervo</p>
+        </div>
+    </div>
+
+    <!-- GRID DE GRÁFICOS CHART.JS -->
+    <div id="analytics-charts-grid" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Gráfico 1: Top Músicas Mais Tocadas -->
+        <div id="card-analytics-musicas" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <span>🎶</span> Músicas Mais Ministradas (Top 5)
+                </h3>
+                <div class="flex items-center gap-2">
+                    <button onclick="abrirModalTodasMusicasAnalytics()" class="text-xs text-brand-400 hover:text-brand-300 font-medium bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg transition flex items-center gap-1">
+                        <span>🔍</span> Ver Lista Completa
+                    </button>
+                    <span class="text-[10px] bg-cyan-950 text-cyan-400 px-2 py-0.5 rounded-full border border-cyan-800">Ranking</span>
+                </div>
+            </div>
+            <div class="h-64 relative">
+                <canvas id="chart-top-musicas"></canvas>
+            </div>
+        </div>
+
+        <!-- Gráfico 2: Ranking de Voluntários Mais Escalados -->
+        <div id="card-analytics-voluntarios" class="bg-slate-900 border border-slate-800 p-5 rounded-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 id="titulo-chart-voluntarios" class="text-sm font-bold text-white flex items-center gap-2">
+                    <span>🎸</span> Voluntários Mais Escalados
+                </h3>
+                <span class="text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-800">Frequência</span>
+            </div>
+            <div class="h-64 relative flex justify-center">
+                <canvas id="chart-top-voluntarios"></canvas>
+            </div>
+        </div>
+    </div>
+</section>

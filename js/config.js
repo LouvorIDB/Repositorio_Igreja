@@ -9,11 +9,3 @@ if (window.supabase) {
         console.error("Erro ao inicializar o Supabase:", err);
     }
 }
-
-let dadosGlobais = { cultos: [], repertorio: [], novas: [], voluntarios: [], ministries: [] };
-let musicasCultoAtual = [];
-let cantoresCultoAtual = []; // cantores selecionados para cantar no culto
-let escalaInstrumentos = { violao: '', bateria: '', teclado: '' };
-let cultoEditandoIndex = null;
-let isAdmin = false;
-let usuarioLogado = null;

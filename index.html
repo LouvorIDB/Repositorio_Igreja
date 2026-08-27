@@ -5,766 +5,323 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0f172a">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Repertório - Igreja</title>
+    <title>Liturge — Gestão de Louvor & Cultos</title>
+    <link rel="icon" type="image/png" href="icon-192.png">
     <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: 'var(--brand-50, #ecfdf5)',
+                            100: 'var(--brand-100, #d1fae5)',
+                            200: 'var(--brand-200, #a7f3d0)',
+                            300: 'var(--brand-300, #6ee7b7)',
+                            400: 'var(--brand-400, #34d399)',
+                            500: 'var(--brand-500, #10b981)',
+                            600: 'var(--brand-600, #059669)',
+                            700: 'var(--brand-700, #047857)',
+                            800: 'var(--brand-800, #065f46)',
+                            900: 'var(--brand-900, #064e3b)',
+                            950: 'var(--brand-950, #022c22)',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --brand-50: #ecfdf5;
+            --brand-100: #d1fae5;
+            --brand-200: #a7f3d0;
+            --brand-300: #6ee7b7;
+            --brand-400: #34d399;
+            --brand-500: #10b981;
+            --brand-600: #059669;
+            --brand-700: #047857;
+            --brand-800: #065f46;
+            --brand-900: #064e3b;
+            --brand-950: #022c22;
+        }
+
+        /* Estilo para datas ocupadas por cultos no Flatpickr */
+        .flatpickr-day.dia-culto-ocupado {
+            background-color: rgba(239, 68, 68, 0.25) !important;
+            border-color: rgba(239, 68, 68, 0.6) !important;
+            color: #fca5a5 !important;
+            font-weight: bold;
+            position: relative;
+        }
+        .flatpickr-day.dia-culto-ocupado::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: #ef4444;
+        }
+    </style>
+    <script>
+        // Recupera e aplica o tema salvo no localStorage imediatamente antes da renderização para evitar piscadas
+        try {
+            const cachedColor = localStorage.getItem('cached_theme_color');
+            if (cachedColor) {
+                const palettes = {
+                    emerald: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b', 950: '#022c22' },
+                    blue: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a', 950: '#172554' },
+                    amber: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309', 800: '#92400e', 900: '#78350f', 950: '#451a03' },
+                    purple: { 50: '#faf5ff', 100: '#f3e8ff', 200: '#e9d5ff', 300: '#d8b4fe', 400: '#c084fc', 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce', 800: '#6b21a8', 900: '#581c87', 950: '#3b0764' },
+                    rose: { 50: '#fff1f2', 100: '#ffe4e6', 200: '#fecdd3', 300: '#fda4af', 400: '#fb7185', 500: '#f43f5e', 600: '#e11d48', 700: '#be123c', 800: '#9f1239', 900: '#881337', 950: '#4c0519' },
+                    indigo: { 50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81', 950: '#1e1b4b' },
+                    sky: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e', 950: '#082f49' },
+                    red: { 50: '#fef2f2', 100: '#fee2e2', 200: '#fecaca', 300: '#fca5a5', 400: '#f87171', 500: '#ef4444', 600: '#dc2626', 700: '#b91c1c', 800: '#991b1b', 900: '#7f1d1d', 950: '#450a0a' }
+                };
+                const palette = palettes[cachedColor.toLowerCase().trim()];
+                if (palette) {
+                    const root = document.documentElement;
+                    Object.keys(palette).forEach(weight => {
+                        root.style.setProperty(`--brand-${weight}`, palette[weight]);
+                    });
+                }
+            }
+        } catch(e) {}
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between">
 
-    <!-- ===================== MODAL DE LOGIN ADMIN ===================== -->
-    <div id="modal-admin" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-8 w-80 shadow-2xl space-y-4">
-            <h2 class="text-lg font-bold text-emerald-400 text-center">🔐 Acesso Admin</h2>
-            <input type="password" id="input-senha-admin" placeholder="Senha"
-                onkeydown="if(event.key==='Enter') entrarAdmin()"
-                class="w-full bg-slate-900 border border-slate-700 px-4 py-2.5 rounded-lg text-white focus:outline-none focus:border-emerald-500 text-sm">
-            <p id="erro-senha" class="text-red-400 text-xs hidden">Senha incorreta.</p>
-            <div class="flex gap-2">
-                <button onclick="fecharModalAdmin()"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
-                <button onclick="entrarAdmin()"
-                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Entrar</button>
-            </div>
+    <!-- ===================== BANNER DE SIMULAÇÃO DE PERFIL ===================== -->
+    <div id="banner-simulacao-perfil" class="hidden bg-gradient-to-r from-amber-600 via-indigo-600 to-emerald-600 text-white px-4 py-2 text-xs font-medium shadow-md flex items-center justify-between z-[100] sticky top-0">
+        <div class="flex items-center gap-2">
+            <span class="text-base">👁️</span>
+            <span><strong>Modo de Simulação Ativo:</strong> Você está visualizando o site como <strong id="simulacao-perfil-nome" class="underline font-bold text-amber-200">Voluntário - Louvor</strong>.</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <select id="select-modo-simulacao-banner" onchange="alterarModoSimulacaoPerfil(this.value)"
+                class="bg-black/30 border border-white/30 text-white rounded px-2.5 py-1 text-xs focus:outline-none cursor-pointer">
+            </select>
+            <button onclick="resetarModoSimulacaoPerfil()" class="bg-black/40 hover:bg-black/60 px-3 py-1 rounded-lg border border-white/30 font-semibold transition flex items-center gap-1">
+                👑 Visão Admin
+            </button>
         </div>
     </div>
 
-    <!-- ===================== PAINEL ADMIN ===================== -->
-    <div id="painel-admin" class="hidden fixed inset-0 bg-slate-900 z-[90] overflow-y-auto">
-        <div class="container mx-auto px-4 py-8 max-w-4xl pb-20">
-            <div class="flex items-center justify-between mb-6">
-                <div>
-                    <h1 class="text-2xl font-bold text-emerald-400">⚙️ Painel Admin</h1>
-                    <p class="text-slate-400 text-sm mt-1">Gerencie cultos, playlists e equipe</p>
-                </div>
-                <button onclick="sairAdmin()"
-                    class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">← Voltar ao
-                    site</button>
-            </div>
-
-            <!-- Navegação por Abas no Admin -->
-            <div class="flex gap-2 mb-6 border-b border-slate-700 pb-3 flex-wrap">
-                <button id="btn-admin-aba-cultos" onclick="mudarAbaAdmin('cultos')"
-                    class="px-4 py-2 rounded-xl text-sm font-medium bg-emerald-600 text-white shadow">📅 Cultos</button>
-                <button id="btn-admin-aba-equipe" onclick="mudarAbaAdmin('equipe')"
-                    class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">👥 Equipe</button>
-                <button onclick="mudarAbaAdmin('ministerios')" id="tab-admin-ministerios"
-                    class="tab-admin-btn px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:text-white">🏢 Ministérios & Equipes</button>
-                <button id="btn-admin-aba-repertorio" onclick="mudarAbaAdmin('repertorio')"
-                    class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">🎼 Repertório Geral</button>
-                <button id="btn-admin-aba-novas" onclick="mudarAbaAdmin('novas')"
-                    class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">🌟 Músicas Novas</button>
-                <button id="btn-admin-aba-solicitacoes" onclick="mudarAbaAdmin('solicitacoes')"
-                    class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">💬 Solicitações</button>
-            </div>
-
-            <!-- ABA 1: CULTOS -->
-            <div id="admin-aba-cultos">
-                <div class="flex gap-3 mb-6 flex-wrap">
-                    <button onclick="mostrarFormCulto(null)"
-                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl font-medium text-sm">+
-                        Novo Culto</button>
-
-                </div>
-                <div>
-                    <h2 class="text-base font-semibold text-slate-300 mb-3">Cultos cadastrados</h2>
-                    <div id="admin-lista-cultos" class="space-y-2">
-                        <p class="text-slate-500 text-sm">Carregando...</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ABA 2: EQUIPE -->
-            <div id="admin-aba-equipe" class="hidden space-y-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-base font-semibold text-slate-300">Integrantes da Equipe</h2>
-                    <button onclick="abrirModalEquipe(null)"
-                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-medium text-sm">+ Novo Integrante</button>
-                </div>
-                <div id="admin-lista-equipe" class="space-y-3">
-                    <p class="text-slate-500 text-sm">Carregando equipe...</p>
-                </div>
-            </div>
-
-            <!-- ABA MINISTÉRIOS & EQUIPES -->
-            <div id="admin-aba-ministerios" class="hidden space-y-4">
-                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-                    <h2 class="text-base font-semibold text-slate-300">Ministérios & Equipes</h2>
-                    <button onclick="abrirModalMinisterioAdmin(null)"
-                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-medium text-sm transition">➕ Novo Ministério</button>
-                </div>
-                <div id="container-admin-ministerios" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <p class="text-slate-500 text-sm">Carregando ministérios...</p>
-                </div>
-            </div>
-
-            <!-- ABA 3: REPERTÓRIO GERAL -->
-            <div id="admin-aba-repertorio" class="hidden space-y-4">
-                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-                    <h2 class="text-base font-semibold text-slate-300">Repertório Geral de Músicas <span id="admin-repertorio-count" class="text-xs font-normal text-emerald-400 ml-1"></span></h2>
-                    <div class="flex gap-2">
-                        <button onclick="abrirModalImportarHolyrics()"
-                            class="bg-slate-700 hover:bg-slate-600 text-emerald-300 border border-slate-600 px-3 py-2 rounded-xl font-medium text-sm transition">📥 Importar Holyrics (JSON)</button>
-                        <button onclick="abrirModalMusicaAdmin()"
-                            class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-medium text-sm transition">+ Adicionar Música</button>
-                    </div>
-                </div>
-                <div class="mb-4 flex flex-col sm:flex-row gap-2">
-                    <input type="text" id="admin-search-repertorio" oninput="filtrarAdminRepertorio()" placeholder="Buscar música no banco..."
-                        class="w-full sm:flex-1 bg-slate-800 border border-slate-700 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-emerald-500">
-                    <select id="admin-filter-repertorio" onchange="filtrarAdminRepertorio()"
-                        class="bg-slate-800 border border-slate-700 px-3 py-2.5 rounded-xl text-sm text-slate-300 focus:outline-none focus:border-emerald-500">
-                        <option value="todas">Todas as Músicas</option>
-                        <option value="multiples_versions">Com mais de 1 versão</option>
-                        <option value="com_letra">Com letra cadastrada</option>
-                        <option value="sem_letra">Sem letra cadastrada</option>
-                    </select>
-                </div>
-                <div id="admin-lista-repertorio" class="space-y-3">
-                    <p class="text-slate-500 text-sm">Carregando repertório...</p>
-                </div>
-            </div>
-
-            <!-- ABA 4: MÚSICAS NOVAS -->
-            <div id="admin-aba-novas" class="hidden space-y-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-base font-semibold text-slate-300">Músicas Novas Aguardando Aprovação</h2>
-                    <button onclick="abrirModalMusicaAdmin()"
-                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl font-medium text-sm">+ Adicionar Música</button>
-                </div>
-                <div id="admin-lista-novas" class="space-y-3">
-                    <p class="text-slate-500 text-sm">Carregando músicas novas...</p>
-                </div>
-            </div>
-
-            <!-- ABA 5: SOLICITAÇÕES -->
-            <div id="admin-aba-solicitacoes" class="hidden space-y-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-base font-semibold text-slate-300">Solicitações de Ajustes e Tons</h2>
-                </div>
-                <div id="admin-lista-solicitacoes" class="space-y-3">
-                    <p class="text-slate-500 text-sm">Carregando solicitações...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================== MODAL DE LETRA PÚBLICA ===================== -->
-    <div id="modal-letra-publica" class="hidden fixed inset-0 bg-black/80 z-[120] flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl p-6 space-y-4 max-h-[85vh] flex flex-col">
-            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-                <div>
-                    <h2 id="letra-publica-titulo" class="text-lg font-bold text-emerald-400"></h2>
-                    <p id="letra-publica-subtitulo" class="text-xs text-slate-400"></p>
-                </div>
-                <button onclick="fecharModalLetraPublica()" class="text-slate-400 hover:text-white text-lg font-bold p-1">✕</button>
-            </div>
-            <div id="letra-publica-conteudo" class="overflow-y-auto pr-2 text-sm text-slate-200 leading-relaxed whitespace-pre-wrap flex-1 space-y-3 font-sans">
-                <!-- Conteúdo da letra -->
-            </div>
-            <div class="pt-2 border-t border-slate-700 text-right">
-                <button onclick="fecharModalLetraPublica()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg text-sm font-medium">Fechar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================== MODAL DE CIFRA PÚBLICA / GLOBAL ===================== -->
-    <div id="modal-cifra-publica" class="hidden fixed inset-0 bg-black/80 z-[120] flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl p-6 space-y-4 max-h-[85vh] flex flex-col">
-            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-                <div>
-                    <h2 id="cifra-publica-titulo" class="text-lg font-bold text-emerald-400"></h2>
-                    <p id="cifra-publica-subtitulo" class="text-xs text-slate-400"></p>
-                </div>
-                <button onclick="fecharModalCifraPublica()" class="text-slate-400 hover:text-white text-lg font-bold p-1">✕</button>
-            </div>
-
-            <!-- Barra de Transposição de Tom em Tempo Real -->
-            <div class="flex items-center justify-between bg-slate-900/80 p-2.5 rounded-xl border border-slate-700/60 flex-wrap gap-2">
-                <span class="text-xs font-semibold text-slate-300">Transposição de Tom:</span>
-                <div class="flex gap-1.5">
-                    <button onclick="alterarTomCifraPublica(-1)" class="bg-indigo-700 hover:bg-indigo-600 text-white px-2.5 py-1 rounded-lg text-xs font-medium transition">[ -1 Tom ]</button>
-                    <button onclick="restaurarTomCifraPublica()" class="bg-slate-700 hover:bg-slate-600 text-emerald-300 px-2.5 py-1 rounded-lg text-xs font-medium transition">[ Tom Original ]</button>
-                    <button onclick="alterarTomCifraPublica(1)" class="bg-indigo-700 hover:bg-indigo-600 text-white px-2.5 py-1 rounded-lg text-xs font-medium transition">[ +1 Tom ]</button>
-                </div>
-            </div>
-
-            <div id="cifra-publica-conteudo" class="overflow-y-auto pr-2 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap flex-1 space-y-2 font-mono bg-slate-950 p-4 rounded-xl border border-slate-800">
-                <!-- Conteúdo da cifra transposta -->
-            </div>
-            <div class="pt-2 border-t border-slate-700 text-right">
-                <button onclick="fecharModalCifraPublica()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded-lg text-sm font-medium">Fechar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================== MODAL IMPORTAR HOLYRICS ===================== -->
-    <div id="modal-importar-holyrics-admin" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-                <h2 class="text-lg font-bold text-emerald-400">📥 Importar Letras do Holyrics (.json)</h2>
-                <button onclick="fecharModalImportarHolyrics()" class="text-slate-400 hover:text-white text-sm">✕</button>
-            </div>
-            
-            <p class="text-xs text-slate-300 leading-normal">
-                Selecione o arquivo <code class="bg-slate-900 px-1 py-0.5 rounded text-emerald-300">.json</code> exportado do aplicativo Holyrics. O sistema irá vincular automaticamente as letras às músicas cadastradas no seu banco de dados.
-            </p>
-
-            <div class="border-2 border-dashed border-slate-700 hover:border-emerald-500 rounded-xl p-6 text-center transition cursor-pointer bg-slate-900/50" onclick="document.getElementById('input-holyrics-json').click()">
-                <input type="file" id="input-holyrics-json" accept=".json" class="hidden" onchange="processarArquivoHolyrics(event)">
-                <span class="text-2xl block mb-1">📄</span>
-                <span class="text-xs text-slate-300 font-medium block">Clique para selecionar o arquivo JSON</span>
-                <span id="holyrics-file-name" class="text-[11px] text-emerald-400 mt-1 block"></span>
-            </div>
-
-            <div id="holyrics-resultado-previa" class="hidden space-y-2 bg-slate-900 p-3 rounded-xl border border-slate-700 text-xs">
-                <p id="holyrics-resumo-texto" class="font-medium text-slate-200"></p>
-                <div id="holyrics-lista-correspondencias" class="max-h-40 overflow-y-auto space-y-1 text-slate-400 divide-y divide-slate-800"></div>
-            </div>
-
-            <div class="flex gap-2 pt-3 border-t border-slate-700">
-                <button onclick="fecharModalImportarHolyrics()"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
-                <button onclick="confirmarImportacaoHolyrics()" id="btn-confirmar-holyrics" disabled
-                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Confirmar e Importar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================== MODAL EDITAR LETRA (ADMIN) ===================== -->
-    <div id="modal-editar-letra-admin" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-700/60 pb-3">
-                <div>
-                    <h2 class="text-lg font-bold text-emerald-400">📝 Editar Letra da Música</h2>
-                    <p id="edit-letra-admin-titulo-musica" class="text-xs text-slate-400"></p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input type="file" id="file-importar-json-musica" accept=".json" class="hidden" onchange="processarJsonMusicaDireto(event)">
-                    <button type="button" onclick="document.getElementById('file-importar-json-musica').click()"
-                        class="bg-indigo-700 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
-                        📥 Importar JSON desta música
-                    </button>
-                    <button onclick="fecharModalEditarLetraAdmin()" class="text-slate-400 hover:text-white text-sm">✕</button>
-                </div>
-            </div>
-
-            <input type="hidden" id="edit-letra-admin-song-id">
-
-            <!-- 1. Letra Padrão (Original) -->
-            <div>
-                <label class="text-xs font-semibold text-slate-300 mb-1 block">📜 Letra Padrão (Original)</label>
-                <textarea id="edit-letra-admin-padrao" rows="6" placeholder="Cole ou edite a letra padrão da música aqui..."
-                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500 font-sans"></textarea>
-            </div>
-
-            <!-- 2 & 3. Letras de Outras Versões -->
-            <div class="border-t border-slate-700 pt-3 space-y-3">
-                <div>
-                    <label class="text-xs font-semibold text-slate-300 mb-1 block">🎶 Outras Versões</label>
-                    <p class="text-xs text-slate-400 mb-2">Selecione uma versão abaixo para editar sua letra personalizada:</p>
-                    <div id="edit-letra-admin-botoes-versoes" class="flex flex-wrap gap-2">
-                        <!-- Botões das versões gerados dinamicamente via JS -->
-                    </div>
-                </div>
-
-                <div id="edit-letra-admin-versao-container" class="hidden space-y-1">
-                    <label id="edit-letra-admin-versao-label" class="text-xs text-emerald-300 block font-medium">Letra da Versão Selecionada</label>
-                    <textarea id="edit-letra-admin-versao-conteudo" rows="6" placeholder="Insira a letra específica para esta versão..."
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500 font-sans"></textarea>
-                </div>
-            </div>
-
-            <!-- 4. Botões de Ação -->
-            <div class="flex gap-2 pt-3 border-t border-slate-700">
-                <button onclick="fecharModalEditarLetraAdmin()"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
-                <button onclick="salvarEdicaoLetraAdmin()" id="btn-salvar-edit-letra-admin"
-                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Letras</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================== MODAL EDITAR CIFRA (ADMIN) ===================== -->
-    <div id="modal-editar-cifra-admin" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-700/60 pb-3">
-                <div>
-                    <h2 class="text-lg font-bold text-emerald-400">🎸 Editar Cifra da Música</h2>
-                    <p id="edit-cifra-admin-titulo-musica" class="text-xs text-slate-400"></p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button type="button" id="btn-buscar-cifra-auto" onclick="buscarCifraAutomaticaAdmin()"
-                        class="bg-indigo-700 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1">
-                        🔍 Buscar Cifra Automática
-                    </button>
-                    <button onclick="fecharModalEditarCifraAdmin()" class="text-slate-400 hover:text-white text-sm">✕</button>
-                </div>
-            </div>
-
-            <input type="hidden" id="edit-cifra-admin-song-id">
-
-            <!-- Container de prévia da busca com rolagem -->
-            <div id="edit-cifra-previa-container" class="hidden bg-slate-900 border border-indigo-500/50 p-3 rounded-xl space-y-2">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-indigo-300">✨ Prévia da Cifra Encontrada</span>
-                    <button type="button" onclick="aplicarPreviaCifra()"
-                        class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded text-xs font-medium transition">
-                        ✅ Usar esta Cifra
-                    </button>
-                </div>
-                <div id="edit-cifra-previa-conteudo" class="max-h-48 overflow-y-auto font-mono text-xs text-slate-200 whitespace-pre-wrap bg-slate-950 p-2.5 rounded border border-slate-800">
-                    <!-- Prévia da cifra pesquisada -->
-                </div>
-            </div>
-
-            <!-- Cifra Padrão (Original) -->
-            <div>
-                <label class="text-xs font-semibold text-slate-300 mb-1 block">🎼 Cifra Padrão (Original)</label>
-                <textarea id="edit-cifra-admin-padrao" rows="6" placeholder="Cole ou edite a cifra com acordes no formato [C], [G/B], [Am7]..."
-                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500 font-mono text-xs"></textarea>
-            </div>
-
-            <!-- Cifras de Outras Versões -->
-            <div class="border-t border-slate-700 pt-3 space-y-3">
-                <div>
-                    <label class="text-xs font-semibold text-slate-300 mb-1 block">🎶 Outras Versões</label>
-                    <p class="text-xs text-slate-400 mb-2">Selecione uma versão abaixo para editar sua cifra personalizada:</p>
-                    <div id="edit-cifra-admin-botoes-versoes" class="flex flex-wrap gap-2">
-                        <!-- Botões das versões gerados dinamicamente via JS -->
-                    </div>
-                </div>
-
-                <div id="edit-cifra-admin-versao-container" class="hidden space-y-1">
-                    <label id="edit-cifra-admin-versao-label" class="text-xs text-emerald-300 block font-medium">Cifra da Versão Selecionada</label>
-                    <textarea id="edit-cifra-admin-versao-conteudo" rows="6" placeholder="Insira a cifra específica para esta versão..."
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500 font-mono text-xs"></textarea>
-                </div>
-            </div>
-
-            <!-- Botões de Ação -->
-            <div class="flex gap-2 pt-3 border-t border-slate-700">
-                <button onclick="fecharModalEditarCifraAdmin()"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
-                <button onclick="salvarEdicaoCifraAdmin()" id="btn-salvar-edit-cifra-admin"
-                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Cifras</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================== MODAL NOVA VERSÃO ===================== -->
-    <div id="modal-versao-admin" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
-            <h2 class="text-lg font-bold text-emerald-400">Adicionar Nova Versão</h2>
-            <p id="versao-admin-musica-titulo" class="text-sm text-slate-300 font-medium"></p>
-            <input type="hidden" id="versao-admin-song-id">
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="text-xs text-slate-400 mb-1 block">Tom</label>
-                    <input type="text" id="versao-admin-tom" placeholder="Ex: G, C, Dm"
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-1 block">Variação</label>
-                    <input type="text" id="versao-admin-variacao" placeholder="Ex: Tom Abaixo"
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                </div>
-            </div>
-
-            <div>
-                <label class="text-xs text-slate-400 mb-1 block">Link do VS (Google Drive)</label>
-                <input type="text" id="versao-admin-vs" placeholder="https://drive.google.com/..."
-                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-            </div>
-
-            <div>
-                <label class="text-xs text-slate-400 mb-1 block">Link do YouTube</label>
-                <input type="text" id="versao-admin-yt" placeholder="https://youtube.com/watch?v=..."
-                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-            </div>
-
-            <div class="flex gap-2 pt-3 border-t border-slate-700">
-                <button onclick="fecharModalNovaVersao()"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
-                <button onclick="salvarNovaVersao()" id="btn-salvar-versao-admin"
-                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Versão</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================== MODAL DE INTEGRANTE DA EQUIPE ===================== -->
-    <div id="modal-equipe"
-        class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center overflow-y-auto py-8 px-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl space-y-4 p-6">
-            <h2 id="modal-equipe-titulo" class="text-lg font-bold text-emerald-400">Novo Integrante</h2>
-
-            <div>
-                <label class="text-xs text-slate-400 mb-1 block">Nome Completo</label>
-                <input type="text" id="equipe-nome" placeholder="Ex: João Marcos"
-                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                    <label class="text-xs text-slate-400 mb-1 block">E-mail</label>
-                    <input type="email" id="equipe-email" placeholder="email@exemplo.com"
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-1 block">Telefone / WhatsApp</label>
-                    <input type="text" id="equipe-telefone" placeholder="(11) 99999-9999"
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                </div>
-            </div>
-
-            <div>
-                <label class="text-xs text-slate-400 mb-1 block">Funções / Instrumentos</label>
-                <div id="equipe-instrumentos-chips" class="flex flex-wrap gap-2 pt-1">
-                </div>
-            </div>
-
-            <div>
-                <label class="text-xs text-slate-400 mb-1 block">Nível de Acesso</label>
-                <select id="equipe-role"
-                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                    <option value="volunteer">Voluntário</option>
-                    <option value="admin">Administrador</option>
-                    <option value="member">Membro</option>
-                </select>
-            </div>
-
-            <input type="hidden" id="equipe-id" value="">
-
-            <div class="flex gap-2 pt-3 border-t border-slate-700">
-                <button onclick="fecharModalEquipe()"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
-                <button onclick="salvarIntegranteEquipe()" id="btn-salvar-equipe"
-                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Integrante</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================== MODAL DE NOVA MÚSICA (ADMIN) ===================== -->
-    <div id="modal-musica-admin"
-        class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center overflow-y-auto py-8 px-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl space-y-4 p-6">
-            <h2 class="text-lg font-bold text-emerald-400">Adicionar Música ao Banco</h2>
-
-            <div>
-                <label class="text-xs text-slate-400 mb-1 block">Título da Música</label>
-                <input type="text" id="admin-musica-titulo" placeholder="Ex: O Nome de Jesus"
-                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="text-xs text-slate-400 mb-1 block">Tom</label>
-                    <input type="text" id="admin-musica-tom" placeholder="Ex: G, C, Dm"
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-1 block">Variação</label>
-                    <input type="text" id="admin-musica-variacao" placeholder="Ex: Original, Tom Abaixo"
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                </div>
-            </div>
-
-            <div>
-                <label class="text-xs text-slate-400 mb-1 block">Link do VS (Google Drive)</label>
-                <input type="text" id="admin-musica-vs" placeholder="https://drive.google.com/..."
-                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-            </div>
-
-            <div>
-                <label class="text-xs text-slate-400 mb-1 block">Link do YouTube</label>
-                <input type="text" id="admin-musica-yt" placeholder="https://youtube.com/watch?v=..."
-                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-            </div>
-
-            <div>
-                <label class="text-xs text-slate-400 mb-1 block">Status Inicial</label>
-                <select id="admin-musica-status"
-                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                    <option value="ativo">Ativa (Repertório Geral)</option>
-                    <option value="nova">Em Aprendizado (Música Nova)</option>
-                </select>
-            </div>
-
-            <div class="flex gap-2 pt-3 border-t border-slate-700">
-                <button onclick="fecharModalMusicaAdmin()"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
-                <button onclick="salvarMusicaAdmin()" id="btn-salvar-musica-admin"
-                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Música</button>
-            </div>
-        </div>
-    </div>
-
-        <!-- ===================== MODAL DE EDIÇÃO DE MÚSICA ===================== -->
-    <div id="modal-editar-musica-admin" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-bold text-emerald-400">✏️ Editar Música</h2>
-                <button onclick="fecharModalEditarMusicaAdmin()" class="text-slate-400 hover:text-white text-sm">✕</button>
-            </div>
-            
-            <input type="hidden" id="edit-admin-song-id">
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div class="sm:col-span-2">
-                    <label class="text-xs text-slate-400 mb-1 block">Título da Música</label>
-                    <input type="text" id="edit-admin-musica-titulo"
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-1 block">Status</label>
-                    <select id="edit-admin-musica-status"
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                        <option value="ativo">Ativa (Repertório)</option>
-                        <option value="nova">Em Aprendizado (Nova)</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="border-t border-slate-700 pt-3">
-                <h3 class="text-sm font-semibold text-slate-300 mb-2">Versões da Música</h3>
-                <div id="edit-admin-lista-versoes" class="space-y-4">
-                    <!-- Preenchido via JS com os campos de cada versão -->
-                </div>
-            </div>
-
-            <div class="flex gap-2 pt-3 border-t border-slate-700">
-                <button onclick="fecharModalEditarMusicaAdmin()"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
-                <button onclick="salvarEdicaoMusicaAdmin()" id="btn-salvar-edit-musica-admin"
-                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Alterações</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================== MODAL NOVA VERSÃO ===================== -->
-    <div id="modal-versao-admin" class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
-            <h2 class="text-lg font-bold text-emerald-400">Adicionar Nova Versão</h2>
-            <p id="versao-admin-musica-titulo" class="text-sm text-slate-300 font-medium"></p>
-            <input type="hidden" id="versao-admin-song-id">
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="text-xs text-slate-400 mb-1 block">Tom</label>
-                    <input type="text" id="versao-admin-tom" placeholder="Ex: G, C, Dm"
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-1 block">Variação</label>
-                    <input type="text" id="versao-admin-variacao" placeholder="Ex: Tom Abaixo"
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                </div>
-            </div>
-
-            <div>
-                <label class="text-xs text-slate-400 mb-1 block">Link do VS (Google Drive)</label>
-                <input type="text" id="versao-admin-vs" placeholder="https://drive.google.com/..."
-                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-            </div>
-
-            <div>
-                <label class="text-xs text-slate-400 mb-1 block">Link do YouTube</label>
-                <input type="text" id="versao-admin-yt" placeholder="https://youtube.com/watch?v=..."
-                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-            </div>
-
-            <div class="flex gap-2 pt-3 border-t border-slate-700">
-                <button onclick="fecharModalNovaVersao()"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
-                <button onclick="salvarNovaVersao()" id="btn-salvar-versao-admin"
-                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Versão</button>
-            </div>
-        </div>
-    </div>
-
-<!-- ===================== MODAL DE EDIÇÃO DE CULTO ===================== -->
-    <div id="modal-culto"
-        class="hidden fixed inset-0 bg-black/70 z-[100] flex items-start justify-center overflow-y-auto py-8 px-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl space-y-5 p-6">
-
-            <h2 id="modal-culto-titulo" class="text-lg font-bold text-emerald-400">Novo Culto</h2>
-
-            <!-- Dados básicos -->
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="text-xs text-slate-400 mb-1 block">Data (dd/mm)</label>
-                    <input type="text" id="culto-data" placeholder="Ex: 18/07"
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="text-xs text-slate-400 mb-1 block">Tipo do Culto</label>
-                    <select id="culto-tipo"
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                        <option value="DOMINGO">DOMINGO</option>
-                        <option value="SABADO">SABADO</option>
-                        <option value="QUARTA">QUARTA</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="flex flex-wrap gap-4">
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" id="culto-em-montagem" class="w-4 h-4 accent-red-500">
-                    <label for="culto-em-montagem" class="text-sm text-slate-300">Marcar como "EM MONTAGEM"</label>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" id="culto-oculto" class="w-4 h-4 accent-slate-500">
-                    <label for="culto-oculto" class="text-sm text-slate-300">Ocultar da visualização geral</label>
-                </div>
-            </div>
-
-            <!-- ===== ESCALA DE INSTRUMENTISTAS ===== -->
-            <div class="border border-slate-700 rounded-xl p-4 space-y-3 bg-slate-900/40">
-                <h3 class="text-sm font-semibold text-slate-300">🎼 Escala de Instrumentistas</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                        <label class="text-xs text-slate-400 mb-1 block">🎸 Violão</label>
-                        <select id="escala-violao"
-                            class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                            <option value="">— Nenhum —</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-xs text-slate-400 mb-1 block">🥁 Bateria</label>
-                        <select id="escala-bateria"
-                            class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                            <option value="">— Nenhum —</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-xs text-slate-400 mb-1 block">🎹 Teclado</label>
-                        <select id="escala-teclado"
-                            class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                            <option value="">— Nenhum —</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ===== ESCALA DE CANTORES DO CULTO ===== -->
-            <div class="border border-slate-700 rounded-xl p-4 space-y-2 bg-slate-900/40">
-                <h3 class="text-sm font-semibold text-slate-300">🎤 Cantores do Culto</h3>
-                <p class="text-xs text-slate-500">Selecione quem vai cantar neste culto (depois você escolhe por
-                    música).</p>
-                <div id="culto-cantores-lista" class="flex flex-wrap gap-2 min-h-[30px]">
-                    <p class="text-slate-500 text-xs">Carregando cantores...</p>
-                </div>
-            </div>
-
-            <!-- ===== MÚSICAS DA PLAYLIST ===== -->
-            <div>
-                <div class="flex items-center justify-between mb-2">
-                    <h3 class="text-sm font-semibold text-slate-300">Músicas da Playlist</h3>
-                    <button onclick="abrirSeletorMusica()"
-                        class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs">+
-                        Adicionar Música</button>
-                </div>
-                <div id="culto-musicas-lista" class="space-y-2 min-h-[40px]">
-                    <p class="text-slate-500 text-xs">Nenhuma música adicionada.</p>
-                </div>
-            </div>
-
-            <!-- Seletor de músicas do banco -->
-            <div id="seletor-musica" class="hidden border border-slate-700 rounded-xl bg-slate-900 p-3 space-y-2">
-                <input type="text" id="busca-banco" placeholder="Buscar no banco de músicas..." onkeyup="filtrarBanco()"
-                    class="w-full bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500">
-                <div id="resultado-banco" class="space-y-1 max-h-48 overflow-y-auto"></div>
-            </div>
-
-            <!-- Ações -->
-            <div class="flex gap-3 pt-2">
-                <button onclick="fecharModalCulto()"
-                    class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2.5 rounded-lg text-sm">Fechar</button>
-                <button onclick="salvarCulto()" id="btn-salvar-culto"
-                    class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-lg text-sm font-medium">Salvar</button>
-            </div>
-            <p id="status-salvar-culto" class="text-xs text-center text-emerald-400 hidden">Salvo com sucesso!</p>
-            <p id="erro-salvar-culto" class="text-xs text-center text-red-400 hidden">Erro ao salvar. Tente novamente.
-            </p>
-        </div>
-    </div>
+    <!-- ===================== CONTAINER DE MODAIS (/views/modais.html) ===================== -->
+    <div id="modais-container"></div>
+
+    <!-- ===================== PAINEL ADMIN CONTAINER (/views/admin-panel.html) ===================== -->
+    <div id="painel-admin-container"></div>
 
     <!-- ===================== SITE PRINCIPAL ===================== -->
     <div class="container mx-auto px-4 py-8 max-w-4xl pb-60">
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-emerald-400 select-none cursor-default" id="titulo-site">Repertório</h1>
-            <p class="text-slate-400 text-sm mt-1 select-none">Organizem-se previamente para os ensaios e cultos.</p>
-
-            <div class="flex justify-center gap-3 mt-6 flex-wrap">
-                <button onclick="mudarAba('cultos')" id="btn-cultos"
-                    class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-emerald-600 text-white shadow-lg">
-                    📅 Próximos Cultos
-                </button>
-                <button onclick="mudarAba('repertorio')" id="btn-repertorio"
-                    class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
-                    🎵 Lista Geral de Músicas
-                </button>
-                <button onclick="mudarAba('novas')" id="btn-novas"
-                    class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
-                    🌟 Músicas Novas
-                </button>
-            </div>
-
-            <div class="flex justify-center mt-3">
-                <button onclick="toggleComentario('form-sugestao-nova')"
-                    class="px-4 py-2 rounded-xl font-medium text-sm transition bg-slate-700 hover:bg-slate-600 text-slate-300">
-                    💡 Sugerir Música Nova
-                </button>
-            </div>
-
-            <div id="form-sugestao-nova"
-                class="hidden mt-4 bg-slate-800 border border-slate-700 rounded-2xl p-4 max-w-lg mx-auto space-y-2">
-                <p class="text-sm text-slate-300 font-medium">Sugerir música para o repertório geral:</p>
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <input type="text" id="sugestao-nova-autor" placeholder="Seu nome"
-                        class="sm:w-1/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-emerald-500">
-                    <input type="text" id="sugestao-nova-texto" placeholder="Nome da música e artista"
-                        class="sm:w-2/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-emerald-500">
-                </div>
-                <button
-                    onclick="enviarComentario('Repertório Geral', 'sugestao-nova-autor', 'sugestao-nova-texto', 'sugestao-nova-status', 'Sugestão de Música Nova')"
-                    class="bg-emerald-700 hover:bg-emerald-600 text-white px-4 py-2 rounded text-sm font-medium">Enviar
-                    sugestão</button>
-                <p id="sugestao-nova-status" class="text-xs text-emerald-400 hidden">Sugestão enviada!</p>
-            </div>
-
+        
+        <!-- ===================== AUTH HEADER ===================== -->
+        <div id="auth-header-container" class="flex justify-end items-center gap-2 mb-6">
+            <button id="btn-login-header" onclick="abrirModalLoginUsuario()" class="hidden text-xs font-medium text-brand-300 hover:text-white transition px-3 py-1.5 border border-brand-500/30 rounded-lg bg-brand-500/10">
+                🔑 Entrar
+            </button>
+            <button id="btn-signup-header" onclick="abrirModalCadastroUsuario()" class="hidden text-xs font-medium text-slate-300 hover:text-white transition px-3 py-1.5 border border-slate-700 rounded-lg bg-slate-800">
+                Criar Conta
+            </button>
+            <button id="btn-onboarding-header" onclick="abrirModalCadastroIgreja()" class="hidden text-xs font-medium text-white hover:bg-indigo-500 transition px-3.5 py-1.5 border border-indigo-500/80 rounded-lg bg-indigo-600 shadow-sm flex items-center gap-1.5">
+                ⛪ Cadastrar Minha Igreja
+            </button>
             
-        </header>
-
-        <div id="secao-cultos" class="space-y-6">
-            <div class="text-center text-slate-500 py-10">Carregando playlists de cultos...</div>
+            <div id="user-session-bar" class="hidden flex items-center gap-3 bg-slate-800/80 border border-slate-700/50 rounded-full px-4 py-1.5 shadow-sm">
+                <div class="flex flex-col items-end">
+                    <span id="user-session-name" class="text-[11px] font-bold text-white leading-tight">Usuário</span>
+                    <span id="user-session-role" class="text-[9px] text-brand-400 font-medium leading-tight tracking-wider uppercase">Voluntário</span>
+                </div>
+                <div class="w-7 h-7 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-xs">
+                    👤
+                </div>
+                <!-- Botão Admin -->
+                <button id="btn-admin-panel" onclick="abrirPainelAdmin()" class="hidden ml-2 text-indigo-400 hover:text-indigo-300 transition" title="Acessar Painel de Administração">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </button>
+                <div class="h-4 w-px bg-slate-600 ml-1"></div>
+                <!-- Botão Sair -->
+                <button onclick="realizarLogoutUsuario()" class="ml-1 text-slate-400 hover:text-red-400 transition" title="Sair da Conta">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </button>
+            </div>
         </div>
 
-        <!-- ABA 3: MÚSICAS NOVAS -->
-        <div id="secao-novas" class="hidden space-y-4">
-            <div class="bg-slate-800/60 border border-emerald-700/40 rounded-2xl p-4 mb-4">
-                <p class="text-emerald-300 text-sm font-medium">🌟 Músicas que estamos aprendendo para o próximo mês</p>
-                <p class="text-slate-400 text-xs mt-1">Ouça, estude os tons e prepare-se!</p>
+        <!-- ===================== LANDING PAGE DE BOAS-VINDAS ===================== -->
+        <div id="landing-boas-vindas" class="hidden max-w-2xl mx-auto text-center py-16 px-4 space-y-8 animate-fade-in">
+            <div class="space-y-4">
+                <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-500 tracking-tight">
+                    Liturge
+                </h1>
+                <p class="text-slate-400 text-lg max-w-md mx-auto">
+                    A plataforma inteligente de ensaios, repertórios e escalas para os ministérios de louvor e mídias da sua igreja.
+                </p>
             </div>
-            <div id="novasList" class="space-y-4">
-                <div class="text-center text-slate-500 py-10">Carregando músicas novas...</div>
+
+            <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-6 shadow-xl space-y-4 max-w-md mx-auto">
+                <h3 class="text-white font-semibold text-sm">Acesse o sistema</h3>
+                <div class="flex flex-col gap-2">
+                    <button onclick="abrirModalLoginUsuario()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl transition text-sm shadow-md">
+                        🔑 Entrar na minha conta
+                    </button>
+                    <button onclick="abrirModalCadastroIgreja()" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 py-2.5 rounded-xl transition text-sm">
+                        🏢 Cadastrar Minha Igreja
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-3 max-w-md mx-auto">
+                <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">ou acesse uma igreja cadastrada</p>
+                <div class="flex gap-2">
+                    <input type="text" id="landing-busca-igreja" placeholder="Digite o slug da igreja (ex: idb-sp)" 
+                        class="flex-1 bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                    <button onclick="irParaIgrejaBuscada()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        Ir ➔
+                    </button>
+                </div>
+                <p id="landing-busca-erro" class="text-xs text-red-400 hidden mt-1"></p>
+            </div>
+        </div>
+        <!-- ===================== LANDING PAGE DE IGREJA PENDENTE ===================== -->
+        <div id="landing-pendente" class="hidden max-w-2xl mx-auto text-center py-16 px-4 space-y-8 animate-fade-in">
+            <div class="space-y-4">
+                <div class="w-20 h-20 bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 animate-pulse">
+                    ⏳
+                </div>
+                <h1 class="text-4xl font-extrabold text-white tracking-tight">
+                    Liturge — Aguardando Aprovação
+                </h1>
+                <p id="pending-church-name" class="text-brand-400 font-bold text-lg"></p>
+                <p class="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
+                    Esta igreja foi cadastrada e está aguardando a liberação do administrador. 
+                    Para iniciar os testes ou liberar o acesso definitivo, por favor, envie a confirmação via WhatsApp.
+                </p>
+            </div>
+
+            <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-6 shadow-xl space-y-4 max-w-md mx-auto">
+                <h3 class="text-white font-semibold text-sm">Enviar solicitação de ativação</h3>
+                <div class="flex flex-col gap-2">
+                    <button id="btn-pending-whatsapp" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-xl transition text-sm shadow-md flex items-center justify-center gap-2">
+                        💬 Mandar mensagem no WhatsApp
+                    </button>
+                    <a href="/" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 py-2.5 rounded-xl transition text-sm block">
+                        ⬅ Voltar à Página Inicial
+                    </a>
+                </div>
             </div>
         </div>
 
-        <div id="secao-repertorio" class="hidden space-y-4">
-            <div class="mb-6">
-                <input type="text" id="searchInput" placeholder="Pesquisar música no repertório geral..."
-                    onkeyup="filtrarMusicas()"
-                    class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-emerald-500">
-            </div>
-            <div id="musicList" class="space-y-4">
-                <div class="text-center text-slate-500 py-10">Carregando repertório...</div>
-            </div>
+        <div id="conteudo-principal-site">
+            <header class="mb-8 text-center">
+                <h1 class="text-3xl font-bold text-brand-400 select-none cursor-default" id="titulo-site">Repertório</h1>
+                <p class="text-slate-400 text-sm mt-1 select-none">Organizem-se previamente para os ensaios e cultos.</p>
+
+                <div class="flex justify-center gap-3 mt-6 flex-wrap">
+                    <button onclick="mudarAba('cultos')" id="btn-cultos"
+                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-brand-600 text-white shadow-lg">
+                        📅 Próximos Cultos
+                    </button>
+                    <button onclick="mudarAba('repertorio')" id="btn-repertorio"
+                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
+                        🎵 Lista Geral de Músicas
+                    </button>
+                    <button onclick="mudarAba('novas')" id="btn-novas"
+                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
+                        🌟 Músicas Novas
+                    </button>
+                    <button onclick="mudarAba('midia')" id="btn-midia"
+                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 hidden">
+                        📷 Mídias (Fotos/Vídeos)
+                    </button>
+                    <button onclick="mudarAba('agenda')" id="btn-agenda"
+                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
+                        🗓️ Agenda & Eventos
+                    </button>
+                    <button onclick="mudarAba('almoxarifado')" id="btn-almoxarifado"
+                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
+                        📦 Recursos & Wiki
+                    </button>
+                    <button onclick="mudarAba('analytics')" id="btn-analytics"
+                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
+                        📊 Analytics & Relatórios
+                    </button>
+                </div>
+
+                <div class="flex justify-center mt-3 hidden gap-3 flex-wrap" id="botoes-sugestao-container">
+                    <button id="btn-holyrics-igreja-container" onclick="copiarScriptHolyricsUnico()"
+                        class="px-4 py-2 rounded-xl font-medium text-sm transition bg-cyan-700/80 hover:bg-cyan-600 text-white border border-cyan-500/50 flex items-center gap-1.5 shadow-lg">
+                        ⚡ Copiar Script Holyrics da Igreja
+                    </button>
+                    <button id="btn-sugerir-nova-container" onclick="toggleComentario('form-sugestao-nova')"
+                        class="px-4 py-2 rounded-xl font-medium text-sm transition bg-slate-700 hover:bg-slate-600 text-slate-300 hidden">
+                        💡 Sugerir Música Nova
+                    </button>
+                    <button id="btn-indisponibilidade-container" onclick="toggleComentario('form-indisponibilidade')"
+                        class="px-4 py-2 rounded-xl font-medium text-sm transition bg-slate-700 hover:bg-slate-600 text-slate-300 hidden">
+                        🗓️ Informar Indisponibilidade
+                    </button>
+                </div>
+
+                <div id="form-sugestao-nova"
+                    class="hidden mt-4 bg-slate-800 border border-slate-700 rounded-2xl p-4 max-w-lg mx-auto space-y-2">
+                    <p class="text-sm text-slate-300 font-medium">Sugerir música para o repertório geral:</p>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="sugestao-nova-autor" placeholder="Seu nome"
+                            class="sm:w-1/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-brand-500">
+                        <input type="text" id="sugestao-nova-texto" placeholder="Nome da música e artista"
+                            class="sm:w-2/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                    <button
+                        onclick="enviarComentario('Repertório Geral', 'sugestao-nova-autor', 'sugestao-nova-texto', 'sugestao-nova-status', 'Sugestão de Música Nova')"
+                        class="bg-brand-700 hover:bg-brand-600 text-white px-4 py-2 rounded text-sm font-medium">Enviar
+                        sugestão</button>
+                    <p id="sugestao-nova-status" class="text-xs text-brand-400 hidden">Sugestão enviada!</p>
+                </div>
+
+                <div id="form-indisponibilidade"
+                    class="hidden mt-4 bg-slate-800 border border-slate-700 rounded-2xl p-4 max-w-lg mx-auto space-y-2">
+                    <p class="text-sm text-slate-300 font-medium">Informe os dias do próximo mês em que você não estará disponível para escalar:</p>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="indisponibilidade-autor" placeholder="Seu nome e instrumento"
+                            class="sm:w-1/2 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-brand-500">
+                        <input type="text" id="indisponibilidade-texto" placeholder="Ex: Dia 12, 19 e 26"
+                            class="sm:w-1/2 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                    <button
+                        onclick="enviarComentario('Mês Seguinte', 'indisponibilidade-autor', 'indisponibilidade-texto', 'indisponibilidade-status', 'Escala/Compromissos')"
+                        class="bg-indigo-700 hover:bg-indigo-600 text-white px-4 py-2 rounded text-sm font-medium">Enviar
+                        datas</button>
+                    <p id="indisponibilidade-status" class="text-xs text-brand-400 hidden">Datas enviadas com sucesso!</p>
+                </div>
+                
+            </header>
+
+            <!-- Dynamic Views Containers -->
+            <div id="secao-cultos-container"></div>
+            <div id="secao-novas-container"></div>
+            <div id="secao-repertorio-container"></div>
+            <div id="secao-midia-container"></div>
+            <div id="secao-agenda-container"></div>
+            <div id="secao-almoxarifado-container"></div>
+            <div id="secao-analytics-container"></div>
         </div>
     </div>
 
@@ -773,7 +330,7 @@
         <div class="container mx-auto max-w-4xl flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="text-center md:text-left w-full md:w-1/3">
                 <span id="nowPlayingTitle"
-                    class="text-xs md:text-sm font-semibold text-emerald-300 block truncate">Nenhuma música
+                    class="text-xs md:text-sm font-semibold text-brand-300 block truncate">Nenhuma música
                     selecionada</span>
             </div>
             <div id="playerContainer" class="w-full md:w-2/3 flex justify-center items-center">
@@ -782,96 +339,21 @@
         </div>
     </div>
 
-    <!-- ===================== MODAL NOVO/EDITAR MINISTÉRIO ===================== -->
-    <div id="modal-ministerio-admin" class="hidden fixed inset-0 bg-black/80 z-[110] flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-                <h3 id="modal-ministerio-titulo" class="text-lg font-bold text-emerald-400">🏢 Novo Ministério</h3>
-                <button onclick="fecharModalMinisterioAdmin()" class="text-slate-400 hover:text-white text-sm">✕</button>
-            </div>
-            <input type="hidden" id="ministerio-admin-id">
-            <div>
-                <label class="block text-xs text-slate-300 mb-1">Nome do Ministério</label>
-                <input type="text" id="ministerio-admin-nome" required placeholder="Ex: Louvor & Adoração" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
-            </div>
-            <div>
-                <label class="block text-xs text-slate-300 mb-1">Descrição</label>
-                <textarea id="ministerio-admin-descricao" rows="2" placeholder="Descrição ou atribuições..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"></textarea>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs text-slate-300 mb-1">Ícone (Emoji)</label>
-                    <input type="text" id="ministerio-admin-icone" placeholder="🎸, 🎥, 🎤" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-300 mb-1">Cor do Card</label>
-                    <select id="ministerio-admin-cor" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
-                        <option value="emerald">Emerald (Verde)</option>
-                        <option value="blue">Blue (Azul)</option>
-                        <option value="amber">Amber (Amarelo)</option>
-                        <option value="purple">Purple (Roxo)</option>
-                        <option value="rose">Rose (Rosa)</option>
-                    </select>
-                </div>
-            </div>
-            <div class="flex gap-2 pt-3 border-t border-slate-700">
-                <button onclick="fecharModalMinisterioAdmin()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
-                <button onclick="salvarMinisterioAdmin()" id="btn-salvar-ministerio-admin" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Ministério</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================== MODAL NOVA FUNÇÃO DE MINISTÉRIO ===================== -->
-    <div id="modal-funcao-admin" class="hidden fixed inset-0 bg-black/80 z-[110] flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-                <h3 class="text-lg font-bold text-emerald-400">➕ Nova Função no Ministério</h3>
-                <button onclick="fecharModalFuncaoAdmin()" class="text-slate-400 hover:text-white text-sm">✕</button>
-            </div>
-            <div>
-                <label class="block text-xs text-slate-300 mb-1">Ministério</label>
-                <select id="funcao-admin-ministerio-id" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
-                    <option value="">Selecione um ministério...</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs text-slate-300 mb-1">Nome da Nova Função</label>
-                <input type="text" id="funcao-admin-nome" required placeholder="Ex: Operador de Luz, Câmera 2" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
-            </div>
-            <div class="flex gap-2 pt-3 border-t border-slate-700">
-                <button onclick="fecharModalFuncaoAdmin()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
-                <button onclick="salvarFuncaoAdmin()" id="btn-salvar-funcao-admin" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Função</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===================== MODAL LOGIN USUÁRIO ===================== -->
-    <div id="modal-login-usuario" class="hidden fixed inset-0 bg-black/80 z-[110] flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative space-y-4">
-            <button onclick="fecharModalLoginUsuario()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">✕</button>
-            <h3 class="text-xl font-bold text-white mb-1">🔑 Entrar no Sistema</h3>
-            <p class="text-xs text-slate-400">Acesse com seu e-mail e senha cadastrados.</p>
-            <form onsubmit="realizarLoginUsuario(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs text-slate-300 mb-1">E-mail</label>
-                    <input type="email" id="login-email" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" placeholder="seu@email.com">
-                </div>
-                <div>
-                    <label class="block text-xs text-slate-300 mb-1">Senha</label>
-                    <input type="password" id="login-senha" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" placeholder="••••••••">
-                </div>
-                <p id="login-erro-msg" class="hidden text-xs text-red-400"></p>
-                <button type="submit" id="btn-submit-login" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-lg text-sm transition">Entrar</button>
-            </form>
-        </div>
-    </div>
-
+    <!-- Scripts do App em ordem de dependência -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/config.js?v=4.5"></script>
-    <script src="js/utils.js?v=4.5"></script>
+    <script src="js/store.js?v=1.0"></script>
+    <script src="js/db.js?v=1.0"></script>
+    <script src="js/router.js?v=1.0"></script>
+    <script src="js/utils.js?v=4.26"></script>
     <script src="js/player.js?v=4.5"></script>
-    <script src="js/admin.js?v=4.5"></script>
-    <script src="js/culto-editor.js?v=4.5"></script>
-    <script src="js/app.js?v=4.5"></script>
+    <script src="js/admin.js?v=4.44"></script>
+    <script src="js/culto-editor.js?v=5.2"></script>
+    <script src="js/holyrics-exporter.js?v=1.2"></script>
+    <script src="js/almoxarifado.js?v=1.0"></script>
+    <script src="js/analytics.js?v=2.2"></script>
+    <script src="js/agenda.js?v=1.2"></script>
+    <script src="js/app.js?v=6.0"></script>
 </body>
 
 </html>

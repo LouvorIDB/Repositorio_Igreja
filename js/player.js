@@ -3,20 +3,46 @@ function fecharPlayer() {
     document.getElementById('playerContainer').innerHTML = '<span class="text-xs text-slate-400">Clique em "▶ Ouvir VS" para carregar o player.</span>';
 }
 
-function playDriveAudio(title, fileId) {
+function playDriveAudio(title, fileIdOrUrl) {
     document.getElementById('nowPlayingTitle').textContent = `Tocando: ${title}`;
     const pc = document.getElementById('playerContainer');
-    if (fileId) {
-        pc.innerHTML = `
-            <div class="flex items-center gap-2 w-full">
-                <div class="drive-player-wrapper flex-1">
-                    <iframe src="https://drive.google.com/file/d/${fileId}/preview" allow="autoplay"></iframe>
-                </div>
-                <button onclick="fecharPlayer()" class="shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white transition text-sm">✕</button>
-            </div>`;
-    } else {
-        pc.innerHTML = '<span class="text-xs text-yellow-400">Insira o link do Drive na edição da música.</span>';
+    if (!fileIdOrUrl) {
+        pc.innerHTML = '<span class="text-xs text-yellow-400">Nenhum áudio/VS cadastrado.</span>';
+        return;
     }
+
+    const strUrl = fileIdOrUrl.toString().trim();
+
+    // Se for URL HTTP/HTTPS (Supabase Storage ou arquivo de áudio direto)
+    if (strUrl.startsWith('http://') || strUrl.startsWith('https://')) {
+        // Se for um objeto do Supabase Storage ou arquivo de áudio (.mp3, .wav, .m4a)
+        if (strUrl.includes('supabase') || strUrl.includes('/storage/') || strUrl.match(/\.(mp3|wav|m4a|ogg|aac)$/i)) {
+            pc.innerHTML = `
+                <div class="flex items-center gap-3 w-full">
+                    <audio controls autoplay class="w-full h-9 rounded-lg accent-brand-500">
+                        <source src="${strUrl}" type="audio/mpeg">
+                        Seu navegador não suporta o player de áudio.
+                    </audio>
+                    <button onclick="fecharPlayer()" class="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white transition text-sm">✕</button>
+                </div>`;
+            return;
+        }
+
+        // Se for um link do Google Drive completo
+        const match = strUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (match && match[1]) {
+            fileIdOrUrl = match[1];
+        }
+    }
+
+    // Fallback para Google Drive em iframe preview
+    pc.innerHTML = `
+        <div class="flex items-center gap-2 w-full">
+            <div class="drive-player-wrapper flex-1">
+                <iframe src="https://drive.google.com/file/d/${fileIdOrUrl}/preview" allow="autoplay"></iframe>
+            </div>
+            <button onclick="fecharPlayer()" class="shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white transition text-sm">✕</button>
+        </div>`;
 }
 
 function playYoutubeAudio(title, url) {

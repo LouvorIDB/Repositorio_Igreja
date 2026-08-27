@@ -1,3 +1,23 @@
+// PROTEÇÃO GLOBAL CONTRA XSS VIA DOMPURIFY
+if (typeof Element !== 'undefined' && Object.defineProperty) {
+    const originalInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+    if (originalInnerHTML) {
+        Object.defineProperty(Element.prototype, 'innerHTML', {
+            set: function(value) {
+                if (window.DOMPurify) {
+                    value = window.DOMPurify.sanitize(value, {
+                        ADD_ATTR: ['onclick', 'onsubmit', 'onchange', 'oninput', 'onkeyup', 'onkeydown', 'target', 'class', 'id', 'type', 'style', 'placeholder', 'value', 'for', 'disabled', 'checked', 'name', 'xmlns', 'viewBox', 'fill', 'd', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'required', 'minlength', 'maxlength', 'data-action'],
+                        ADD_TAGS: ['iframe', 'svg', 'path', 'circle', 'rect', 'line', 'polygon', 'polyline', 'g', 'defs', 'clipPath']
+                    });
+                }
+                originalInnerHTML.set.call(this, value);
+            },
+            get: function() {
+                return originalInnerHTML.get.call(this);
+            }
+        });
+    }
+}
 
 function sanitizarTextoCifraClub(texto) {
     if (!texto || typeof texto !== 'string') return texto || '';
@@ -70,16 +90,86 @@ function removerAcentos(str) {
     return (str || '').toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
-// Retorna lista de nomes que têm o instrumento na coluna C
-function cantoresPorInstrumento(instrumento) {
-    const termoBuscado = removerAcentos(instrumento);
-    return dadosGlobais.cantores.slice(1)
-        .filter(row => {
-            const lista = removerAcentos(row[2] || '').split(',').map(s => s.trim());
-            return lista.some(inst => inst.includes(termoBuscado) || termoBuscado.includes(inst));
-        })
-        .map(row => row[0] ? row[0].toString().trim() : '')
-        .filter(Boolean);
+function obterIdsMinisteriosDoUsuario(user) {
+    if (!user) return [];
+    const minIds = new Set();
+    if (user.ministry_id) minIds.add(user.ministry_id);
+
+    const userUmr = user.user_ministry_roles || [];
+    const userRoleIds = userUmr.map(ur => ur.ministry_role_id || ur.role_id).filter(Boolean);
+
+    const ministries = window.dadosGlobais?.ministries || [];
+    ministries.forEach(m => {
+        if (m.id === user.ministry_id) minIds.add(m.id);
+        const roles = m.ministry_roles || [];
+        if (roles.some(r => userRoleIds.includes(r.id))) {
+            minIds.add(m.id);
+        }
+    });
+
+    userUmr.forEach(ur => {
+        if (ur.ministry_id) minIds.add(ur.ministry_id);
+        if (ur.ministry_roles && ur.ministry_roles.ministry_id) minIds.add(ur.ministry_roles.ministry_id);
+    });
+
+    if (user.lider_de && Array.isArray(user.lider_de)) {
+        user.lider_de.forEach(id => minIds.add(id));
+    }
+
+    return Array.from(minIds);
+}
+window.obterIdsMinisteriosDoUsuario = obterIdsMinisteriosDoUsuario;
+
+function obterIdsMinisteriosQueLidera(user) {
+    if (!user) return [];
+    if (Array.isArray(user.lider_de)) {
+        return user.lider_de;
+    }
+    if (Array.isArray(user.ministry_leaders)) {
+        return user.ministry_leaders.map(ml => ml.ministry_id || ml).filter(Boolean);
+    }
+    const roleStr = (user.system_role || user.role || '').toLowerCase();
+    if (roleStr === 'lider' && user.ministry_id) {
+        return [user.ministry_id];
+    }
+    return [];
+}
+window.obterIdsMinisteriosQueLidera = obterIdsMinisteriosQueLidera;
+
+// Retorna lista de nomes que têm o instrumento na coluna C ou pertencem ao ministério especificado
+function cantoresPorInstrumento(instrumento, ministryId = null) {
+    if (!instrumento && !ministryId) {
+        return [...new Set((dadosGlobais.voluntarios || []).map(v => (v.name || '').trim()).filter(Boolean))];
+    }
+
+    const termoBuscado = instrumento ? removerAcentos(instrumento) : '';
+    const listaVoluntarios = dadosGlobais.voluntarios || [];
+
+    const filtrados = listaVoluntarios.filter(v => {
+        if (!v || !v.name) return false;
+
+        // Se ministryId for informado, verifica se o voluntário possui o cargo associado àquele ministério
+        if (ministryId && v.user_ministry_roles && Array.isArray(v.user_ministry_roles)) {
+            const pertenceAoMin = v.user_ministry_roles.some(umr => umr.ministry_id === ministryId || (umr.ministry_roles && umr.ministry_roles.ministry_id === ministryId));
+            if (!pertenceAoMin) return false;
+        }
+
+        if (!termoBuscado) return true;
+
+        const rNames = v.roleNames || v.roles || v.instruments || [];
+        const rStr = Array.isArray(rNames) ? rNames.join(',') : String(rNames || '');
+        const normRoles = removerAcentos(rStr);
+
+        // Verifica equivalências (ex: Cantor / Vocalista / Vocal)
+        if (termoBuscado.includes('cantor') || termoBuscado.includes('vocal')) {
+            return normRoles.includes('cantor') || normRoles.includes('vocal');
+        }
+
+        return normRoles.includes(termoBuscado);
+    });
+
+    const nomes = filtrados.map(v => (v.name || '').trim()).filter(Boolean);
+    return [...new Set(nomes)];
 }
 
 // Popula um <select> com a lista de nomes, mantendo o valor selecionado
@@ -95,11 +185,21 @@ function popularSelect(idSelect, nomes, valorAtual) {
     });
 }
 
-function extrairIdDrive(url) {
+function obterUrlAudioVs(url) {
     if (!url) return '';
-    const m1 = url.match(/\/d\/([a-zA-Z0-9_-]+)/); if (m1) return m1[1];
-    const m2 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/); if (m2) return m2[1];
-    return '';
+    const str = url.toString().trim();
+    const m1 = str.match(/\/d\/([a-zA-Z0-9_-]+)/); if (m1) return m1[1];
+    const m2 = str.match(/[?&]id=([a-zA-Z0-9_-]+)/); if (m2) return m2[1];
+    // Se for URL do Supabase Storage ou link HTTP direto, retorna a própria URL
+    if (str.startsWith('http://') || str.startsWith('https://')) {
+        return str;
+    }
+    return str;
+}
+
+// Alias de retrocompatibilidade
+function extrairIdDrive(url) {
+    return obterUrlAudioVs(url);
 }
 
 function extrairIdYoutube(url) {
@@ -420,6 +520,71 @@ window.abrirModalCifraPublica = abrirModalCifraPublica;
 window.fecharModalCifraPublica = fecharModalCifraPublica;
 window.alterarTomCifraPublica = alterarTomCifraPublica;
 window.restaurarTomCifraPublica = restaurarTomCifraPublica;
+
+const TAILWIND_PALETTES = {
+    emerald: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b', 950: '#022c22' },
+    blue: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a', 950: '#172554' },
+    amber: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309', 800: '#92400e', 900: '#78350f', 950: '#451a03' },
+    purple: { 50: '#faf5ff', 100: '#f3e8ff', 200: '#e9d5ff', 300: '#d8b4fe', 400: '#c084fc', 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce', 800: '#6b21a8', 900: '#581c87', 950: '#3b0764' },
+    rose: { 50: '#fff1f2', 100: '#ffe4e6', 200: '#fecdd3', 300: '#fda4af', 400: '#fb7185', 500: '#f43f5e', 600: '#e11d48', 700: '#be123c', 800: '#9f1239', 900: '#881337', 950: '#4c0519' },
+    indigo: { 50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81', 950: '#1e1b4b' },
+    sky: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e', 950: '#082f49' },
+    red: { 50: '#fef2f2', 100: '#fee2e2', 200: '#fecaca', 300: '#fca5a5', 400: '#f87171', 500: '#ef4444', 600: '#dc2626', 700: '#b91c1c', 800: '#991b1b', 900: '#7f1d1d', 950: '#450a0a' }
+};
+
+function aplicarTemaColor(corNome) {
+    if (!corNome) corNome = 'emerald';
+    const nomeBaixo = corNome.toLowerCase().trim();
+    
+    let palette = null;
+    if (window.tailwind && window.tailwind.colors && window.tailwind.colors[nomeBaixo]) {
+        palette = window.tailwind.colors[nomeBaixo];
+    } else {
+        palette = TAILWIND_PALETTES[nomeBaixo] || TAILWIND_PALETTES.emerald;
+    }
+    
+    if (typeof palette !== 'object') return;
+    
+    const root = document.documentElement;
+    Object.keys(palette).forEach(weight => {
+        if (palette[weight]) {
+            root.style.setProperty(`--brand-${weight}`, palette[weight]);
+        }
+    });
+}
+window.aplicarTemaColor = aplicarTemaColor;
+
+function getMinistryForUser(user) {
+    if (!user || !dadosGlobais.ministries || dadosGlobais.ministries.length === 0) return null;
+    
+    if (user.ministry_id) {
+        const min = dadosGlobais.ministries.find(m => m.id === user.ministry_id);
+        if (min) return min;
+    }
+    
+    if (user.ministries && typeof user.ministries === 'string') {
+        const targetName = typeof removerAcentos === 'function' ? removerAcentos(user.ministries.toLowerCase()) : user.ministries.toLowerCase();
+        const min = dadosGlobais.ministries.find(m => {
+            const mName = typeof removerAcentos === 'function' ? removerAcentos((m.name || '').toLowerCase()) : (m.name || '').toLowerCase();
+            return mName === targetName || mName.includes(targetName) || targetName.includes(mName);
+        });
+        if (min) return min;
+    }
+    
+    if (user.roleNames && Array.isArray(user.roleNames)) {
+        for (const min of dadosGlobais.ministries) {
+            const minRoles = (min.ministry_roles || []).map(r => typeof removerAcentos === 'function' ? removerAcentos((r.name || '').toLowerCase()) : (r.name || '').toLowerCase());
+            const userRoles = user.roleNames.map(rn => typeof removerAcentos === 'function' ? removerAcentos((rn || '').toLowerCase()) : (rn || '').toLowerCase());
+            if (userRoles.some(ur => minRoles.some(mr => mr.includes(ur) || ur.includes(mr)))) {
+                return min;
+            }
+        }
+    }
+
+    return null;
+}
+window.getMinistryForUser = getMinistryForUser;
+
 
 
 

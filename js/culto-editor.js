@@ -1,7 +1,55 @@
 // ===================== ADMIN: CRIAR / EDITAR CULTO =====================
+let cultoEditandoId = null;
+let flatpickrInstancia = null;
+
+function inicializarCalendarioCulto(dataInicialStr) {
+    const inputEl = document.getElementById('culto-data');
+    if (!inputEl) return;
+
+    if (typeof flatpickr === 'undefined') {
+        inputEl.value = dataInicialStr || '';
+        return;
+    }
+
+    if (flatpickrInstancia) {
+        flatpickrInstancia.destroy();
+        flatpickrInstancia = null;
+    }
+
+    const busyDates = [];
+    const services = (typeof dadosGlobais !== 'undefined' && dadosGlobais.services) ? dadosGlobais.services : [];
+    services.forEach(s => {
+        if (s.id !== cultoEditandoId && s.date) {
+            const dateOnly = s.date.split('T')[0];
+            if (dateOnly && !busyDates.includes(dateOnly)) {
+                busyDates.push(dateOnly);
+            }
+        }
+    });
+
+    flatpickrInstancia = flatpickr(inputEl, {
+        locale: 'pt',
+        dateFormat: 'd/m/Y',
+        defaultDate: dataInicialStr || null,
+        disableMobile: "true",
+        onDayCreate: function(dObj, dStr, fp, dayElem) {
+            if (!dayElem.dateObj) return;
+            const year = dayElem.dateObj.getFullYear();
+            const month = String(dayElem.dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dayElem.dateObj.getDate()).padStart(2, '0');
+            const formatted = `${year}-${month}-${day}`;
+
+            if (busyDates.includes(formatted)) {
+                dayElem.classList.add('dia-culto-ocupado');
+                dayElem.title = 'Já existe um culto cadastrado nesta data';
+            }
+        }
+    });
+}
 
 function mostrarFormCulto(startIndex) {
     cultoEditandoIndex = startIndex;
+    cultoEditandoId = startIndex !== null && dadosGlobais.cultos[startIndex] ? dadosGlobais.cultos[startIndex][8] : null;
     musicasCultoAtual = [];
     cantoresCultoAtual = [];
     escalaInstrumentos = { violao: '', bateria: '', teclado: '' };
@@ -9,10 +57,10 @@ function mostrarFormCulto(startIndex) {
     document.getElementById('status-salvar-culto').classList.add('hidden');
     document.getElementById('erro-salvar-culto').classList.add('hidden');
 
+    let dataFormatar = null;
+
     if (startIndex === null) {
         document.getElementById('modal-culto-titulo').textContent = 'Novo Culto';
-        document.getElementById('culto-data').value = '';
-        document.getElementById('culto-tipo').value = 'DOMINGO';
         document.getElementById('culto-em-montagem').checked = false;
         document.getElementById('culto-oculto').checked = false;
     } else {
@@ -22,13 +70,17 @@ function mostrarFormCulto(startIndex) {
         document.getElementById('culto-em-montagem').checked = tituloCulto.toUpperCase().includes('EM MONTAGEM');
         document.getElementById('culto-oculto').checked = tituloCulto.toUpperCase().includes('OCULTO');
 
-        const partes = tituloCulto.split(' - ');
-        document.getElementById('culto-data').value = partes[0] || '';
-        if (tituloCulto.includes('DOMINGO')) document.getElementById('culto-tipo').value = 'DOMINGO';
-        else if (tituloCulto.includes('SABADO')) document.getElementById('culto-tipo').value = 'SABADO';
-        else if (tituloCulto.includes('QUARTA')) document.getElementById('culto-tipo').value = 'QUARTA';
+        const sTarget = (dadosGlobais.services || []).find(s => s.id === cultoEditandoId);
+        if (sTarget && sTarget.date) {
+            const dateOnly = sTarget.date.split('T')[0];
+            const p = dateOnly.split('-');
+            if (p.length === 3) dataFormatar = `${p[2]}/${p[1]}/${p[0]}`;
+        }
+        if (!dataFormatar) {
+            const partes = tituloCulto.split(' - ');
+            dataFormatar = partes[0] || '';
+        }
 
-        // Lê coluna F: instrumentos (JSON) e coluna G: cantores do culto
         try {
             const colF = rows[startIndex][5] ? rows[startIndex][5].toString() : '{}';
             escalaInstrumentos = JSON.parse(colF);
@@ -37,7 +89,6 @@ function mostrarFormCulto(startIndex) {
         const colG = rows[startIndex][6] ? rows[startIndex][6].toString() : '';
         cantoresCultoAtual = colG ? colG.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-        // Carrega músicas (colunas A-G de cada linha, sendo G os cantores da música)
         for (let i = startIndex + 1; i < rows.length; i++) {
             const texto = rows[i][0] ? rows[i][0].toString() : '';
             if (texto.includes("CULTO DE")) break;
@@ -53,10 +104,41 @@ function mostrarFormCulto(startIndex) {
         }
     }
 
+    inicializarCalendarioCulto(dataFormatar);
+
     popularSelectsInstrumentos();
     renderizarCantoresCulto();
     renderizarMusicasCulto();
     document.getElementById('seletor-musica').classList.add('hidden');
+
+    const userToEvaluate = modoSimulacaoPerfil || usuarioLogado;
+    const roleUsuario = userToEvaluate ? (userToEvaluate.system_role || userToEvaluate.role || 'membro') : 'visitante';
+    const userMinistryIds = typeof obterIdsMinisteriosDoUsuario === 'function' 
+        ? obterIdsMinisteriosDoUsuario(userToEvaluate) 
+        : (userToEvaluate?.ministry_id ? [userToEvaluate.ministry_id] : []);
+
+    const ministeriosDoUsuario = (dadosGlobais.ministries || []).filter(m => userMinistryIds.includes(m.id));
+    const temLouvorOuMusica = ministeriosDoUsuario.some(m => (m.name || '').toLowerCase().includes('louvor') || (m.name || '').toLowerCase().includes('musica'));
+    const isLiderNaoLouvor = (roleUsuario === 'lider') && ministeriosDoUsuario.length > 0 && !temLouvorOuMusica;
+
+    const secCantores = document.getElementById('sec-culto-cantores');
+    if (secCantores) {
+        if (!isLiderNaoLouvor && (roleUsuario === 'admin' || hasPermission('ver_cantor') || hasPermission('enviar_sugestao_culto'))) {
+            secCantores.classList.remove('hidden');
+        } else {
+            secCantores.classList.add('hidden');
+        }
+    }
+
+    const secMusicas = document.getElementById('sec-culto-musicas');
+    if (secMusicas) {
+        if (!isLiderNaoLouvor && (roleUsuario === 'admin' || hasPermission('enviar_sugestao_culto') || hasPermission('ver_repertorio'))) {
+            secMusicas.classList.remove('hidden');
+        } else {
+            secMusicas.classList.add('hidden');
+        }
+    }
+
     document.getElementById('modal-culto').classList.remove('hidden');
 }
 
@@ -66,12 +148,82 @@ function fecharModalCulto() {
     document.getElementById('modal-culto').classList.add('hidden');
 }
 
+
 // ===================== ADMIN: INSTRUMENTISTAS =====================
 
 function popularSelectsInstrumentos() {
-    popularSelect('escala-violao', cantoresPorInstrumento('Violão'), escalaInstrumentos.violao || '');
-    popularSelect('escala-bateria', cantoresPorInstrumento('Bateria'), escalaInstrumentos.bateria || '');
-    popularSelect('escala-teclado', cantoresPorInstrumento('Teclado'), escalaInstrumentos.teclado || '');
+    const container = document.getElementById('escala-dinamica-container');
+    if (!container) return;
+
+    if (!dadosGlobais.ministries || dadosGlobais.ministries.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500">Nenhum ministério cadastrado.</p>';
+        return;
+    }
+
+    const userToEvaluate = modoSimulacaoPerfil || usuarioLogado;
+    const roleUsuario = userToEvaluate ? (userToEvaluate.system_role || userToEvaluate.role || 'membro') : 'visitante';
+    const userMinistryIds = typeof obterIdsMinisteriosDoUsuario === 'function' 
+        ? obterIdsMinisteriosDoUsuario(userToEvaluate) 
+        : (userToEvaluate?.ministry_id ? [userToEvaluate.ministry_id] : []);
+
+    let html = '';
+    dadosGlobais.ministries.forEach(min => {
+        // Regra de visibilidade: Admin vê tudo, Líder vê os ministérios que pertence/lidera
+        if (roleUsuario !== 'admin' && roleUsuario !== 'lider') return;
+        if (roleUsuario === 'lider' && userMinistryIds.length > 0 && !userMinistryIds.includes(min.id)) return;
+
+        const roles = min.ministry_roles || [];
+        // Filtra "Cantor" da seção de selects (pois eles têm a seção multiselect própria)
+        const rolesFiltrados = roles.filter(r => !r.name.toLowerCase().includes('cantor') && !r.name.toLowerCase().includes('vocal'));
+
+        if (rolesFiltrados.length === 0) return;
+
+        html += `
+            <div class="mb-4 bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+                <h4 class="text-xs font-bold text-brand-500 mb-3 uppercase tracking-wider">${min.icon || ''} ${min.name}</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+        `;
+
+        rolesFiltrados.forEach(role => {
+            const roleName = role.name;
+            const selectId = `escala-dinamica-${role.id}`;
+            const keySemAcento = typeof removerAcentos === 'function' ? removerAcentos(roleName.toLowerCase()) : roleName.toLowerCase();
+            const valorSalvo = escalaInstrumentos[roleName] || escalaInstrumentos[roleName.toLowerCase()] || escalaInstrumentos[keySemAcento] || '';
+            
+            // Busca voluntários filtrando por cargo e ministério (com fallback)
+            let listaVoluntarios = cantoresPorInstrumento(roleName, min.id);
+            if (listaVoluntarios.length === 0) {
+                listaVoluntarios = cantoresPorInstrumento(roleName);
+            }
+            
+            let optionsHtml = `<option value="">— Nenhum —</option>`;
+            listaVoluntarios.forEach(vol => {
+                const selected = vol === valorSalvo ? 'selected' : '';
+                optionsHtml += `<option value="${vol}" ${selected}>${vol}</option>`;
+            });
+
+            html += `
+                <div>
+                    <label class="text-xs text-slate-400 mb-1 block">${roleName}</label>
+                    <select id="${selectId}" data-role-name="${roleName}" data-role-id="${role.id}" onchange="verificarAlertasEscalacao('${selectId}', this.value)" class="escala-dinamica-input w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                        ${optionsHtml}
+                    </select>
+                    <div id="aviso-${selectId}" class="mt-1 space-y-0.5"></div>
+                </div>
+            `;
+        });
+
+        html += `
+                </div>
+            </div>
+        `;
+    });
+
+    if (!html) {
+        html = '<p class="text-xs text-slate-500">Nenhum campo de escala disponível para o seu acesso.</p>';
+    }
+
+    container.innerHTML = html;
 }
 
 // ===================== ADMIN: CANTORES DO CULTO =====================
@@ -88,7 +240,7 @@ function renderizarCantoresCulto() {
     container.innerHTML = lista.map(nome => {
         const ativo = cantoresCultoAtual.includes(nome);
         const cls = ativo
-            ? 'bg-emerald-600 text-white border-emerald-500'
+            ? 'bg-brand-600 text-white border-brand-500'
             : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500';
         return `<button type="button" onclick="toggleCantorCulto('${nome.replace(/'/g, "\\'")}')" class="px-3 py-1.5 rounded-full text-xs font-medium border transition ${cls}">${ativo ? '✓ ' : ''}${nome}</button>`;
     }).join('');
@@ -139,7 +291,7 @@ function renderizarMusicasCulto() {
             : cantoresCultoAtual.map(nome => {
                 const ativo = (m.cantores || []).includes(nome);
                 const cls = ativo
-                    ? 'bg-emerald-700 text-white border-emerald-600'
+                    ? 'bg-brand-700 text-white border-brand-600'
                     : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500';
                 return `<button type="button" onclick="toggleCantorMusica(${idx},'${nome.replace(/'/g, "\\'")}')" class="px-2 py-0.5 rounded-full text-xs border transition ${cls}">${ativo ? '✓ ' : ''}${nome}</button>`;
             }).join('');
@@ -150,7 +302,7 @@ function renderizarMusicasCulto() {
                     <span class="text-slate-500 hover:text-slate-300 font-bold select-none text-base cursor-grab mr-1">⣿</span>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm text-white font-medium truncate">${m.nome}</p>
-                        <p class="text-xs text-emerald-300">${m.tom} ${m.variacao ? '('+m.variacao+')' : ''}</p>
+                        <p class="text-xs text-brand-300">${m.tom} ${m.variacao ? '('+m.variacao+')' : ''}</p>
                     </div>
                     <div class="flex gap-1 shrink-0">
                         <button onclick="removerMusica(${idx})" class="text-red-400 hover:text-red-300 px-1.5 py-1 rounded text-xs">✕</button>
@@ -201,8 +353,13 @@ function filtrarBanco() {
     const banco = dadosGlobais.banco;
     const container = document.getElementById('resultado-banco');
 
-    const filtradas = banco.slice(1).filter(row => {
-        const nome = row[0] ? row[0].toString().toLowerCase() : '';
+    if (!banco || banco.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 text-xs px-2">Nenhuma música encontrada.</p>';
+        return;
+    }
+
+    const filtradas = banco.filter(item => {
+        const nome = (item.nome || (item[0] ? item[0].toString() : '')).toLowerCase();
         return nome && nome.includes(termo);
     });
 
@@ -211,17 +368,17 @@ function filtrarBanco() {
         return;
     }
 
-    container.innerHTML = filtradas.slice(0, 50).map(row => {
-        const nome = row[0] || '';
-        const tom = row[1] || '';
-        const variacao = row[2] || 'Original';
-        const vs = row[3] || '';
-        const yt = row[4] || '';
+    container.innerHTML = filtradas.slice(0, 50).map(item => {
+        const nome = item.nome || item[0] || '';
+        const tom = item.tom || item[1] || '';
+        const variacao = item.variacao || item[2] || 'Original';
+        const vs = item.vs || item[3] || '';
+        const yt = item.yt || item[4] || '';
         return `
             <button onclick="adicionarMusicaDoBanco('${nome.toString().replace(/'/g, "\\'")}','${tom.toString().replace(/'/g, "\\'")}','${variacao.toString().replace(/'/g, "\\'")}','${vs.toString().replace(/'/g, "\\'")}','${yt.toString().replace(/'/g, "\\'")}')"
                 class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-700 transition flex items-center justify-between gap-2">
                 <span class="text-sm text-white truncate">${nome}</span>
-                <span class="text-xs text-emerald-300 shrink-0">${tom} (${variacao})</span>
+                <span class="text-xs text-brand-300 shrink-0">${tom} (${variacao})</span>
             </button>
         `;
     }).join('');
@@ -241,19 +398,48 @@ function adicionarMusicaDoBanco(nome, tom, variacao, vs, yt) {
 
 async function salvarCulto() {
     const data = document.getElementById('culto-data').value.trim();
-    const tipo = document.getElementById('culto-tipo').value;
     const emMontagem = document.getElementById('culto-em-montagem').checked;
     const oculto = document.getElementById('culto-oculto').checked;
 
-    if (!data) { mostrarToast('Preencha a data do culto.', 'aviso'); return; }
+    if (!data) { mostrarToast('Escolha a data do culto no calendário.', 'aviso'); return; }
 
-    const titulo = `${data} - CULTO DE ${tipo}${emMontagem ? ' - EM MONTAGEM' : ''}${oculto ? ' - OCULTO' : ''}`;
+    let dataFinalObj = new Date();
+    const partesData = data.split('/');
+    if (partesData.length === 3) {
+        const dia = parseInt(partesData[0], 10);
+        const mes = parseInt(partesData[1], 10) - 1;
+        const ano = parseInt(partesData[2], 10);
+        dataFinalObj = new Date(ano, mes, dia, 12, 0, 0);
+    } else if (partesData.length === 2) {
+        const dia = parseInt(partesData[0], 10);
+        const mes = parseInt(partesData[1], 10) - 1;
+        dataFinalObj = new Date(new Date().getFullYear(), mes, dia, 12, 0, 0);
+    } else {
+        const dateParsed = Date.parse(data);
+        if (!isNaN(dateParsed)) {
+            dataFinalObj = new Date(dateParsed);
+        }
+    }
 
-    escalaInstrumentos = {
-        violao: document.getElementById('escala-violao').value,
-        bateria: document.getElementById('escala-bateria').value,
-        teclado: document.getElementById('escala-teclado').value
-    };
+    const diasSemana = ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
+    const diaIndex = dataFinalObj.getDay();
+    let tipo = diasSemana[diaIndex];
+    if (diaIndex === 6) tipo = "SABADO";
+
+    const diaStr = String(dataFinalObj.getDate()).padStart(2, '0');
+    const mesStr = String(dataFinalObj.getMonth() + 1).padStart(2, '0');
+    const dataFormatadaTitle = `${diaStr}/${mesStr}`;
+
+    const titulo = `${dataFormatadaTitle} - CULTO DE ${tipo}${emMontagem ? ' - EM MONTAGEM' : ''}${oculto ? ' - OCULTO' : ''}`;
+
+    escalaInstrumentos = {};
+    const inputsDinamicos = document.querySelectorAll('.escala-dinamica-input');
+    inputsDinamicos.forEach(input => {
+        const roleName = input.getAttribute('data-role-name');
+        if (roleName) {
+            escalaInstrumentos[roleName] = input.value;
+        }
+    });
 
     const btn = document.getElementById('btn-salvar-culto');
     const statusEl = document.getElementById('status-salvar-culto');
@@ -269,58 +455,33 @@ async function salvarCulto() {
             throw new Error("Cliente Supabase não inicializado.");
         }
 
-        // 1. Buscar a igreja tenant principal na tabela 'churches'
-        let churchId = null;
-        try {
-            const { data: churches } = await supabaseClient.from('churches').select('id').limit(1);
-            if (churches && churches.length > 0) {
-                churchId = churches[0].id;
-            }
-        } catch (e) {
-            console.warn('Tabela churches não consultada:', e);
-        }
+        // 1. Obter a igreja tenant atual a partir do estado global
+        const churchId = (typeof dadosGlobais !== 'undefined' && dadosGlobais.church?.id) ? dadosGlobais.church.id : null;
 
         const serviceData = {
             title: titulo,
             status: oculto ? 'arquivado' : (emMontagem ? 'aberto' : 'confirmado'),
+            date: dataFinalObj.toISOString(),
             notes: JSON.stringify({
                 escala: escalaInstrumentos,
                 cantores: cantoresCultoAtual
             })
         };
-        if (cultoEditandoIndex === null) {
-            serviceData.date = new Date().toISOString();
-        }
         if (churchId) serviceData.church_id = churchId;
 
-        let serviceId = null;
+        let serviceId = cultoEditandoId;
 
         // 2. Edição vs Novo Culto
-        if (cultoEditandoIndex !== null && dadosGlobais.cultos && dadosGlobais.cultos[cultoEditandoIndex]) {
-            const tituloAnterior = dadosGlobais.cultos[cultoEditandoIndex][0] ? dadosGlobais.cultos[cultoEditandoIndex][0].toString() : '';
-            const tituloLimpo = tituloAnterior.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim();
-
-            const { data: existing } = await supabaseClient
+        if (serviceId) {
+            const { error: updateErr } = await supabaseClient
                 .from('services')
-                .select('id')
-                .or(`title.eq.${tituloAnterior},title.eq.${tituloLimpo}`)
-                .maybeSingle();
+                .update(serviceData)
+                .eq('id', serviceId);
+            if (updateErr) throw updateErr;
 
-            if (existing && existing.id) {
-                serviceId = existing.id;
-                const { error: updateErr } = await supabaseClient
-                    .from('services')
-                    .update(serviceData)
-                    .eq('id', serviceId);
-                if (updateErr) throw updateErr;
-
-                // Remove músicas associadas antigas para recriar com a nova ordem/cantores
-                await supabaseClient.from('service_songs').delete().eq('service_id', serviceId);
-            }
-        }
-
-        // Se for Novo Culto ou se não encontrou o ID existente para atualizar
-        if (!serviceId) {
+            // Remove músicas associadas antigas para recriar com a nova ordem/cantores
+            await supabaseClient.from('service_songs').delete().eq('service_id', serviceId);
+        } else {
             const { data: newService, error: insertErr } = await supabaseClient
                 .from('services')
                 .insert([serviceData])
@@ -330,7 +491,71 @@ async function salvarCulto() {
             serviceId = newService.id;
         }
 
-        // 3. Inserir itens associados em 'service_songs'
+        // 3. Inserir escalas relacionais na tabela 'service_scales'
+        if (serviceId) {
+            try {
+                // Deletar escalas existentes deste culto para ressalvar
+                await supabaseClient.from('service_scales').delete().eq('service_id', serviceId);
+
+                const voluntariosList = (typeof Store !== 'undefined' && Store.getVoluntarios) ? Store.getVoluntarios() : (dadosGlobais.voluntarios || []);
+                const ministriesList = (typeof Store !== 'undefined' && Store.getMinistries) ? Store.getMinistries() : (dadosGlobais.ministries || []);
+                const scalesToInsert = [];
+
+                let cantorRoleId = null;
+                for (const m of ministriesList) {
+                    const found = (m.ministry_roles || []).find(r => (r.name || '').toLowerCase().includes('cantor') || (r.name || '').toLowerCase().includes('vocal'));
+                    if (found) { cantorRoleId = found.id; break; }
+                }
+
+                // A) Escala de instrumentistas/funções dinâmicas
+                inputsDinamicos.forEach(input => {
+                    const roleName = input.getAttribute('data-role-name');
+                    const roleId = input.getAttribute('data-role-id');
+                    const val = input.value;
+                    if (roleName && val) {
+                        const prof = voluntariosList.find(p => p.name === val || p.id === val);
+                        if (prof && prof.id) {
+                            const item = {
+                                service_id: serviceId,
+                                user_id: prof.id
+                            };
+                            if (roleId) item.role_id = roleId;
+                            if (churchId) item.church_id = churchId;
+                            scalesToInsert.push(item);
+                        }
+                    }
+                });
+
+                // B) Cantores do Culto
+                if (Array.isArray(cantoresCultoAtual)) {
+                    cantoresCultoAtual.forEach(nomeCantor => {
+                        if (nomeCantor) {
+                            const prof = voluntariosList.find(p => p.name === nomeCantor || p.id === nomeCantor);
+                            if (prof && prof.id) {
+                                const item = {
+                                    service_id: serviceId,
+                                    user_id: prof.id
+                                };
+                                if (cantorRoleId) item.role_id = cantorRoleId;
+                                if (churchId) item.church_id = churchId;
+                                scalesToInsert.push(item);
+                            }
+                        }
+                    });
+                }
+
+                if (scalesToInsert.length > 0) {
+                    const { error: scalesErr } = await supabaseClient.from('service_scales').insert(scalesToInsert);
+                    if (scalesErr) {
+                        console.warn('Aviso ao inserir service_scales:', scalesErr);
+                    }
+                }
+            } catch (errScale) {
+                console.warn('Erro ao processar salvamento de service_scales:', errScale);
+            }
+        }
+
+        // 4. Inserir itens associados em 'service_songs'
         if (musicasCultoAtual && musicasCultoAtual.length > 0 && serviceId) {
             for (let idx = 0; idx < musicasCultoAtual.length; idx++) {
                 const m = musicasCultoAtual[idx];
@@ -368,7 +593,7 @@ async function salvarCulto() {
             }
         }
 
-        // 4. Pós-gravação
+        // 5. Pós-gravação
         fecharModalCulto();
         await carregarDados();
         mostrarToast('Culto e músicas salvos com sucesso no Supabase!', 'sucesso');
@@ -381,3 +606,67 @@ async function salvarCulto() {
         btn.disabled = false;
     }
 }
+
+// ===================== MOTOR DE ESCALA INTELIGENTE (ALERTAS DE FADIGA E CONFLITOS) =====================
+
+function verificarAlertasEscalacao(selectId, nomeOuId) {
+    const containerAviso = document.getElementById(`aviso-${selectId}`);
+    if (!containerAviso) return;
+    containerAviso.innerHTML = '';
+
+    if (!nomeOuId) return;
+
+    const dataCultoStr = document.getElementById('culto-data').value;
+    const voluntariosList = (typeof Store !== 'undefined' && Store.getVoluntarios) ? Store.getVoluntarios() : (window.dadosGlobais?.voluntarios || []);
+    const prof = voluntariosList.find(p => p.name === nomeOuId || p.id === nomeOuId);
+    if (!prof) return;
+
+    let htmlAviso = '';
+
+    // 1. Checar Conflito Cruzado no Mesmo Culto / Formulário
+    let conflitoNoForm = false;
+    const outrosSelects = document.querySelectorAll('.escala-dinamica-input');
+    outrosSelects.forEach(sel => {
+        if (sel.id !== selectId && sel.value === nomeOuId) {
+            conflitoNoForm = true;
+        }
+    });
+
+    if (conflitoNoForm) {
+        htmlAviso += `<p class="text-[11px] text-red-400 font-semibold flex items-center gap-1">⚠️ Conflito Cruzado: ${prof.name} já selecionado em outra função neste culto!</p>`;
+    }
+
+    // 2. Checar Fadiga / Teto Mensal (Burnout Protection)
+    const maxPermitido = prof.max_services_per_month || prof.monthly_limit || 4;
+    let totalEscalasNoMes = 0;
+
+    if (dataCultoStr) {
+        const partes = dataCultoStr.split('-');
+        let anoTarget = partes[0];
+        let mesTarget = partes[1];
+        if (partes.length === 3 && partes[0].length === 2) {
+            // Se formato DD/MM/YYYY
+            anoTarget = partes[2];
+            mesTarget = partes[1];
+        }
+
+        const servicesList = window.dadosGlobais?.servicesDataList || [];
+        
+        servicesList.forEach(s => {
+            if (s.date && anoTarget && mesTarget && s.date.includes(`${anoTarget}-${mesTarget}`)) {
+                const escalados = s.service_scales || [];
+                const estaEscalado = escalados.some(sc => sc.user_id === prof.id || sc.profile_id === prof.id);
+                if (estaEscalado) totalEscalasNoMes++;
+            }
+        });
+
+        if (totalEscalasNoMes >= maxPermitido) {
+            htmlAviso += `<p class="text-[11px] text-amber-400 font-semibold flex items-center gap-1">🔥 Risco de Fadiga: ${prof.name} possui ${totalEscalasNoMes} escalas no mês (Limite: ${maxPermitido})</p>`;
+        }
+    }
+
+    containerAviso.innerHTML = htmlAviso;
+}
+
+window.verificarAlertasEscalacao = verificarAlertasEscalacao;
+

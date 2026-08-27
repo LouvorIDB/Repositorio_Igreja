@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Liturge — Gestão de Louvor & Cultos</title>
+    <link rel="icon" type="image/png" href="/assets/icon-192-oA4SdW_S.png">
+    <link rel="manifest" href="/assets/manifest-6g3SSxuz.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: 'var(--brand-50, #ecfdf5)',
+                            100: 'var(--brand-100, #d1fae5)',
+                            200: 'var(--brand-200, #a7f3d0)',
+                            300: 'var(--brand-300, #6ee7b7)',
+                            400: 'var(--brand-400, #34d399)',
+                            500: 'var(--brand-500, #10b981)',
+                            600: 'var(--brand-600, #059669)',
+                            700: 'var(--brand-700, #047857)',
+                            800: 'var(--brand-800, #065f46)',
+                            900: 'var(--brand-900, #064e3b)',
+                            950: 'var(--brand-950, #022c22)',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --brand-50: #ecfdf5;
+            --brand-100: #d1fae5;
+            --brand-200: #a7f3d0;
+            --brand-300: #6ee7b7;
+            --brand-400: #34d399;
+            --brand-500: #10b981;
+            --brand-600: #059669;
+            --brand-700: #047857;
+            --brand-800: #065f46;
+            --brand-900: #064e3b;
+            --brand-950: #022c22;
+        }
+    </style>
+    <script>
+        // Recupera e aplica o tema salvo no localStorage imediatamente antes da renderização para evitar piscadas
+        try {
+            const cachedColor = localStorage.getItem('cached_theme_color');
+            if (cachedColor) {
+                const palettes = {
+                    emerald: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b', 950: '#022c22' },
+                    blue: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a', 950: '#172554' },
+                    amber: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309', 800: '#92400e', 900: '#78350f', 950: '#451a03' },
+                    purple: { 50: '#faf5ff', 100: '#f3e8ff', 200: '#e9d5ff', 300: '#d8b4fe', 400: '#c084fc', 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce', 800: '#6b21a8', 900: '#581c87', 950: '#3b0764' },
+                    rose: { 50: '#fff1f2', 100: '#ffe4e6', 200: '#fecdd3', 300: '#fda4af', 400: '#fb7185', 500: '#f43f5e', 600: '#e11d48', 700: '#be123c', 800: '#9f1239', 900: '#881337', 950: '#4c0519' },
+                    indigo: { 50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81', 950: '#1e1b4b' },
+                    sky: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e', 950: '#082f49' },
+                    red: { 50: '#fef2f2', 100: '#fee2e2', 200: '#fecaca', 300: '#fca5a5', 400: '#f87171', 500: '#ef4444', 600: '#dc2626', 700: '#b91c1c', 800: '#991b1b', 900: '#7f1d1d', 950: '#450a0a' }
+                };
+                const palette = palettes[cachedColor.toLowerCase().trim()];
+                if (palette) {
+                    const root = document.documentElement;
+                    Object.keys(palette).forEach(weight => {
+                        root.style.setProperty(`--brand-${weight}`, palette[weight]);
+                    });
+                }
+            }
+        } catch(e) {}
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CnTog7sS.css">
+</head>
+
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- ===================== BANNER DE SIMULAÇÃO DE PERFIL ===================== -->
+    <div id="banner-simulacao-perfil" class="hidden bg-gradient-to-r from-amber-600 via-indigo-600 to-emerald-600 text-white px-4 py-2 text-xs font-medium shadow-md flex items-center justify-between z-[100] sticky top-0">
+        <div class="flex items-center gap-2">
+            <span class="text-base">👁️</span>
+            <span><strong>Modo de Simulação Ativo:</strong> Você está visualizando o site como <strong id="simulacao-perfil-nome" class="underline font-bold text-amber-200">Voluntário - Louvor</strong>.</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <select id="select-modo-simulacao-banner" onchange="alterarModoSimulacaoPerfil(this.value)"
+                class="bg-black/30 border border-white/30 text-white rounded px-2.5 py-1 text-xs focus:outline-none cursor-pointer">
+            </select>
+            <button onclick="resetarModoSimulacaoPerfil()" class="bg-black/40 hover:bg-black/60 px-3 py-1 rounded-lg border border-white/30 font-semibold transition flex items-center gap-1">
+                👑 Visão Admin
+            </button>
+        </div>
+    </div>
+
+    <!-- ===================== CONTAINER DE MODAIS (/views/modais.html) ===================== -->
+    <div id="modais-container"></div>
+
+    <!-- ===================== PAINEL ADMIN CONTAINER (/views/admin-panel.html) ===================== -->
+    <div id="painel-admin-container"></div>
+
+    <!-- ===================== SITE PRINCIPAL ===================== -->
+    <div class="container mx-auto px-4 py-8 max-w-4xl pb-60">
+        
+        <!-- ===================== AUTH HEADER ===================== -->
+        <div id="auth-header-container" class="flex justify-end items-center gap-2 mb-6">
+            <button id="btn-login-header" onclick="abrirModalLoginUsuario()" class="hidden text-xs font-medium text-brand-300 hover:text-white transition px-3 py-1.5 border border-brand-500/30 rounded-lg bg-brand-500/10">
+                🔑 Entrar
+            </button>
+            <button id="btn-signup-header" onclick="abrirModalCadastroUsuario()" class="hidden text-xs font-medium text-slate-300 hover:text-white transition px-3 py-1.5 border border-slate-700 rounded-lg bg-slate-800">
+                Criar Conta
+            </button>
+            <button id="btn-onboarding-header" onclick="abrirModalCadastroIgreja()" class="hidden text-xs font-medium text-white hover:bg-indigo-500 transition px-3.5 py-1.5 border border-indigo-500/80 rounded-lg bg-indigo-600 shadow-sm flex items-center gap-1.5">
+                ⛪ Cadastrar Minha Igreja
+            </button>
+            
+            <div id="user-session-bar" class="hidden flex items-center gap-3 bg-slate-800/80 border border-slate-700/50 rounded-full px-4 py-1.5 shadow-sm">
+                <div class="flex flex-col items-end">
+                    <span id="user-session-name" class="text-[11px] font-bold text-white leading-tight">Usuário</span>
+                    <span id="user-session-role" class="text-[9px] text-brand-400 font-medium leading-tight tracking-wider uppercase">Voluntário</span>
+                </div>
+                <div class="w-7 h-7 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-xs">
+                    👤
+                </div>
+                <!-- Botão Admin -->
+                <button id="btn-admin-panel" onclick="abrirPainelAdmin()" class="hidden ml-2 text-indigo-400 hover:text-indigo-300 transition" title="Acessar Painel de Administração">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </button>
+                <div class="h-4 w-px bg-slate-600 ml-1"></div>
+                <!-- Botão Sair -->
+                <button onclick="realizarLogoutUsuario()" class="ml-1 text-slate-400 hover:text-red-400 transition" title="Sair da Conta">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- ===================== LANDING PAGE DE BOAS-VINDAS ===================== -->
+        <div id="landing-boas-vindas" class="hidden max-w-2xl mx-auto text-center py-16 px-4 space-y-8 animate-fade-in">
+            <div class="space-y-4">
+                <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-500 tracking-tight">
+                    Liturge
+                </h1>
+                <p class="text-slate-400 text-lg max-w-md mx-auto">
+                    A plataforma inteligente de ensaios, repertórios e escalas para os ministérios de louvor e mídias da sua igreja.
+                </p>
+            </div>
+
+            <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-6 shadow-xl space-y-4 max-w-md mx-auto">
+                <h3 class="text-white font-semibold text-sm">Acesse o sistema</h3>
+                <div class="flex flex-col gap-2">
+                    <button onclick="abrirModalLoginUsuario()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl transition text-sm shadow-md">
+                        🔑 Entrar na minha conta
+                    </button>
+                    <button onclick="abrirModalCadastroIgreja()" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 py-2.5 rounded-xl transition text-sm">
+                        🏢 Cadastrar Minha Igreja
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-3 max-w-md mx-auto">
+                <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">ou acesse uma igreja cadastrada</p>
+                <div class="flex gap-2">
+                    <input type="text" id="landing-busca-igreja" placeholder="Digite o slug da igreja (ex: idb-sp)" 
+                        class="flex-1 bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                    <button onclick="irParaIgrejaBuscada()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                        Ir ➔
+                    </button>
+                </div>
+                <p id="landing-busca-erro" class="text-xs text-red-400 hidden mt-1"></p>
+            </div>
+        </div>
+        <!-- ===================== LANDING PAGE DE IGREJA PENDENTE ===================== -->
+        <div id="landing-pendente" class="hidden max-w-2xl mx-auto text-center py-16 px-4 space-y-8 animate-fade-in">
+            <div class="space-y-4">
+                <div class="w-20 h-20 bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 animate-pulse">
+                    ⏳
+                </div>
+                <h1 class="text-4xl font-extrabold text-white tracking-tight">
+                    Liturge — Aguardando Aprovação
+                </h1>
+                <p id="pending-church-name" class="text-brand-400 font-bold text-lg"></p>
+                <p class="text-slate-400 text-sm max-w-md mx-auto leading-relaxed">
+                    Esta igreja foi cadastrada e está aguardando a liberação do administrador. 
+                    Para iniciar os testes ou liberar o acesso definitivo, por favor, envie a confirmação via WhatsApp.
+                </p>
+            </div>
+
+            <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-6 shadow-xl space-y-4 max-w-md mx-auto">
+                <h3 class="text-white font-semibold text-sm">Enviar solicitação de ativação</h3>
+                <div class="flex flex-col gap-2">
+                    <button id="btn-pending-whatsapp" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-xl transition text-sm shadow-md flex items-center justify-center gap-2">
+                        💬 Mandar mensagem no WhatsApp
+                    </button>
+                    <a href="/" class="w-full bg-slate-700 hover:bg-slate-600 text-slate-200 py-2.5 rounded-xl transition text-sm block">
+                        ⬅ Voltar à Página Inicial
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="conteudo-principal-site">
+            <header class="mb-8 text-center">
+                <h1 class="text-3xl font-bold text-brand-400 select-none cursor-default" id="titulo-site">Repertório</h1>
+                <p class="text-slate-400 text-sm mt-1 select-none">Organizem-se previamente para os ensaios e cultos.</p>
+
+                <div class="flex justify-center gap-3 mt-6 flex-wrap">
+                    <button onclick="mudarAba('cultos')" id="btn-cultos"
+                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-brand-600 text-white shadow-lg">
+                        📅 Próximos Cultos
+                    </button>
+                    <button onclick="mudarAba('repertorio')" id="btn-repertorio"
+                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
+                        🎵 Lista Geral de Músicas
+                    </button>
+                    <button onclick="mudarAba('novas')" id="btn-novas"
+                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700">
+                        🌟 Músicas Novas
+                    </button>
+                    <button onclick="mudarAba('midia')" id="btn-midia"
+                        class="px-5 py-2.5 rounded-xl font-medium text-sm transition bg-slate-800 text-slate-300 hover:bg-slate-700 hidden">
+                        📷 Mídias (Fotos/Vídeos)
+                    </button>
+                </div>
+
+                <div class="flex justify-center mt-3 hidden gap-3" id="botoes-sugestao-container">
+                    <button id="btn-sugerir-nova-container" onclick="toggleComentario('form-sugestao-nova')"
+                        class="px-4 py-2 rounded-xl font-medium text-sm transition bg-slate-700 hover:bg-slate-600 text-slate-300 hidden">
+                        💡 Sugerir Música Nova
+                    </button>
+                    <button id="btn-indisponibilidade-container" onclick="toggleComentario('form-indisponibilidade')"
+                        class="px-4 py-2 rounded-xl font-medium text-sm transition bg-slate-700 hover:bg-slate-600 text-slate-300 hidden">
+                        🗓️ Informar Indisponibilidade
+                    </button>
+                </div>
+
+                <div id="form-sugestao-nova"
+                    class="hidden mt-4 bg-slate-800 border border-slate-700 rounded-2xl p-4 max-w-lg mx-auto space-y-2">
+                    <p class="text-sm text-slate-300 font-medium">Sugerir música para o repertório geral:</p>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="sugestao-nova-autor" placeholder="Seu nome"
+                            class="sm:w-1/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-brand-500">
+                        <input type="text" id="sugestao-nova-texto" placeholder="Nome da música e artista"
+                            class="sm:w-2/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                    <button
+                        onclick="enviarComentario('Repertório Geral', 'sugestao-nova-autor', 'sugestao-nova-texto', 'sugestao-nova-status', 'Sugestão de Música Nova')"
+                        class="bg-brand-700 hover:bg-brand-600 text-white px-4 py-2 rounded text-sm font-medium">Enviar
+                        sugestão</button>
+                    <p id="sugestao-nova-status" class="text-xs text-brand-400 hidden">Sugestão enviada!</p>
+                </div>
+
+                <div id="form-indisponibilidade"
+                    class="hidden mt-4 bg-slate-800 border border-slate-700 rounded-2xl p-4 max-w-lg mx-auto space-y-2">
+                    <p class="text-sm text-slate-300 font-medium">Informe os dias do próximo mês em que você não estará disponível para escalar:</p>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="indisponibilidade-autor" placeholder="Seu nome e instrumento"
+                            class="sm:w-1/2 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-brand-500">
+                        <input type="text" id="indisponibilidade-texto" placeholder="Ex: Dia 12, 19 e 26"
+                            class="sm:w-1/2 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-brand-500">
+                    </div>
+                    <button
+                        onclick="enviarComentario('Mês Seguinte', 'indisponibilidade-autor', 'indisponibilidade-texto', 'indisponibilidade-status', 'Escala/Compromissos')"
+                        class="bg-indigo-700 hover:bg-indigo-600 text-white px-4 py-2 rounded text-sm font-medium">Enviar
+                        datas</button>
+                    <p id="indisponibilidade-status" class="text-xs text-brand-400 hidden">Datas enviadas com sucesso!</p>
+                </div>
+                
+            </header>
+
+            <!-- Dynamic Views Containers -->
+            <div id="secao-cultos-container"></div>
+            <div id="secao-novas-container"></div>
+            <div id="secao-repertorio-container"></div>
+            <div id="secao-midia-container"></div>
+        </div>
+    </div>
+
+    <!-- Rodapé Fixo -->
+    <div class="bg-slate-800 border-t border-slate-700 px-6 py-5 fixed bottom-0 left-0 right-0 shadow-2xl z-50">
+        <div class="container mx-auto max-w-4xl flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="text-center md:text-left w-full md:w-1/3">
+                <span id="nowPlayingTitle"
+                    class="text-xs md:text-sm font-semibold text-brand-300 block truncate">Nenhuma música
+                    selecionada</span>
+            </div>
+            <div id="playerContainer" class="w-full md:w-2/3 flex justify-center items-center">
+                <span class="text-xs text-slate-400">Clique em "▶ Ouvir VS" para carregar o player.</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts do App em ordem de dependência -->
+    <script src="js/config.js?v=4.5"></script>
+    <script src="js/store.js?v=1.0"></script>
+    <script src="js/db.js?v=1.0"></script>
+    <script src="js/router.js?v=1.0"></script>
+    <script src="js/utils.js?v=4.20"></script>
+    <script src="js/player.js?v=4.5"></script>
+    <script src="js/admin.js?v=4.24"></script>
+    <script src="js/culto-editor.js?v=4.20"></script>
+    <script src="js/holyrics-exporter.js?v=1.0"></script>
+    <script src="js/app.js?v=4.21"></script>
+</body>
+
+</html>

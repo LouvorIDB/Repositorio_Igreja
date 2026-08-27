@@ -1,0 +1,11 @@
+id,church_id,name,email,phone,role,created_at,instruments,ministries,system_role,ministry_id
+6404a77f-e6e7-4019-95c4-6870e997771a,ae125cfd-96ef-4324-b1f0-f96a4f34eecf,João Midia,erickrosquero@gmail.com,,volunteer,2026-08-14 15:07:18.533936+00,,Louvor,voluntario,86af156f-4451-42f1-bfc7-65e85bcd37a0
+7745a761-64d2-46c8-a3ec-28351645326b,ae125cfd-96ef-4324-b1f0-f96a4f34eecf,Igor Ribeiro,,+55 11 98893-0385,volunteer,2026-08-11 23:05:43.179423+00,Vocalista,Louvor,voluntario,86af156f-4451-42f1-bfc7-65e85bcd37a0
+847552ca-eccb-4c7e-babf-990d21c47365,ae125cfd-96ef-4324-b1f0-f96a4f34eecf,Wallace,,+55 11 99181-1585,volunteer,2026-08-11 23:15:46.942737+00,Violão,Louvor,voluntario,86af156f-4451-42f1-bfc7-65e85bcd37a0
+9d58eba5-3006-4747-84e6-6bd593c39655,ae125cfd-96ef-4324-b1f0-f96a4f34eecf,Bispo Bruno,,+55 11 96436-0062,volunteer,2026-08-11 23:05:43.179423+00,"Vocalista, Violão, Teclado",Louvor,voluntario,86af156f-4451-42f1-bfc7-65e85bcd37a0
+b6727f8f-945e-478d-9ae0-1f5b6de6bdac,ae125cfd-96ef-4324-b1f0-f96a4f34eecf,Pastora Pauliana,,+55 11 96065-3773,volunteer,2026-08-11 23:05:43.179423+00,Vocalista,Louvor,voluntario,86af156f-4451-42f1-bfc7-65e85bcd37a0
+d9db2441-0299-4260-ba5c-e3c2975bede7,ae125cfd-96ef-4324-b1f0-f96a4f34eecf,João Marcos,joao.marcos.xavier.484@gmail.com,+55 11 99778-7992,admin,2026-08-11 22:01:02.002192+00,"Vocalista, Bateria",Louvor,admin,86af156f-4451-42f1-bfc7-65e85bcd37a0
+df39dae3-317c-4730-b271-76101e3d90a9,ae125cfd-96ef-4324-b1f0-f96a4f34eecf,Afonso,,+55 11 98341-7008,volunteer,2026-08-14 15:00:00.499859+00,"Teclado, Bateria, Diretor musical",,lider,86af156f-4451-42f1-bfc7-65e85bcd37a0
+e6a2f5ef-04ab-4636-bb2c-c7491ceba302,c2273d93-492e-46e4-a8c0-fcb847cd8424,João Beta tester,caioidiota02@gmeil.com,,admin,2026-08-18 13:44:11.019382+00,,,voluntario,
+ed3a944d-312b-49df-8e9e-316e83ad206d,ea22cd8d-cf74-4c09-839f-3b8e5dd3ff17,Testador da terra snata,joaooliveira02@professor.educacao.sp.gov.br,,admin,2026-08-18 14:47:59.721833+00,,,voluntario,
+f18607c2-17d4-4648-956a-a69c5fefdae5,ae125cfd-96ef-4324-b1f0-f96a4f34eecf,Franciele,,+55 11 96568-0894,volunteer,2026-08-11 23:05:43.179423+00,Vocalista,Louvor,voluntario,86af156f-4451-42f1-bfc7-65e85bcd37a0

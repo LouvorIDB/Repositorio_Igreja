@@ -1,0 +1,143 @@
+<!-- SEÇÃO ALMOXARIFADO VIRTUAL E WIKI BASE -->
+<section id="secao-almoxarifado" class="hidden space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+        <div>
+            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                <span>📦</span> Almoxarifado Virtual & Base de Conhecimento
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">Gestão de patrimônio, status de equipamentos e manuais técnicos por ministério.</p>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+            <button id="btn-novo-equipamento" onclick="abrirModalEquipamento()" class="hidden px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg">
+                <span>+</span> Novo Item
+            </button>
+            <button id="btn-novo-doc" onclick="abrirModalDocWiki()" class="hidden px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+                <span>📄</span> Novo Tutorial / Wiki
+            </button>
+        </div>
+    </div>
+
+    <!-- Navegação Secundária da Seção (Abas Internas) -->
+    <div class="flex border-b border-slate-800 gap-4">
+        <button onclick="mudarAbaAlmoxarifado('equipamentos')" id="tab-almox-equipamentos" class="pb-3 text-sm font-semibold text-brand-400 border-b-2 border-brand-500 transition">
+            🛠️ Equipamentos & Patrimônio
+        </button>
+        <button onclick="mudarAbaAlmoxarifado('wiki')" id="tab-almox-wiki" class="pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition">
+            📚 Manuais & Senhas (Wiki)
+        </button>
+    </div>
+
+    <!-- SUB-SEÇÃO 1: EQUIPAMENTOS -->
+    <div id="subsecao-almox-equipamentos" class="space-y-4">
+        <div id="grid-equipamentos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Cards renderizados via js/almoxarifado.js -->
+            <div class="col-span-full py-12 text-center text-slate-500 text-xs">
+                Carregando equipamentos...
+            </div>
+        </div>
+    </div>
+
+    <!-- SUB-SEÇÃO 2: MANUAIS E WIKI -->
+    <div id="subsecao-almox-wiki" class="hidden space-y-4">
+        <div id="grid-docs-wiki" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Items de Wiki renderizados via js/almoxarifado.js -->
+            <div class="col-span-full py-12 text-center text-slate-500 text-xs">
+                Carregando tutoriais e manuais...
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- MODAL CADASTRAR / EDITAR EQUIPAMENTO -->
+<div id="modal-equipamento" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4">
+        <h3 id="modal-equipamento-titulo" class="text-base font-bold text-white">Cadastrar Item no Almoxarifado</h3>
+        
+        <form id="form-equipamento" onsubmit="salvarEquipamento(event)" class="space-y-3">
+            <input type="hidden" id="equipamento-id">
+            
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Nome do Item / Equipamento</label>
+                <input type="text" id="equipamento-nome" required placeholder="Ex: Mesa de Som X32, Microfone Sem Fio 1" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Ministério</label>
+                    <select id="equipamento-ministerio" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Status</label>
+                    <select id="equipamento-status" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                        <option value="disponivel">✅ Disponível / OK</option>
+                        <option value="em_uso">🎤 Em Uso</option>
+                        <option value="manutencao">🛠️ Na Manutenção</option>
+                        <option value="quebrado">🔴 Quebrado / Defeito</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Localização / Armário</label>
+                <input type="text" id="equipamento-local" placeholder="Ex: Rack Principal, Armário B - Gaveta 2" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Observações / Detalhes</label>
+                <textarea id="equipamento-desc" rows="2" placeholder="Detalhes de uso, cabo com mau contato, etc." class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="fecharModalEquipamento()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs font-medium hover:bg-slate-700">Cancelar</button>
+                <button type="submit" id="btn-salvar-equipamento" class="px-4 py-2 bg-brand-600 text-white rounded-lg text-xs font-semibold hover:bg-brand-500">Salvar Item</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL CADASTRAR / EDITAR WIKI -->
+<div id="modal-doc-wiki" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4">
+        <h3 id="modal-doc-titulo" class="text-base font-bold text-white">Cadastrar Tutorial ou Manual</h3>
+        
+        <form id="form-doc-wiki" onsubmit="salvarDocWiki(event)" class="space-y-3">
+            <input type="hidden" id="doc-id">
+            
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Título do Documento / Manual</label>
+                <input type="text" id="doc-titulo-input" required placeholder="Ex: Senhas da Transmissão, Como ligar a mesa" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Ministério</label>
+                    <select id="doc-ministerio" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">Tipo de Conteúdo</label>
+                    <select id="doc-tipo" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                        <option value="wiki_texto">📝 Texto / Guia Rápido</option>
+                        <option value="manual_pdf">📄 Link PDF / Drive</option>
+                        <option value="video_link">🎬 Vídeo Tutorial</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Link do Arquivo / Vídeo (URL)</label>
+                <input type="url" id="doc-url" placeholder="https://drive.google.com/... ou https://youtube.com/..." class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-slate-400 mb-1">Conteúdo / Instruções em Texto</label>
+                <textarea id="doc-desc" rows="3" placeholder="Passo a passo, senhas do roteador, checklist de encerramento..." class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="fecharModalDocWiki()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs font-medium hover:bg-slate-700">Cancelar</button>
+                <button type="submit" id="btn-salvar-doc" class="px-4 py-2 bg-brand-600 text-white rounded-lg text-xs font-semibold hover:bg-brand-500">Salvar Documento</button>
+            </div>
+        </form>
+    </div>
+</div>

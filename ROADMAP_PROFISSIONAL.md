@@ -46,37 +46,37 @@ Garantindo isolamento total de dados entre diferentes igrejas desde o primeiro d
 
 ### FASE 6: Migração de Dados do Legado (Google Sheets ➔ Supabase)
 
-#### **Etapa 6.1: Script de Exportação e Carga (Seeding)**
+#### **[x] Etapa 6.1: Script de Exportação e Carga (Seeding)**
 **Objetivo**: Ler a biblioteca de músicas (`Banco_Musicas` e `Musicas_Novas`), lista de cantores (`Cantores`) e histórico de cultos (`Playlists`) do Google Sheets e popular as tabelas relacionais do Supabase.
 
-#### **Etapa 6.2: Validação da Paridade dos Dados Migrados**
+#### **[x] Etapa 6.2: Validação da Paridade dos Dados Migrados**
 **Objetivo**: Conferir a integridade dos dados migrados no painel do Supabase Studio (Table Editor), confirmando que todos os tons e links de mídia foram preservados.
 
 ---
 
 ### FASE 7: Substituição da API no Frontend (Desconexão do Apps Script)
 
-#### **Etapa 7.1: Integração da SDK do Supabase em `js/config.js`**
+#### **[x] Etapa 7.1: Integração da SDK do Supabase em `js/config.js`**
 **Objetivo**: Adicionar o cliente Supabase JS (`@supabase/supabase-js`) no projeto e inicializar o cliente em `js/config.js` utilizando `SUPABASE_URL` e `SUPABASE_ANON_KEY`.
 
-#### **Etapa 7.2: Refatoração do Carregamento de Dados (`js/app.js`)**
+#### **[x] Etapa 7.2: Refatoração do Carregamento de Dados (`js/app.js`)**
 **Objetivo**: Substituir `fetch(WEB_APP_URL)` por consultas declarativas `supabase.from('services').select(...)` em `js/app.js`, mantendo a camada de cache `localStorage`.
 
-#### **Etapa 7.3: Refatoração da Autenticação Admin (`js/admin.js`)**
+#### **[x] Etapa 7.3: Refatoração da Autenticação Admin (`js/admin.js`)**
 **Objetivo**: Substituir a validação via Apps Script por autenticação nativa via `supabase.auth.signInWithPassword()` ou sessão RLS.
 
-#### **Etapa 7.4: Refatoração da Criação e Edição de Cultos (`js/culto-editor.js`)**
+#### **[x] Etapa 7.4: Refatoração da Criação e Edição de Cultos (`js/culto-editor.js`)**
 **Objetivo**: Substituir a chamada `salvarCulto` pelas operações relacionais `supabase.from('services').upsert(...)` e `supabase.from('service_songs').insert(...)`.
 
-#### **Etapa 7.5: Refatoração das Ações `toggleOculto` e `moverMusicasNovas` (`js/admin.js` e `js/app.js`)**
+#### **[x] Etapa 7.5: Refatoração das Ações `toggleOculto` e `moverMusicasNovas` (`js/admin.js` e `js/app.js`)**
 **Objetivo**: Atualizar o status `is_hidden` via `UPDATE` simples e mover registros da tabela `songs` alterando `status = 'ativo'`.
 
 ---
 
 ### FASE 8: Homologação Final, Teste PWA e Desativação do Legado
 
-#### **Etapa 8.1: Teste Integrado Fim-a-Fim no PWA**
+#### **[x] Etapa 8.1: Teste Integrado Fim-a-Fim no PWA**
 **Objetivo**: Validar login, criação de cultos, filtro de repertório, reprodução de mídia e cache offline no aplicativo instalado no PC e celular operando via Supabase.
 
-#### **Etapa 8.2: Descontinuação do Google Apps Script (`Código.js`)**
+#### **[x] Etapa 8.2: Descontinuação do Google Apps Script (`Código.js`)**
 **Objetivo**: Arquivar os scripts legados da pasta `apps-script/` e homologar o aplicativo operando 100% com infraestrutura PostgreSQL no Supabase.

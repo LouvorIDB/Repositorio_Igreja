@@ -1,0 +1,318 @@
+<!-- ===================== PAINEL ADMIN ===================== -->
+<div id="painel-admin" class="hidden fixed inset-0 bg-slate-900 z-[90] overflow-y-auto">
+    <div class="container mx-auto px-4 py-8 max-w-4xl pb-20">
+        <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-brand-400">⚙️ Painel Admin</h1>
+                <p class="text-slate-400 text-sm mt-1">Gerencie cultos, playlists, equipe e permissões</p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+                <div id="container-simulacao-admin" class="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 shadow-inner">
+                    <span class="text-xs font-semibold text-brand-400 shrink-0">👁️ Simular Visualização:</span>
+                    <select id="select-modo-simulacao-admin" onchange="alterarModoSimulacaoPerfil(this.value)"
+                        class="bg-slate-900 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-1 focus:outline-none focus:border-brand-500 cursor-pointer">
+                    </select>
+                </div>
+                <button onclick="sairAdmin()"
+                    class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-xl text-sm transition">
+                    ← Voltar ao site
+                </button>
+            </div>
+        </div>
+
+        <!-- Navegação por Abas no Admin -->
+        <div class="flex gap-2 mb-6 border-b border-slate-700 pb-3 flex-wrap">
+            <button id="btn-admin-aba-cultos" onclick="mudarAbaAdmin('cultos')"
+                class="px-4 py-2 rounded-xl text-sm font-medium bg-brand-600 text-white shadow">📅 Cultos</button>
+            <button id="btn-admin-aba-historico" onclick="mudarAbaAdmin('historico')"
+                class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">📜 Histórico</button>
+
+            <button onclick="mudarAbaAdmin('ministerios')" id="tab-admin-ministerios"
+                class="tab-admin-btn px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:text-white">🏢 Ministérios & Equipes</button>
+            <button id="btn-admin-aba-repertorio" onclick="mudarAbaAdmin('repertorio')"
+                class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">🎼 Repertório Geral</button>
+            <button id="btn-admin-aba-novas" onclick="mudarAbaAdmin('novas')"
+                class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">🌟 Músicas Novas</button>
+
+            <button id="btn-admin-aba-solicitacoes" onclick="mudarAbaAdmin('solicitacoes')"
+                class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">💬 Solicitações</button>
+            <button id="btn-admin-aba-agenda" onclick="mudarAbaAdmin('agenda')"
+                class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">📅 Eventos & Agenda</button>
+            <button id="btn-admin-aba-igrejas" onclick="mudarAbaAdmin('igrejas')"
+                class="hidden px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">⛪ Gerenciar Igrejas</button>
+            <button id="btn-admin-aba-configuracoes" onclick="mudarAbaAdmin('configuracoes')"
+                class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">⚙️ Configurações</button>
+        </div>
+
+        <!-- ABA 1: CULTOS -->
+        <div id="admin-aba-cultos">
+            <div class="flex gap-3 mb-6 flex-wrap">
+                <button id="btn-admin-novo-culto" onclick="mostrarFormCulto(null)"
+                    class="bg-brand-600 hover:bg-brand-500 text-white px-5 py-2.5 rounded-xl font-medium text-sm">+
+                    Novo Culto</button>
+            </div>
+            <div>
+                <h2 class="text-base font-semibold text-slate-300 mb-3">Cultos cadastrados</h2>
+                <div id="admin-lista-cultos" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <!-- ABA HISTÓRICO DE CULTOS (ARQUIVADOS) -->
+        <div id="admin-aba-historico" class="hidden space-y-4">
+            <h2 class="text-base font-semibold text-slate-300 mb-3">📜 Histórico de Cultos (Arquivados)</h2>
+            <div id="admin-historico-cultos-lista" class="space-y-4">
+                <p class="text-slate-500 text-sm">Carregando histórico...</p>
+            </div>
+        </div>
+
+        <!-- ABA MINISTÉRIOS & EQUIPES -->
+        <div id="admin-aba-ministerios" class="hidden space-y-4">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <h2 id="admin-ministerios-titulo" class="text-base font-semibold text-slate-300">Ministérios & Equipes</h2>
+                <button id="btn-admin-novo-ministerio" onclick="abrirModalMinisterioAdmin(null)"
+                    class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-xl font-medium text-sm transition">➕ Novo Ministério</button>
+            </div>
+            <div id="container-admin-ministerios" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <p class="text-slate-500 text-sm">Carregando ministérios...</p>
+            </div>
+        </div>
+
+        <!-- ABA 2: REPERTÓRIO GERAL -->
+        <div id="admin-aba-repertorio" class="hidden space-y-4">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                <h2 class="text-base font-semibold text-slate-300">Repertório Geral de Músicas <span id="admin-repertorio-count" class="text-xs font-normal text-brand-400 ml-1"></span></h2>
+                <div class="flex gap-2 flex-wrap">
+                    <button onclick="abrirModalImportarPlanilha()"
+                        class="bg-emerald-700 hover:bg-emerald-600 text-white px-3.5 py-2 rounded-xl font-medium text-xs sm:text-sm transition flex items-center gap-1 shadow-sm">📊 Restaurar da Planilha</button>
+                    <button onclick="abrirModalImportarHolyrics()"
+                        class="bg-slate-700 hover:bg-slate-600 text-brand-300 border border-slate-600 px-3 py-2 rounded-xl font-medium text-xs sm:text-sm transition">📥 Importar Holyrics (JSON)</button>
+                    <button onclick="limparApenasLetrasAdmin()"
+                        class="bg-amber-950/60 hover:bg-amber-900 text-amber-300 border border-amber-700/50 px-3 py-2 rounded-xl font-medium text-xs sm:text-sm transition">📝 Limpar Apenas Letras</button>
+                    <button onclick="abrirModalMusicaAdmin()"
+                        class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-xl font-medium text-xs sm:text-sm transition">+ Adicionar Música</button>
+                </div>
+            </div>
+            <div class="mb-4 flex flex-col sm:flex-row gap-2">
+                <input type="text" id="admin-search-repertorio" oninput="filtrarAdminRepertorio()" placeholder="Buscar música no banco..."
+                    class="w-full sm:flex-1 bg-slate-800 border border-slate-700 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-brand-500">
+                <select id="admin-filter-repertorio" onchange="filtrarAdminRepertorio()"
+                    class="bg-slate-800 border border-slate-700 px-3 py-2.5 rounded-xl text-sm text-slate-300 focus:outline-none focus:border-brand-500">
+                    <option value="todas">Todas as Músicas</option>
+                    <option value="com_vs">🎵 Com Áudio / VS</option>
+                    <option value="sem_vs">⚠️ Sem Áudio / VS</option>
+                    <option value="com_yt">📺 Com YouTube</option>
+                    <option value="sem_yt">⚠️ Sem YouTube</option>
+                    <option value="com_letra">📜 Com letra cadastrada</option>
+                    <option value="sem_letra">⚠️ Sem letra cadastrada</option>
+                    <option value="multiples_versions">🔀 Com mais de 1 versão</option>
+                </select>
+            </div>
+            <div id="admin-lista-repertorio" class="space-y-3">
+                <p class="text-slate-500 text-sm">Carregando músicas...</p>
+            </div>
+        </div>
+
+        <!-- ABA 3: MÚSICAS NOVAS -->
+        <div id="admin-aba-novas" class="hidden space-y-4">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-base font-semibold text-slate-300">Músicas em Aprendizado (Novas)</h2>
+                <button onclick="abrirModalMusicaAdmin('nova')"
+                    class="bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-xl font-medium text-sm transition">+ Cadastrar Nova Música</button>
+            </div>
+            <div id="admin-lista-novas" class="space-y-3">
+                <p class="text-slate-500 text-sm">Carregando músicas novas...</p>
+            </div>
+        </div>
+
+        <!-- ABA 4: SOLICITAÇÕES -->
+        <div id="admin-aba-solicitacoes" class="hidden space-y-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+                <div class="flex gap-2 border-b border-slate-700/60 pb-2">
+                    <button id="btn-solic-sub-pendentes" onclick="filtrarSubAbaSolicitacoes('pendentes')"
+                        class="px-4 py-2 rounded-xl text-xs font-semibold transition bg-brand-600 text-white flex items-center gap-1.5">
+                        <span>⏳ Pendentes</span>
+                        <span id="badge-solic-pendentes" class="px-2 py-0.5 text-[10px] bg-slate-900/60 text-white rounded-full">0</span>
+                    </button>
+                    <button id="btn-solic-sub-concluidas" onclick="filtrarSubAbaSolicitacoes('concluidas')"
+                        class="px-4 py-2 rounded-xl text-xs font-semibold transition bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5">
+                        <span>✅ Histórico (Aprovadas / Rejeitadas)</span>
+                        <span id="badge-solic-concluidas" class="px-2 py-0.5 text-[10px] bg-slate-900/60 text-slate-300 rounded-full">0</span>
+                    </button>
+                </div>
+                <input type="text" id="admin-search-solicitacoes" oninput="filtrarListaSolicitacoesInput()" placeholder="Buscar por nome, música ou texto..."
+                    class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl text-xs text-white focus:outline-none focus:border-brand-500 w-full sm:w-64">
+            </div>
+
+            <div id="admin-lista-solicitacoes" class="space-y-3">
+                <p class="text-slate-500 text-sm">Carregando solicitações...</p>
+            </div>
+        </div>
+
+        <!-- ABA 6: CONFIGURAÇÕES GLOBAIS E PERMISSÕES -->
+        <div id="admin-aba-configuracoes" class="hidden space-y-6">
+            
+            <!-- GESTÃO DE MEMBROS E ACESSOS LIMITADOS -->
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg space-y-4">
+                <div class="flex items-center justify-between flex-wrap gap-2 border-b border-slate-700 pb-3">
+                    <div>
+                        <h2 class="text-base font-bold text-brand-400">👥 Membros & Acessos Limitados</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Cadastre e controle os membros da igreja e seus níveis de acesso.</p>
+                    </div>
+                    <button onclick="abrirModalCriarMembroAdmin()" class="bg-brand-600 hover:bg-brand-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-medium transition shadow flex items-center gap-1">
+                        + Cadastrar Membro
+                    </button>
+                </div>
+
+                <div id="admin-lista-membros" class="space-y-2">
+                    <p class="text-slate-500 text-xs py-4 text-center">Carregando membros da igreja...</p>
+                </div>
+            </div>
+
+            <!-- MATRIZ DE PERMISSÕES PÚBLICAS -->
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg space-y-4">
+                <div class="border-b border-slate-700 pb-3">
+                    <h2 class="text-base font-bold text-brand-400">🌍 Visibilidade Pública / Sem Ministério</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Defina o que os membros sem ministério vinculado ou visitantes gerais podem ver na plataforma.</p>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60 space-y-3">
+                        <p class="text-xs font-semibold text-brand-300 mb-2">Marque o que está liberado para visualização pública:</p>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
+                                <input type="checkbox" id="public-perm-ver_escala" class="rounded accent-brand-500">
+                                <span>📅 Ver Escala de Voluntários</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
+                                <input type="checkbox" id="public-perm-ver_letra" class="rounded accent-brand-500">
+                                <span>📜 Ver Botão e Texto da Letra</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
+                                <input type="checkbox" id="public-perm-ver_cifra" class="rounded accent-brand-500">
+                                <span>🎸 Ver Botão e Texto da Cifra</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
+                                <input type="checkbox" id="public-perm-ver_vs" class="rounded accent-brand-500">
+                                <span>▶ Ver e Ouvir Áudio / VS</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
+                                <input type="checkbox" id="public-perm-ver_youtube" class="rounded accent-brand-500">
+                                <span>📺 Ver Botão de Vídeo do YouTube</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
+                                <input type="checkbox" id="public-perm-ver_cantor" class="rounded accent-brand-500">
+                                <span>🎤 Ver Vocalistas Escalados</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
+                                <input type="checkbox" id="public-perm-ver_midia" class="rounded accent-brand-500">
+                                <span>🖼️ Ver Mídias de Projeção</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
+                                <input type="checkbox" id="public-perm-enviar_solic_musica" class="rounded accent-brand-500">
+                                <span>💬 Enviar Pedido de Ajuste de Tom</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
+                                <input type="checkbox" id="public-perm-enviar_sugestao_culto" class="rounded accent-brand-500">
+                                <span>💡 Enviar Sugestão de Música no Culto</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
+                                <input type="checkbox" id="public-perm-ver_repertorio" class="rounded accent-brand-500">
+                                <span>🎼 Acessar Aba Repertório Geral</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
+                                <input type="checkbox" id="public-perm-ver_musicas_novas" class="rounded accent-brand-500">
+                                <span>🌟 Acessar Aba Músicas Novas</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
+                                <input type="checkbox" id="public-perm-ver_aba_midias_upadas" class="rounded accent-brand-500">
+                                <span>📥 Acessar Aba Mídias Upadas / Downloads</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
+                                <input type="checkbox" id="public-perm-ver_agenda" class="rounded accent-brand-500">
+                                <span>📅 Acessar Aba Agenda & Eventos</span>
+                            </label>
+                            <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
+                                <input type="checkbox" id="public-perm-gerar_script_holyrics" class="rounded accent-brand-500">
+                                <span>📋 Exportar Script Holyrics</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="pt-2">
+                        <button onclick="salvarPermissoesPublicas()" id="btn-salvar-perm-publica" class="bg-brand-600 hover:bg-brand-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition shadow flex items-center gap-1.5">
+                            💾 Salvar Permissões Públicas
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONFIGURAÇÕES GLOBAIS DE APARÊNCIA -->
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg space-y-4 max-w-xl">
+                <h2 class="text-base font-bold text-brand-400 border-b border-slate-700 pb-2">🎨 Aparência Global do Site</h2>
+                <div>
+                    <label class="block text-xs text-slate-300 mb-2 font-medium">Cor Padrão da Visão Pública (Visitantes)</label>
+                    <select id="config-cor-global" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                        <option value="emerald">Emerald (Verde Padrão)</option>
+                        <option value="blue">Blue (Azul)</option>
+                        <option value="amber">Amber (Amarelo / Dourado)</option>
+                        <option value="purple">Purple (Roxo)</option>
+                        <option value="rose">Rose (Rosa / Vermelho)</option>
+                        <option value="indigo">Indigo (Índigo)</option>
+                        <option value="sky">Sky (Azul Céu)</option>
+                    </select>
+                </div>
+                <div class="pt-2">
+                    <button onclick="salvarConfiguracoesGlobaisAdmin()" class="bg-brand-600 hover:bg-brand-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition">💾 Salvar Cor Global</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA AGENDA & EVENTOS DA IGREJA -->
+        <div id="admin-aba-agenda" class="hidden space-y-4">
+            <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <span>📅</span> Gestão de Eventos da Igreja
+                    </h2>
+                    <p class="text-xs text-slate-400">Cadastre e gerencie a programação de eventos especiais da igreja.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="abrirModalCultoRecorrenteAdmin()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition shadow flex items-center gap-1.5">
+                        <span>🔄</span> Cadastrar Cultos Recorrentes
+                    </button>
+                    <button onclick="abrirModalEventoAdmin()" class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition shadow flex items-center gap-1.5">
+                        <span>➕</span> Cadastrar Novo Evento
+                    </button>
+                </div>
+            </div>
+
+            <div id="admin-lista-eventos-agenda" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Lista de eventos para gerenciar -->
+            </div>
+        </div>
+
+        <!-- ABA GESTÃO DE IGREJAS (SaaS - Apenas para o Administrador Global no Tenant idb-louvor) -->
+        <div id="admin-aba-igrejas" class="hidden space-y-4">
+            <h2 class="text-base font-semibold text-slate-300">Gestão de Igrejas Cadastradas (SaaS)</h2>
+            <div class="bg-slate-800/40 border border-slate-700 rounded-2xl overflow-hidden">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-800 text-xs text-slate-400 uppercase">
+                        <tr>
+                            <th class="px-4 py-3">Igreja</th>
+                            <th class="px-4 py-3">Identificador (Slug)</th>
+                            <th class="px-4 py-3">WhatsApp Líder</th>
+                            <th class="px-4 py-3">Valor Combinado</th>
+                            <th class="px-4 py-3">Status</th>
+                            <th class="px-4 py-3 text-right">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-lista-igrejas-body">
+                        <!-- Injetado dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
