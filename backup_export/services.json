@@ -1,0 +1,136 @@
+[
+  {
+    "id": "d1af4a2f-8989-4030-a7cd-59a9dbb828d9",
+    "church_id": "ae125cfd-96ef-4324-b1f0-f96a4f34eecf",
+    "title": "22/08 - CULTO DE SABADO - OCULTO",
+    "date": "2026-08-22T15:00:00+00:00",
+    "status": "arquivado",
+    "notes": "{\"escala\":{\"Violão\":\"Wallace\",\"Teclado\":\"Bispo Bruno\",\"Bateria\":\"João Marcos\",\"Diretor musical\":\"\",\"guitarra\":\"\",\"Operador da Iluminação\":\"Jo testeiro\",\"Operador da Projeção\":\"\",\"Câmera móvel\":\"\",\"Operador da Transmissão\":\"\",\"Fotografia\":\"\"},\"cantores\":[]}",
+    "created_at": "2026-08-11T21:01:28.314989+00:00",
+    "media_urls": []
+  },
+  {
+    "id": "628747e0-b235-407d-8c70-f569f05a1b80",
+    "church_id": "ae125cfd-96ef-4324-b1f0-f96a4f34eecf",
+    "title": "23/08 - CULTO DE DOMINGO",
+    "date": "2026-08-23T15:00:00+00:00",
+    "status": "confirmado",
+    "notes": "{\"escala\":{\"Violão\":\"Wallace\",\"Teclado\":\"Bispo Bruno\",\"Bateria\":\"Afonso\",\"Diretor musical\":\"\",\"guitarra\":\"\",\"Operador da Iluminação\":\"\",\"Operador da Projeção\":\"\",\"Câmera móvel\":\"\",\"Operador da Transmissão\":\"\",\"Fotografia\":\"\"},\"cantores\":[]}",
+    "created_at": "2026-08-11T21:01:28.584981+00:00",
+    "media_urls": []
+  },
+  {
+    "id": "1f954910-b901-4c78-a05e-2d6386301640",
+    "church_id": "ae125cfd-96ef-4324-b1f0-f96a4f34eecf",
+    "title": "30/08 - CULTO DE DOMINGO",
+    "date": "2026-08-30T15:00:00+00:00",
+    "status": "confirmado",
+    "notes": "{\"escala\":{\"Violão\":\"Bispo Bruno\",\"Teclado\":\"\",\"Bateria\":\"João Marcos\",\"Diretor musical\":\"\",\"guitarra\":\"\",\"Operador da Iluminação\":\"\",\"Operador da Projeção\":\"\",\"Câmera móvel\":\"\",\"Operador da Transmissão\":\"\",\"Fotografia\":\"\"},\"cantores\":[\"Bispo Bruno\",\"Igor Ribeiro\"]}",
+    "created_at": "2026-08-11T21:01:29.476574+00:00",
+    "media_urls": [
+      {
+        "url": "https://pfhkzgccoirosztjcyrh.supabase.co/storage/v1/object/public/media-inbox/1786659399076_2rhklp.jpeg",
+        "name": "1786659399076_2rhklp.jpeg"
+      },
+      {
+        "url": "https://pfhkzgccoirosztjcyrh.supabase.co/storage/v1/object/public/media-inbox/vs_tracks",
+        "name": "vs_tracks"
+      }
+    ]
+  },
+  {
+    "id": "f5948792-75c4-4b9b-9910-a1efb90eb07e",
+    "church_id": "ae125cfd-96ef-4324-b1f0-f96a4f34eecf",
+    "title": "02/08 - CULTO DE DOMINGO - EM MONTAGEM - OCULTO",
+    "date": "2026-08-02T15:00:00+00:00",
+    "status": "arquivado",
+    "notes": "{\"escala\":{\"Violão\":\"\",\"Teclado\":\"\",\"Bateria\":\"\",\"Diretor musical\":\"\",\"Operador da Iluminação\":\"\",\"Operador da Projeção\":\"\",\"Câmera móvel\":\"\",\"Operador da Transmissão\":\"\"},\"cantores\":[]}",
+    "created_at": "2026-08-11T21:01:24.327089+00:00",
+    "media_urls": []
+  },
+  {
+    "id": "c6aeeae4-8473-4eb7-a891-12f51a1232ce",
+    "church_id": "ae125cfd-96ef-4324-b1f0-f96a4f34eecf",
+    "title": "05/08 - CULTO DE QUARTA - OCULTO",
+    "date": "2026-08-05T15:00:00+00:00",
+    "status": "arquivado",
+    "notes": "{\"escala\":{\"Violão\":\"\",\"Teclado\":\"\",\"Bateria\":\"\",\"Diretor musical\":\"\",\"Operador da Iluminação\":\"\",\"Operador da Projeção\":\"\",\"Câmera móvel\":\"\",\"Operador da Transmissão\":\"\"},\"cantores\":[]}",
+    "created_at": "2026-08-11T21:01:24.853256+00:00",
+    "media_urls": []
+  },
+  {
+    "id": "e91d9d9c-42a9-4008-b63c-f18ec08d74e8",
+    "church_id": "ae125cfd-96ef-4324-b1f0-f96a4f34eecf",
+    "title": "08/08 - CULTO DE SABADO - OCULTO",
+    "date": "2026-08-08T15:00:00+00:00",
+    "status": "arquivado",
+    "notes": "{\"escala\":{\"Violão\":\"\",\"Teclado\":\"\",\"Bateria\":\"\",\"Diretor musical\":\"\",\"Operador da Iluminação\":\"\",\"Operador da Projeção\":\"\",\"Câmera móvel\":\"\",\"Operador da Transmissão\":\"\"},\"cantores\":[]}",
+    "created_at": "2026-08-11T21:01:25.187892+00:00",
+    "media_urls": []
+  },
+  {
+    "id": "11aebd43-32fb-43f1-92f2-42c439f4e39a",
+    "church_id": "ae125cfd-96ef-4324-b1f0-f96a4f34eecf",
+    "title": "09/08 - CULTO DE DOMINGO - OCULTO",
+    "date": "2026-08-09T15:00:00+00:00",
+    "status": "arquivado",
+    "notes": "{\"escala\":{\"Violão\":\"\",\"Teclado\":\"\",\"Bateria\":\"\",\"Diretor musical\":\"\",\"Operador da Iluminação\":\"\",\"Operador da Projeção\":\"\",\"Câmera móvel\":\"\",\"Operador da Transmissão\":\"\"},\"cantores\":[]}",
+    "created_at": "2026-08-11T21:01:25.565232+00:00",
+    "media_urls": []
+  },
+  {
+    "id": "1f1203f9-6159-4abc-96e9-71dbdeba5fcb",
+    "church_id": "ae125cfd-96ef-4324-b1f0-f96a4f34eecf",
+    "title": "12/08 - CULTO DE QUARTA - OCULTO",
+    "date": "2026-08-12T15:00:00+00:00",
+    "status": "arquivado",
+    "notes": "{\"escala\":{\"Violão\":\"\",\"Teclado\":\"\",\"Bateria\":\"\",\"Diretor musical\":\"\",\"Operador da Iluminação\":\"\",\"Operador da Projeção\":\"\",\"Câmera móvel\":\"\",\"Operador da Transmissão\":\"\"},\"cantores\":[]}",
+    "created_at": "2026-08-11T21:01:26.26445+00:00",
+    "media_urls": []
+  },
+  {
+    "id": "4cdbcbc7-9dc3-43c9-9d29-542e3153d766",
+    "church_id": "ae125cfd-96ef-4324-b1f0-f96a4f34eecf",
+    "title": "15/08 - CULTO DE SABADO - OCULTO",
+    "date": "2026-08-15T15:00:00+00:00",
+    "status": "arquivado",
+    "notes": "{\"escala\":{\"Violão\":\"\",\"Teclado\":\"\",\"Bateria\":\"\",\"Diretor musical\":\"\",\"Operador da Iluminação\":\"\",\"Operador da Projeção\":\"\",\"Câmera móvel\":\"\",\"Operador da Transmissão\":\"\"},\"cantores\":[]}",
+    "created_at": "2026-08-11T21:01:26.57352+00:00",
+    "media_urls": [
+      {
+        "url": "https://pfhkzgccoirosztjcyrh.supabase.co/storage/v1/object/public/media-inbox/1786659399076_2rhklp.jpeg",
+        "name": "1786659399076_2rhklp.jpeg"
+      }
+    ]
+  },
+  {
+    "id": "bf34a2a5-0fae-4c6b-a44a-3391f7ca16f6",
+    "church_id": "ae125cfd-96ef-4324-b1f0-f96a4f34eecf",
+    "title": "16/08 - CULTO DE DOMINGO - OCULTO",
+    "date": "2026-08-16T15:00:00+00:00",
+    "status": "arquivado",
+    "notes": "{\"escala\":{\"Violão\":\"\",\"Teclado\":\"\",\"Bateria\":\"\",\"Diretor musical\":\"\",\"Operador da Iluminação\":\"\",\"Operador da Projeção\":\"\",\"Câmera móvel\":\"\",\"Operador da Transmissão\":\"\"},\"cantores\":[]}",
+    "created_at": "2026-08-11T21:01:26.965064+00:00",
+    "media_urls": []
+  },
+  {
+    "id": "a6993319-df2b-4fe5-b4e6-7df901a10500",
+    "church_id": "ae125cfd-96ef-4324-b1f0-f96a4f34eecf",
+    "title": "19/08 - CULTO DE QUARTA - OCULTO",
+    "date": "2026-08-19T15:00:00+00:00",
+    "status": "arquivado",
+    "notes": "{\"escala\":{\"Violão\":\"Wallace\",\"Teclado\":\"Bispo Bruno\",\"Bateria\":\"João Marcos\",\"Diretor musical\":\"\",\"Operador da Iluminação\":\"\",\"Operador da Projeção\":\"\",\"Câmera móvel\":\"\",\"Operador da Transmissão\":\"\"},\"cantores\":[]}",
+    "created_at": "2026-08-11T21:01:27.579147+00:00",
+    "media_urls": []
+  },
+  {
+    "id": "6cfa8b54-8cf8-4c16-95c3-1847c0d3d062",
+    "church_id": "ae125cfd-96ef-4324-b1f0-f96a4f34eecf",
+    "title": "26/08 - CULTO DE QUARTA",
+    "date": "2026-08-26T15:00:00+00:00",
+    "status": "confirmado",
+    "notes": "{\"escala\":{\"Violão\":\"Wallace\",\"Teclado\":\"Bispo Bruno\",\"Bateria\":\"Afonso\",\"Diretor musical\":\"\",\"Operador da Iluminação\":\"\",\"Operador da Projeção\":\"\",\"Câmera móvel\":\"\",\"Operador da Transmissão\":\"\"},\"cantores\":[]}",
+    "created_at": "2026-08-11T21:01:29.161213+00:00",
+    "media_urls": []
+  }
+]

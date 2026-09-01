@@ -143,13 +143,13 @@
             </button>
             
             <div id="user-session-bar" class="hidden flex items-center gap-3 bg-slate-800/80 border border-slate-700/50 rounded-full px-4 py-1.5 shadow-sm">
-                <div class="flex flex-col items-end">
-                    <span id="user-session-name" class="text-[11px] font-bold text-white leading-tight">Usuário</span>
+                <button onclick="abrirMinhaConta()" class="flex flex-col items-end text-right group cursor-pointer" title="Minha Conta">
+                    <span id="user-session-name" class="text-[11px] font-bold text-white leading-tight group-hover:text-brand-300 transition">Usuário</span>
                     <span id="user-session-role" class="text-[9px] text-brand-400 font-medium leading-tight tracking-wider uppercase">Voluntário</span>
-                </div>
-                <div class="w-7 h-7 rounded-full bg-slate-700 border border-slate-600 flex items-center justify-center text-xs">
+                </button>
+                <button onclick="abrirMinhaConta()" class="w-7 h-7 rounded-full bg-slate-700 hover:bg-slate-600 border border-slate-600 flex items-center justify-center text-xs transition cursor-pointer" title="Minha Conta">
                     👤
-                </div>
+                </button>
                 <!-- Botão Admin -->
                 <button id="btn-admin-panel" onclick="abrirPainelAdmin()" class="hidden ml-2 text-indigo-400 hover:text-indigo-300 transition" title="Acessar Painel de Administração">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -231,30 +231,36 @@
 
         <div id="conteudo-principal-site" class="flex flex-col md:flex-row gap-8 items-start w-full">
             
+            <!-- MÁSCARA DE FUNDO (BACKDROP) MENU MOBILE -->
+            <div id="sidebar-backdrop" onclick="fecharSidebarMenu('sidebar-menu')" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[60] md:hidden"></div>
+
             <!-- MENU MOBILE TOGGLE -->
             <div class="md:hidden w-full flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm mb-4">
                 <h1 class="text-xl font-bold text-brand-400 select-none cursor-default truncate" id="titulo-site-mobile">Menu</h1>
-                <button onclick="document.getElementById('sidebar-menu').classList.toggle('hidden')" class="text-slate-300 hover:text-white p-2">
+                <button onclick="toggleSidebarMenu('sidebar-menu')" class="text-slate-300 hover:text-white p-2 focus:outline-none" aria-label="Abrir Menu">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                 </button>
             </div>
 
-            <!-- SIDEBAR -->
-            <aside id="sidebar-menu" class="hidden md:flex flex-col gap-6 w-full md:w-64 shrink-0 sticky top-24 z-10 bg-slate-900/95 md:bg-transparent p-4 md:p-0 rounded-2xl md:rounded-none border md:border-none border-slate-700/50 shadow-xl md:shadow-none mb-6 md:mb-0">
-                <!-- CABEÇALHO DA IGREJA -->
-                <div class="mb-2 hidden md:block px-2">
+            <!-- SIDEBAR (MENU SLIDE-OVER MOBILE & STICKY BOUNDED DESKTOP) -->
+            <aside id="sidebar-menu" class="hidden md:flex flex-col gap-6 fixed md:sticky top-0 md:top-24 left-0 bottom-0 md:bottom-auto z-[70] md:z-40 h-[100dvh] md:h-auto max-h-[100dvh] md:max-h-[calc(100vh-7rem)] w-72 md:w-64 max-w-[85vw] md:max-w-none shrink-0 bg-slate-900 md:bg-transparent p-6 md:p-0 border-r md:border-none border-slate-800 shadow-2xl md:shadow-none overflow-y-auto sidebar-scroll-container custom-scrollbar mb-6 md:mb-0">
+                <!-- CABEÇALHO DO MENU -->
+                <div class="mb-2 flex items-center justify-between px-2">
                     <h1 class="text-2xl font-bold text-brand-400 select-none cursor-default" id="titulo-site">Repertório</h1>
+                    <button onclick="fecharSidebarMenu('sidebar-menu')" class="md:hidden text-slate-400 hover:text-white p-1" aria-label="Fechar Menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
                 </div>
 
-                <nav class="flex flex-col gap-6">
+                <nav class="flex flex-col gap-6 pb-24">
                     <div>
                         <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2">Geral</h3>
                         <div class="flex flex-col gap-1">
-                            <button onclick="mudarAba('cultos'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');" id="btn-cultos"
+                            <button onclick="mudarAba('cultos'); fecharSidebarMenu('sidebar-menu');" id="btn-cultos"
                                 class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
                                 📅 Próximos Cultos
                             </button>
-                            <button onclick="mudarAba('agenda'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');" id="btn-agenda"
+                            <button onclick="mudarAba('agenda'); fecharSidebarMenu('sidebar-menu');" id="btn-agenda"
                                 class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
                                 🗓️ Agenda & Eventos
                             </button>
@@ -264,11 +270,11 @@
                     <div>
                         <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2">Músicas & Ensaios</h3>
                         <div class="flex flex-col gap-1">
-                            <button onclick="mudarAba('repertorio'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');" id="btn-repertorio"
+                            <button onclick="mudarAba('repertorio'); fecharSidebarMenu('sidebar-menu');" id="btn-repertorio"
                                 class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
                                 🎵 Lista Geral
                             </button>
-                            <button onclick="mudarAba('novas'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');" id="btn-novas"
+                            <button onclick="mudarAba('novas'); fecharSidebarMenu('sidebar-menu');" id="btn-novas"
                                 class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
                                 🌟 Músicas Novas
                             </button>
@@ -278,15 +284,15 @@
                     <div>
                         <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2">Ferramentas da Equipe</h3>
                         <div class="flex flex-col gap-1">
-                            <button onclick="mudarAba('midia'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');" id="btn-midia"
+                            <button onclick="mudarAba('midia'); fecharSidebarMenu('sidebar-menu');" id="btn-midia"
                                 class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 items-center gap-3 hidden">
                                 📷 Mídias (Fotos/Vídeos)
                             </button>
-                            <button onclick="mudarAba('almoxarifado'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');" id="btn-almoxarifado"
+                            <button onclick="mudarAba('almoxarifado'); fecharSidebarMenu('sidebar-menu');" id="btn-almoxarifado"
                                 class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
                                 📦 Recursos & Wiki
                             </button>
-                            <button onclick="mudarAba('analytics'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');" id="btn-analytics"
+                            <button onclick="mudarAba('analytics'); fecharSidebarMenu('sidebar-menu');" id="btn-analytics"
                                 class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
                                 📊 Analytics & Relatórios
                             </button>
@@ -296,17 +302,27 @@
                     <div id="botoes-sugestao-container" class="hidden">
                         <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2 pt-2 border-t border-slate-700/50">Ações Especiais</h3>
                         <div class="flex flex-col gap-1">
-                            <button id="btn-sugerir-nova-container" onclick="toggleComentario('form-sugestao-nova'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');"
+                            <button id="btn-sugerir-nova-container" onclick="toggleComentario('form-sugestao-nova'); fecharSidebarMenu('sidebar-menu');"
                                 class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-indigo-300 hover:bg-indigo-900/30 border border-transparent hover:border-indigo-500/30 flex items-center gap-3 hidden">
                                 💡 Sugerir Música Nova
                             </button>
-                            <button id="btn-indisponibilidade-container" onclick="toggleComentario('form-indisponibilidade'); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');"
+                            <button id="btn-indisponibilidade-container" onclick="toggleComentario('form-indisponibilidade'); fecharSidebarMenu('sidebar-menu');"
                                 class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-rose-300 hover:bg-rose-900/30 border border-transparent hover:border-rose-500/30 flex items-center gap-3 hidden">
                                 🗓️ Informar Indisponibilidade
                             </button>
-                            <button id="btn-holyrics-igreja-container" onclick="copiarScriptHolyricsUnico(); if(window.innerWidth < 768) document.getElementById('sidebar-menu').classList.add('hidden');"
+                            <button id="btn-holyrics-igreja-container" onclick="mudarAba('holyrics'); fecharSidebarMenu('sidebar-menu');"
                                 class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-cyan-300 hover:bg-cyan-900/30 border border-transparent hover:border-cyan-500/30 flex items-center gap-3 hidden">
-                                ⚡ Copiar Script Holyrics
+                                ⚡ Importação Holyrics
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="sidebar-minha-conta-container">
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2 pt-2 border-t border-slate-700/50">Minha Conta</h3>
+                        <div class="flex flex-col gap-1">
+                            <button onclick="abrirMinhaConta(); fecharSidebarMenu('sidebar-menu');" id="btn-minha-conta-sidebar"
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
+                                👤 Meus Dados
                             </button>
                         </div>
                     </div>
@@ -358,11 +374,12 @@
             <div id="secao-agenda-container"></div>
             <div id="secao-almoxarifado-container"></div>
             <div id="secao-analytics-container"></div>
+            <div id="secao-holyrics-container"></div>
         </div>
     </div>
 
-    <!-- Rodapé Fixo -->
-    <div class="bg-slate-800 border-t border-slate-700 px-6 py-5 fixed bottom-0 left-0 right-0 shadow-2xl z-50">
+    <!-- Rodapé Fixo do Player (Oculto por padrão até dar play) -->
+    <div id="fixed-player-bar" style="display: none;" class="hidden bg-slate-800 border-t border-slate-700 px-6 py-5 fixed bottom-0 left-0 md:left-64 right-0 shadow-2xl z-20">
         <div class="container mx-auto max-w-4xl flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="text-center md:text-left w-full md:w-1/3">
                 <span id="nowPlayingTitle"
@@ -382,14 +399,14 @@
     <script src="js/db.js?v=1.0"></script>
     <script src="js/router.js?v=1.0"></script>
     <script src="js/utils.js?v=4.26"></script>
-    <script src="js/player.js?v=4.5"></script>
-    <script src="js/admin.js?v=4.44"></script>
+    <script src="js/player.js?v=4.9"></script>
+    <script src="js/admin.js?v=4.45"></script>
     <script src="js/culto-editor.js?v=5.2"></script>
     <script src="js/holyrics-exporter.js?v=1.2"></script>
     <script src="js/almoxarifado.js?v=1.0"></script>
     <script src="js/analytics.js?v=2.2"></script>
     <script src="js/agenda.js?v=1.2"></script>
-    <script src="js/app.js?v=6.0"></script>
+    <script src="js/app.js?v=6.2"></script>
 </body>
 
 </html>

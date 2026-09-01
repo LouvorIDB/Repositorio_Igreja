@@ -1,0 +1,50 @@
+{
+  "churches": {
+    "status": "success",
+    "total_records": 7
+  },
+  "profiles": {
+    "status": "success",
+    "total_records": 14
+  },
+  "roles": {
+    "status": "success",
+    "total_records": 0
+  },
+  "ministries": {
+    "status": "success",
+    "total_records": 1
+  },
+  "ministry_roles": {
+    "status": "success",
+    "total_records": 0
+  },
+  "user_ministry_roles": {
+    "status": "success",
+    "total_records": 0
+  },
+  "services": {
+    "status": "success",
+    "total_records": 12
+  },
+  "songs": {
+    "status": "success",
+    "total_records": 120
+  },
+  "song_versions": {
+    "status": "success",
+    "total_records": 121
+  },
+  "service_songs": {
+    "status": "success",
+    "total_records": 50
+  },
+  "availability_comments": {
+    "status": "success",
+    "total_records": 20
+  },
+  "themes": {
+    "status": "success",
+    "total_records": 0
+  }
+}

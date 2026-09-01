@@ -1,0 +1,8 @@
+id,name,slug,logo_url,theme_color_primary,theme_color_secondary,created_at,status,agreed_payment,leader_whatsapp,public_permissions,active_month
+"c2273d93-492e-46e4-a8c0-fcb847cd8424","Igreja Teste","teste-igreja","","amber","#10b981","2026-08-18T13:44:10.475594+00:00","active","A combinar","11997787992","{}",""
+"357f01d6-4eb2-45e7-9dfb-5caeee983c98","Teste da igreja 2","teste-igrejaa","","amber","#10b981","2026-08-18T14:38:17.180799+00:00","pending","A combinar","11997787992","{}",""
+"82dec33e-b1bc-49c4-896d-acc62486eac7","Teste da igreja 2","tst-igreja","","amber","#10b981","2026-08-18T14:38:41.597983+00:00","pending","A combinar","11997787992","{}",""
+"a0764802-cc84-434d-8323-dc89a5ccc78e","Teste da Igreja","tst-igrj","","amber","#10b981","2026-08-18T14:39:48.340157+00:00","pending","A combinar","11997787992","{}",""
+"ea22cd8d-cf74-4c09-839f-3b8e5dd3ff17","Igreja do teste sagrado","sacred-tst","","amber","#10b981","2026-08-18T14:47:59.285906+00:00","pending","A combinar","11997787992","{}",""
+"44571509-c1f9-45e4-8a04-fede7e42a935","asd","asdasd","","blue","#10b981","2026-08-24T14:17:22.434203+00:00","pending","A combinar","99999999999","{}",""
+"ae125cfd-96ef-4324-b1f0-f96a4f34eecf","Igreja de Deus no Brasil","idb-louvor","","#0f172a","purple","2026-08-11T20:43:37.698179+00:00","active","","","{""ver_vs"":false,""ver_cifra"":false,""ver_letra"":true,""ver_midia"":false,""ver_cantor"":false,""ver_escala"":false,""ver_youtube"":true,""ver_repertorio"":false,""ver_musicas_novas"":false,""enviar_solic_musica"":false,""enviar_sugestao_culto"":false,""gerar_script_holyrics"":false,""ver_aba_midias_upadas"":false}","2026-08"

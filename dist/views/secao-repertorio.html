@@ -1,0 +1,20 @@
+<div id="secao-repertorio" class="hidden space-y-4">
+    <div class="mb-6 flex flex-col sm:flex-row gap-2">
+        <input type="text" id="searchInput" placeholder="Pesquisar música ou artista no repertório..."
+            onkeyup="filtrarMusicas()"
+            class="w-full sm:flex-1 px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-brand-500">
+        <select id="repertorio-filter" onchange="filtrarMusicas()"
+            class="bg-slate-800 border border-slate-700 px-3 py-3 rounded-xl text-sm text-slate-300 focus:outline-none focus:border-brand-500">
+            <option value="todas">Todas as Músicas</option>
+            <option value="com_vs">🎵 Com Áudio / VS</option>
+            <option value="sem_vs">⚠️ Sem Áudio / VS</option>
+            <option value="com_yt">📺 Com YouTube</option>
+            <option value="sem_yt">⚠️ Sem YouTube</option>
+            <option value="com_letra">📜 Com Letra</option>
+            <option value="sem_letra">⚠️ Sem Letra</option>
+        </select>
+    </div>
+    <div id="musicList" class="space-y-4">
+        <div class="text-center text-slate-500 py-10">Carregando repertório...</div>
+    </div>
+</div>
