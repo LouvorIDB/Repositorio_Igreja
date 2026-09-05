@@ -6,21 +6,22 @@
 (function () {
     'use strict';
 
-    // Estado interno inicial
+    // Estado interno inicial com pré-hidratação de cache para inicialização instantânea sem piscadas
     const _state = {
         dadosGlobais: {
             cultos: [],
             repertorio: [],
             novas: [],
             voluntarios: [],
-            ministries: []
+            ministries: [],
+            church: (typeof window !== 'undefined' && window.__CACHED_CHURCH__) ? window.__CACHED_CHURCH__ : null
         },
         musicasCultoAtual: [],
         cantoresCultoAtual: [],
         escalaInstrumentos: { violao: '', bateria: '', teclado: '' },
         cultoEditandoIndex: null,
         isAdmin: false,
-        usuarioLogado: null
+        usuarioLogado: (typeof window !== 'undefined' && window.__CACHED_USER__) ? window.__CACHED_USER__ : null
     };
 
     // Subscritos/Listeners para mudanças de estado

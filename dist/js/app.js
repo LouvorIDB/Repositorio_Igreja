@@ -1,7 +1,32 @@
 // ===================== INICIALIZAÇÃO =====================
 
 window.addEventListener('DOMContentLoaded', async () => {
-    // 0. Limpeza preventiva de Service Workers antigos e cache persistente do navegador
+    // 0. Fallback de segurança para a tela de carregamento (não travar em caso de erro de rede ou lentidão)
+    const splashTimeout = setTimeout(() => {
+        if (typeof finalizarTelaCarregamento === 'function') {
+            finalizarTelaCarregamento();
+        }
+    }, 3500);
+
+    // Passo 2: Pré-hidratação visual imediata com dados em cache para evitar qualquer piscada de tela
+    if (window.__CACHED_CHURCH__ && !dadosGlobais.church) {
+        dadosGlobais.church = window.__CACHED_CHURCH__;
+    }
+    if (window.__CACHED_USER__ && !usuarioLogado) {
+        usuarioLogado = window.__CACHED_USER__;
+        const sessionBar = document.getElementById('user-session-bar');
+        const nameEl = document.getElementById('user-session-name');
+        const roleEl = document.getElementById('user-session-role');
+        if (sessionBar) sessionBar.classList.remove('hidden');
+        if (nameEl) nameEl.textContent = usuarioLogado.name || usuarioLogado.email || 'Usuário';
+        if (roleEl) {
+            let rRole = (usuarioLogado.system_role || usuarioLogado.role || 'voluntário').toLowerCase();
+            if (rRole === 'volunteer') rRole = 'voluntário';
+            roleEl.textContent = rRole.toUpperCase();
+        }
+    }
+
+    // 0.1 Limpeza preventiva de Service Workers antigos e cache persistente do navegador
     if ('serviceWorker' in navigator) {
         try {
             const regs = await navigator.serviceWorker.getRegistrations();
@@ -39,6 +64,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     await verificarSessaoAtiva();
     // 2. Depois carrega os dados com base na igreja identificada
     await carregarDados();
+
+    // 3. Libera a tela de carregamento suavemente após renderização completa
+    clearTimeout(splashTimeout);
+    if (typeof finalizarTelaCarregamento === 'function') {
+        finalizarTelaCarregamento();
+    }
 
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(err => {
@@ -189,6 +220,18 @@ async function sincronizarSolicitacoesOffline() {
     }
 }
 
+// ===================== CONTROLE DA TELA DE CARREGAMENTO (SPLASH SCREEN) =====================
+function finalizarTelaCarregamento() {
+    const splash = document.getElementById('app-splash-screen');
+    if (!splash || splash.dataset.finalizado === 'true') return;
+    splash.dataset.finalizado = 'true';
+    splash.classList.add('opacity-0', 'pointer-events-none');
+    setTimeout(() => {
+        splash.style.display = 'none';
+    }, 550);
+}
+window.finalizarTelaCarregamento = finalizarTelaCarregamento;
+
 async function carregarDados() {
     try {
         if (!supabaseClient) {
@@ -197,7 +240,12 @@ async function carregarDados() {
 
         // 1. Identificar a Igreja Ativa para Multi-Tenant RLS
         let currentChurchId = null;
-        dadosGlobais.church = null;
+        if (!dadosGlobais.church && window.__CACHED_CHURCH__) {
+            dadosGlobais.church = window.__CACHED_CHURCH__;
+        }
+        if (dadosGlobais.church && dadosGlobais.church.id) {
+            currentChurchId = dadosGlobais.church.id;
+        }
 
         // Se o usuário está logado, a igreja dele tem prioridade
         if (usuarioLogado && usuarioLogado.church_id) {
@@ -205,6 +253,9 @@ async function carregarDados() {
             const { data: cData } = await supabaseClient.from('churches').select('*').eq('id', currentChurchId).maybeSingle();
             if (cData) {
                 dadosGlobais.church = cData;
+                try {
+                    localStorage.setItem('cached_church_data', JSON.stringify(cData));
+                } catch (e) {}
             }
         }
 
@@ -217,19 +268,26 @@ async function carregarDados() {
                 if (cData) {
                     dadosGlobais.church = cData;
                     currentChurchId = cData.id;
+                    try {
+                        localStorage.setItem('cached_church_data', JSON.stringify(cData));
+                    } catch (e) {}
                 }
             }
         }
 
         // Se NÃO há igreja definida (usuário deslogado sem slug na URL)
         if (!currentChurchId) {
+            dadosGlobais.church = null;
+            try { localStorage.removeItem('cached_church_data'); } catch (e) {}
             exibirLandingBoasVindas();
+            finalizarTelaCarregamento();
             return;
         }
 
         // Se a igreja está pendente de aprovação
         if (dadosGlobais.church && dadosGlobais.church.status === 'pending') {
             exibirLandingPendente(dadosGlobais.church);
+            finalizarTelaCarregamento();
             return;
         }
 
@@ -278,10 +336,12 @@ async function carregarDados() {
         const { data: songsData, error: songsErr } = await songsQuery;
         if (songsErr) throw songsErr;
 
-        // Buscar integrantes/cantores ('profiles') e suas funções vinculadas
+        // Buscar integrantes/cantores ('profiles') da igreja e suas funções vinculadas
         let profilesData = [];
         try {
-            const { data: pData } = await supabaseClient.from('profiles').select('*');
+            let pQuery = supabaseClient.from('profiles').select('*');
+            if (currentChurchId) pQuery = pQuery.eq('church_id', currentChurchId);
+            const { data: pData } = await pQuery;
             const { data: umrData } = await supabaseClient.from('user_ministry_roles').select('*, ministry_roles(*)');
             let mlData = [];
             try {
@@ -331,10 +391,14 @@ async function carregarDados() {
             console.warn('Tabela profiles ou user_ministry_roles não consultada:', e);
         }
 
-        const { data: ministriesData, error: minErr } = await supabaseClient
+        let minQuery = supabaseClient
             .from('ministries')
             .select('*, ministry_roles(*)')
             .order('name');
+        if (currentChurchId) {
+            minQuery = minQuery.eq('church_id', currentChurchId);
+        }
+        const { data: ministriesData, error: minErr } = await minQuery;
 
         if (minErr) {
             console.warn('Aviso ao carregar ministérios:', minErr);
@@ -358,12 +422,25 @@ async function carregarDados() {
         const cultosFormatados = [];
         (servicesData || []).forEach(service => {
             let tituloHeader = service.title || `CULTO DE ${(service.type || 'DOMINGO').toUpperCase()} - ${service.date || ''}`;
-            if (service.status === 'arquivado' || (service.title && service.title.toUpperCase().includes('OCULTO'))) {
-                tituloHeader = (service.title && service.title.includes('OCULTO')) ? service.title : `${tituloHeader} - OCULTO`;
-            } else if (service.is_hidden && !tituloHeader.toUpperCase().includes('OCULTO')) {
+            let isOculto = service.status === 'arquivado' || service.is_hidden || (service.title && service.title.toUpperCase().includes('OCULTO'));
+            let isEmMontagem = service.is_draft || service.status === 'aberto' || (service.title && service.title.toUpperCase().includes('EM MONTAGEM'));
+
+            if (service.notes) {
+                try {
+                    const pn = JSON.parse(service.notes);
+                    if (pn && typeof pn === 'object') {
+                        if (pn.em_montagem !== undefined) isEmMontagem = !!pn.em_montagem;
+                        else if (pn.is_draft !== undefined) isEmMontagem = !!pn.is_draft;
+                        if (pn.oculto !== undefined) isOculto = !!pn.oculto;
+                        else if (pn.is_hidden !== undefined) isOculto = !!pn.is_hidden;
+                    }
+                } catch(e){}
+            }
+
+            if (isOculto && !tituloHeader.toUpperCase().includes('OCULTO')) {
                 tituloHeader += " - OCULTO";
             }
-            if (service.is_draft && !tituloHeader.toUpperCase().includes('EM MONTAGEM')) {
+            if (isEmMontagem && !tituloHeader.toUpperCase().includes('EM MONTAGEM')) {
                 tituloHeader += " - EM MONTAGEM";
             }
 
@@ -376,7 +453,10 @@ async function carregarDados() {
                 service.service_scales.forEach(scaleItem => {
                     const profileName = scaleItem.profiles ? scaleItem.profiles.name : (scaleItem.profile_name || '');
                     const roleName = scaleItem.ministry_roles ? scaleItem.ministry_roles.name : (scaleItem.role_name || '');
-                    if (roleName.toLowerCase() === 'cantor' || roleName.toLowerCase() === 'vocal') {
+                    const rScope = scaleItem.ministry_roles ? scaleItem.ministry_roles.scale_scope : null;
+                    const rLow = roleName.toLowerCase();
+                    const isSongScope = rScope === 'song' || (!rScope && (rLow.includes('cantor') || rLow.includes('vocal') || (!roleName && profileName)));
+                    if (isSongScope) {
                         if (profileName && !cantoresCultoList.includes(profileName)) {
                             cantoresCultoList.push(profileName);
                         }
@@ -384,17 +464,42 @@ async function carregarDados() {
                         escala[roleName] = profileName;
                     }
                 });
-                if (cantoresCultoList.length > 0) {
-                    cantoresCultoStr = cantoresCultoList.join(', ');
-                }
-            } else if (service.notes) {
-                // Fallback para cultos que ainda usavam o campo notes em JSON
+            }
+
+            // Fallback 1: Buscar cantores e escalas em service.notes (JSON)
+            if (service.notes) {
                 try {
                     const parsedNotes = JSON.parse(service.notes);
-                    if (parsedNotes.escala) escala = parsedNotes.escala;
-                    if (parsedNotes.cantores && Array.isArray(parsedNotes.cantores)) cantoresCultoStr = parsedNotes.cantores.join(', ');
+                    if (cantoresCultoList.length === 0 && parsedNotes.cantores && Array.isArray(parsedNotes.cantores)) {
+                        cantoresCultoList = [...parsedNotes.cantores];
+                    }
+                    if (parsedNotes.escala && typeof parsedNotes.escala === 'object') {
+                        Object.keys(parsedNotes.escala).forEach(k => {
+                            if (!escala[k] && parsedNotes.escala[k]) escala[k] = parsedNotes.escala[k];
+                        });
+                    }
                 } catch(e){}
             }
+
+            // Fallback 2: Se veio como string singers_list ou singers direto do service
+            if (cantoresCultoList.length === 0 && cantoresCultoStr) {
+                cantoresCultoList = cantoresCultoStr.split(',').map(s => s.trim()).filter(Boolean);
+            }
+
+            // Fallback 3: Se ainda não tiver cantores, agrega os cantores vinculados às músicas deste culto
+            if (cantoresCultoList.length === 0 && service.service_songs && service.service_songs.length > 0) {
+                service.service_songs.forEach(ss => {
+                    const sSingers = (ss.singers_list || ss.singers || '').split(',').map(s => s.trim()).filter(Boolean);
+                    sSingers.forEach(sName => {
+                        if (!cantoresCultoList.includes(sName)) cantoresCultoList.push(sName);
+                    });
+                });
+            }
+
+            if (cantoresCultoList.length > 0) {
+                cantoresCultoStr = cantoresCultoList.join(', ');
+            }
+
             const colF = JSON.stringify(escala);
             const colG = cantoresCultoStr;
             const mediaUrls = JSON.stringify(service.service_media && service.service_media.length > 0 ? service.service_media : (service.media_urls || []));
@@ -501,6 +606,7 @@ async function carregarDados() {
         dadosGlobais.banco = dataObj.banco;
         dadosGlobais.cantores = dataObj.cantores;
         dadosGlobais.voluntarios = profilesData || [];
+        dadosGlobais.profiles = profilesData || [];
         dadosGlobais.novas = dataObj.novas;
         dadosGlobais.servicesDataList = servicesData || [];
 
@@ -517,8 +623,14 @@ async function carregarDados() {
                 renderizarHistoricoCultos();
             }
         }
+        if (typeof finalizarTelaCarregamento === 'function') {
+            finalizarTelaCarregamento();
+        }
     } catch (error) {
         console.error("Erro ao carregar dados do Supabase:", error);
+        if (typeof finalizarTelaCarregamento === 'function') {
+            finalizarTelaCarregamento();
+        }
         const carregouOffline = await carregarDadosOffline();
         if (!carregouOffline) {
             const secaoCultos = document.getElementById('secao-cultos');
@@ -822,16 +934,39 @@ function renderizarCultos(rows) {
                 });
             });
 
+            // Identifica o ministério de Louvor para integrar cantores/vocalistas na mesma linha
+            const louvorMin = (dadosGlobais.ministries || []).find(m => {
+                const n = (m.name || '').toLowerCase();
+                return n.includes('louvor') || n.includes('musica') || n.includes('adora');
+            }) || { name: 'Louvor', color: 'brand', icon: '⛪' };
+
             const groupedEscala = {};
             const emojimap = { 'violão': '🎸', 'bateria': '🥁', 'teclado': '🎹', 'baixo': '🎸', 'projeção': '💻', 'fotografia': '📷', 'transmissão': '🎥' };
             
+            // Unifica todos os cantores e vocalistas sem duplicações
+            const vocaisList = [];
+            if (cantoresCulto) {
+                cantoresCulto.split(',').map(s => s.trim()).filter(Boolean).forEach(c => {
+                    if (!vocaisList.includes(c)) vocaisList.push(c);
+                });
+            }
+
             Object.keys(instrObj).forEach(key => {
                 if (instrObj[key]) {
                     const keyLower = typeof removerAcentos === 'function' ? removerAcentos(key.toLowerCase()) : key.toLowerCase();
+                    
+                    // Se for vocalista ou cantor, funde na lista unificada de vocais do culto
+                    if (keyLower.includes('vocal') || keyLower.includes('cantor')) {
+                        const nomes = instrObj[key].toString().split(',').map(s => s.trim()).filter(Boolean);
+                        nomes.forEach(n => {
+                            if (!vocaisList.includes(n)) vocaisList.push(n);
+                        });
+                        return; // Evita exibir campo duplicado
+                    }
+
                     const emoji = emojimap[keyLower] || '🎵';
                     const nomeFormato = key.charAt(0).toUpperCase() + key.slice(1);
-                    
-                    const minInfo = roleToMinistry[keyLower] || { name: 'Outros', color: 'emerald', icon: '🎵' };
+                    const minInfo = roleToMinistry[keyLower] || louvorMin;
                     
                     if (!groupedEscala[minInfo.name]) {
                         groupedEscala[minInfo.name] = { color: minInfo.color, icon: minInfo.icon, parts: [] };
@@ -840,13 +975,21 @@ function renderizarCultos(rows) {
                 }
             });
 
+            // Insere os cantores/vocalistas diretamente na linha do ministério de Louvor
+            if (vocaisList.length > 0) {
+                const minName = louvorMin.name || 'Louvor';
+                if (!groupedEscala[minName]) {
+                    groupedEscala[minName] = { color: louvorMin.color || 'brand', icon: louvorMin.icon || '⛪', parts: [] };
+                }
+                const labelVocal = vocaisList.length > 1 ? 'Vocalistas' : 'Vocalista';
+                groupedEscala[minName].parts.push(`🎤 ${labelVocal}: <span class="text-${louvorMin.color || 'brand'}-300 font-medium">${vocaisList.join(', ')}</span>`);
+            }
+
             let linhaInstrumentos = '';
-            let linhaCantores = '';
             let linhaMidias = '';
 
             if (usuarioLogado) {
-                const canVerEscala = hasPermission('ver_escala');
-                const canVerCantor = hasPermission('ver_cantor');
+                const canVerEscala = hasPermission('ver_escala') || hasPermission('ver_cantor');
                 const canVerMidia = hasPermission('ver_midia');
 
                 if (canVerEscala && Object.keys(groupedEscala).length > 0) {
@@ -856,12 +999,6 @@ function renderizarCultos(rows) {
                             ${info.parts.join('<span class="text-slate-600">|</span>')}
                         </div>`;
                     }).join('');
-                }
-                
-                if (canVerCantor) {
-                    linhaCantores = cantoresCulto
-                        ? `<div class="px-4 py-1.5 text-xs bg-slate-900/40 border-b border-slate-700/30"><span class="text-slate-400">🎤 Cantores: </span><span class="text-brand-300 font-medium">${cantoresCulto}</span></div>`
-                        : '';
                 }
 
                 if (canVerMidia) {
@@ -878,12 +1015,14 @@ function renderizarCultos(rows) {
             htmlCultos += `
                 <div class="bg-slate-800/80 border border-slate-700 rounded-2xl overflow-hidden shadow-md mb-3">
                     <button onclick="toggleCultoBloco('${idPlaylist}', '${idSeta}')" class="w-full flex items-center justify-between ${corHeader} px-4 py-2.5 transition text-left">
-                        <h2 class="font-bold ${corTexto} text-sm uppercase tracking-wider">${blocoAtual.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim()}</h2>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h2 class="font-bold ${corTexto} text-sm uppercase tracking-wider">${blocoAtual.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim()}</h2>
+                            ${blocoEmMontagem ? '<span class="text-[10px] bg-red-950 text-red-300 border border-red-700/70 px-2 py-0.5 rounded-full font-bold shadow-sm">🚧 EM MONTAGEM</span>' : ''}
+                        </div>
                         <span id="${idSeta}" class="${corTexto} text-xs">▼</span>
                     </button>
                     ${linhaMidias}
                     ${linhaInstrumentos}
-                    ${linhaCantores}
                     <div id="${idPlaylist}" class="hidden divide-y divide-slate-700/50">
             `;
 
@@ -1293,6 +1432,9 @@ async function verificarSessaoAtiva() {
             } catch(e) {}
 
             usuarioLogado = profile || { id: userId, name: session.user.email, system_role: 'usuario', email: session.user.email };
+            try {
+                localStorage.setItem('cached_user_profile', JSON.stringify(usuarioLogado));
+            } catch (e) {}
 
             const btnLogin = document.getElementById('btn-login-header');
             const btnSignup = document.getElementById('btn-signup-header');
@@ -1345,8 +1487,22 @@ async function verificarSessaoAtiva() {
             }
             if (roleEl) roleEl.textContent = roleText;
             atualizarTemaGlobal();
+
+            // Disparar Assistente de Onboarding se a igreja estiver aprovada mas com onboarding pendente
+            setTimeout(() => {
+                if (usuarioLogado && (usuarioLogado.system_role === 'admin' || usuarioLogado.role === 'admin' || window.isSuperAdmin)) {
+                    if (dadosGlobais.church && dadosGlobais.church.status === 'active' && dadosGlobais.church.onboarding_completed === false) {
+                        if (typeof abrirModalOnboardingWizard === 'function') {
+                            abrirModalOnboardingWizard();
+                        }
+                    }
+                }
+            }, 800);
         } else {
             usuarioLogado = null;
+            try {
+                localStorage.removeItem('cached_user_profile');
+            } catch (e) {}
             const btnLogin = document.getElementById('btn-login-header');
             const btnSignup = document.getElementById('btn-signup-header');
             const btnOnboarding = document.getElementById('btn-onboarding-header');
@@ -1386,13 +1542,11 @@ async function realizarLoginUsuario(e) {
         if (error) throw error;
 
         await verificarSessaoAtiva();
+        await carregarDados();
         fecharModalLoginUsuario();
-        if (typeof mostrarToast === 'function') {
-            mostrarToast('Login realizado com sucesso!', 'sucesso');
-        }
-        setTimeout(() => window.location.reload(), 500);
+        mostrarToast('Login realizado com sucesso!', 'sucesso');
     } catch (err) {
-        console.error('Erro ao fazer login:', err);
+        console.error("Erro no login:", err);
         if (erroMsg) {
             erroMsg.textContent = err.message || 'Erro ao realizar login. Verifique suas credenciais.';
             erroMsg.classList.remove('hidden');
@@ -1404,6 +1558,11 @@ async function realizarLoginUsuario(e) {
 
 async function realizarLogoutUsuario() {
     try {
+        try {
+            localStorage.removeItem('cached_user_profile');
+            localStorage.removeItem('cached_church_data');
+            localStorage.removeItem('cached_theme_color');
+        } catch (e) {}
         if (supabaseClient) {
             await supabaseClient.auth.signOut();
         }
@@ -1916,6 +2075,18 @@ function aplicarVisibilidadePermissoes() {
         else btn.classList.add('hidden');
     });
 
+    // 3.1. Controle de Upload de Mídias por Ministério
+    let podeFazerUploadMidia = isSystemAdmin;
+    if (!podeFazerUploadMidia && userMinistryIds.length > 0 && dadosGlobais.ministries) {
+        podeFazerUploadMidia = dadosGlobais.ministries.some(m => userMinistryIds.includes(m.id) && m.can_upload_media === true);
+    }
+    const btnUploadMidiaWrapper = document.getElementById('btn-upload-midia-wrapper');
+    const dropzoneMidia = document.getElementById('dropzone-midia');
+    const containerMidiaUploadAcao = document.getElementById('container-midia-upload-acao');
+    if (btnUploadMidiaWrapper) btnUploadMidiaWrapper.classList.toggle('hidden', !podeFazerUploadMidia);
+    if (dropzoneMidia) dropzoneMidia.classList.toggle('hidden', !podeFazerUploadMidia);
+    if (containerMidiaUploadAcao) containerMidiaUploadAcao.classList.toggle('hidden', !podeFazerUploadMidia);
+
     // 4. Modais e Edições restritos (Admin)
     if (typeof renderizarAdminListaCultos === 'function') {
         renderizarAdminListaCultos();
@@ -1961,20 +2132,17 @@ function atualizarTemaGlobal() {
     
     console.log('[TEMA] atualizarTemaGlobal chamado. usuarioLogado:', !!usuarioLogado, 'church:', dadosGlobais.church);
 
-    if (usuarioLogado) {
+    // 1. A paleta configurada na congregação define a atmosfera principal do site
+    if (dadosGlobais.church && dadosGlobais.church.theme_color_secondary) {
+        corTema = dadosGlobais.church.theme_color_secondary;
+    } else if (usuarioLogado) {
         const userMin = typeof getMinistryForUser === 'function' ? getMinistryForUser(usuarioLogado) : null;
-        console.log('[TEMA] userMin encontrado:', userMin);
         if (userMin && userMin.color) {
             corTema = userMin.color;
         }
-    } 
-    
-    if (corTema === 'emerald' && dadosGlobais.church && dadosGlobais.church.theme_color_secondary) {
-        console.log('[TEMA] Usando cor da igreja:', dadosGlobais.church.theme_color_secondary);
-        corTema = dadosGlobais.church.theme_color_secondary;
     }
 
-    console.log('[TEMA] Cor final aplicada:', corTema);
+    console.log('[TEMA] Paleta final aplicada:', corTema);
     if (typeof aplicarTemaColor === 'function') {
         aplicarTemaColor(corTema);
     }
@@ -2058,7 +2226,25 @@ async function realizarOnboardingIgreja(event) {
     try {
         if (!supabaseClient) throw new Error("Cliente Supabase não está inicializado.");
 
-        // 1. Criar registro na tabela 'churches' como status 'pending'
+        const emptyPerms = {
+            ver_escala: false,
+            ver_letra: false,
+            ver_cifra: false,
+            ver_vs: false,
+            ver_youtube: false,
+            ver_cantor: false,
+            ver_midia: false,
+            enviar_solic_musica: false,
+            enviar_sugestao_culto: false,
+            ver_repertorio: false,
+            ver_musicas_novas: false,
+            ver_aba_midias_upadas: false,
+            ver_agenda: false,
+            gerar_script_holyrics: false,
+            ver_almoxarifado: false
+        };
+
+        // 1. Criar registro na tabela 'churches' como status 'pending' e permissões desativadas
         const { data: newChurch, error: churchErr } = await supabaseClient
             .from('churches')
             .insert({
@@ -2067,7 +2253,9 @@ async function realizarOnboardingIgreja(event) {
                 theme_color_primary: corTema,
                 status: 'pending',
                 agreed_payment: 'A combinar',
-                leader_whatsapp: whatsappAdmin
+                leader_whatsapp: whatsappAdmin,
+                public_permissions: emptyPerms,
+                onboarding_completed: false
             })
             .select('id')
             .single();
@@ -2075,15 +2263,30 @@ async function realizarOnboardingIgreja(event) {
         if (churchErr) throw churchErr;
         const churchId = newChurch.id;
 
-        // 2. Provisionar o Ministério padrão para a nova igreja
-        await supabaseClient
+        // 2. Provisionar o Ministério padrão para a nova igreja (com permissões desativadas por padrão)
+        const { data: newMin } = await supabaseClient
             .from('ministries')
             .insert({
                 church_id: churchId,
                 name: 'Ministério de Louvor & Adoração',
                 description: 'Equipe principal de louvor da igreja',
-                icon: '🎵'
-            });
+                icon: '🎵',
+                permissions: emptyPerms,
+                can_upload_media: false
+            })
+            .select('id')
+            .single();
+
+        // 2.1 Provisionar funções padrão com escopo explícito (Música vs Culto)
+        if (newMin && newMin.id) {
+            await supabaseClient.from('ministry_roles').insert([
+                { ministry_id: newMin.id, name: 'Ministro de Louvor', scale_scope: 'song' },
+                { ministry_id: newMin.id, name: 'Cantor(a) / Vocal', scale_scope: 'song' },
+                { ministry_id: newMin.id, name: 'Violão', scale_scope: 'service' },
+                { ministry_id: newMin.id, name: 'Bateria', scale_scope: 'service' },
+                { ministry_id: newMin.id, name: 'Teclado', scale_scope: 'service' }
+            ]);
+        }
 
         // 3. Cadastrar usuário no Supabase Auth
         const { data: authData, error: authErr } = await supabaseClient.auth.signUp({
@@ -2133,6 +2336,10 @@ async function realizarOnboardingIgreja(event) {
 
         fecharModalCadastroIgreja();
         localStorage.setItem('liturge_last_church_creation', Date.now().toString());
+        try {
+            localStorage.removeItem(`louvoridb_events_${churchId}`);
+            if (typeof eventosMemoria !== 'undefined') eventosMemoria = [];
+        } catch(e) {}
         mostrarToast(`⛪ A igreja "${nomeIgreja}" foi cadastrada e está aguardando ativação!`, 'sucesso');
         
         // Recarregar app com o novo ambiente da igreja (irá detectar status 'pending' e travar na tela pendente)
@@ -2169,11 +2376,13 @@ function exibirLandingBoasVindas() {
     const mainContent = document.getElementById('conteudo-principal-site');
     const footerBar = document.querySelector('div.bg-slate-800.border-t.border-slate-700');
     const authHeader = document.getElementById('auth-header-container');
+    const btnMenu = document.getElementById('btn-menu-mobile');
     
     if (landing) landing.classList.remove('hidden');
     if (mainContent) mainContent.classList.add('hidden');
     if (footerBar) footerBar.classList.add('hidden');
     if (authHeader) authHeader.classList.add('hidden');
+    if (btnMenu) btnMenu.classList.add('hidden');
 }
 
 function ocultarLandingBoasVindas() {
@@ -2181,11 +2390,13 @@ function ocultarLandingBoasVindas() {
     const mainContent = document.getElementById('conteudo-principal-site');
     const footerBar = document.querySelector('div.bg-slate-800.border-t.border-slate-700');
     const authHeader = document.getElementById('auth-header-container');
+    const btnMenu = document.getElementById('btn-menu-mobile');
     
     if (landing) landing.classList.add('hidden');
     if (mainContent) mainContent.classList.remove('hidden');
     if (footerBar) footerBar.classList.remove('hidden');
     if (authHeader) authHeader.classList.remove('hidden');
+    if (btnMenu) btnMenu.classList.remove('hidden');
 }
 
 async function irParaIgrejaBuscada() {
@@ -2238,6 +2449,7 @@ function exibirLandingPendente(church) {
     const mainContent = document.getElementById('conteudo-principal-site');
     const footerBar = document.querySelector('div.bg-slate-800.border-t.border-slate-700');
     const authHeader = document.getElementById('auth-header-container');
+    const btnMenu = document.getElementById('btn-menu-mobile');
     const landingBoasVindas = document.getElementById('landing-boas-vindas');
     const churchNameEl = document.getElementById('pending-church-name');
     const btnWhatsapp = document.getElementById('btn-pending-whatsapp');
@@ -2247,6 +2459,7 @@ function exibirLandingPendente(church) {
     if (mainContent) mainContent.classList.add('hidden');
     if (footerBar) footerBar.classList.add('hidden');
     if (authHeader) authHeader.classList.add('hidden');
+    if (btnMenu) btnMenu.classList.add('hidden');
 
     if (churchNameEl) {
         churchNameEl.textContent = church.name;
@@ -2277,6 +2490,7 @@ async function migrarNotasParaServiceScalesSeNecessario(servicesData) {
     let cantorRoleId = null;
     for (const m of ministries) {
         const found = (m.ministry_roles || []).find(r => {
+            if (r.scale_scope === 'song') return true;
             const nameNorm = typeof removerAcentos === 'function' ? removerAcentos((r.name || '').toLowerCase()) : (r.name || '').toLowerCase();
             return nameNorm.includes('cantor') || nameNorm.includes('vocal');
         });
@@ -2451,7 +2665,10 @@ function renderizarHistoricoCultos() {
                 service.service_scales.forEach(scaleItem => {
                     const profileName = scaleItem.profiles ? scaleItem.profiles.name : (scaleItem.profile_name || '');
                     const roleName = scaleItem.ministry_roles ? scaleItem.ministry_roles.name : (scaleItem.role_name || '');
-                    if (roleName.toLowerCase() === 'cantor' || roleName.toLowerCase() === 'vocal') {
+                    const rScope = scaleItem.ministry_roles ? scaleItem.ministry_roles.scale_scope : null;
+                    const rLow = roleName.toLowerCase();
+                    const isSongScope = rScope === 'song' || (!rScope && (rLow.includes('cantor') || rLow.includes('vocal')));
+                    if (isSongScope) {
                         if (profileName && !cantoresCultoList.includes(profileName)) {
                             cantoresCultoList.push(profileName);
                         }
@@ -2470,14 +2687,36 @@ function renderizarHistoricoCultos() {
                 } catch(e){}
             }
 
+            const louvorMin = (dadosGlobais.ministries || []).find(m => {
+                const n = (m.name || '').toLowerCase();
+                return n.includes('louvor') || n.includes('musica') || n.includes('adora');
+            }) || { name: 'Louvor', color: 'brand', icon: '⛪' };
+
             const groupedEscala = {};
             const emojimap = { 'violão': '🎸', 'bateria': '🥁', 'teclado': '🎹', 'baixo': '🎸', 'projeção': '💻', 'fotografia': '📷', 'transmissão': '🎥' };
+            
+            const vocaisList = [];
+            if (cantoresCultoStr) {
+                cantoresCultoStr.split(',').map(s => s.trim()).filter(Boolean).forEach(c => {
+                    if (!vocaisList.includes(c)) vocaisList.push(c);
+                });
+            }
+
             Object.keys(instrObj).forEach(key => {
                 if (instrObj[key]) {
                     const keyLower = typeof removerAcentos === 'function' ? removerAcentos(key.toLowerCase()) : key.toLowerCase();
+                    
+                    if (keyLower.includes('vocal') || keyLower.includes('cantor')) {
+                        const nomes = instrObj[key].toString().split(',').map(s => s.trim()).filter(Boolean);
+                        nomes.forEach(n => {
+                            if (!vocaisList.includes(n)) vocaisList.push(n);
+                        });
+                        return;
+                    }
+
                     const emoji = emojimap[keyLower] || '🎵';
                     const nomeFormato = key.charAt(0).toUpperCase() + key.slice(1);
-                    const minInfo = roleToMinistry[keyLower] || { name: 'Outros', color: 'emerald', icon: '🎵' };
+                    const minInfo = roleToMinistry[keyLower] || louvorMin;
                     if (!groupedEscala[minInfo.name]) {
                         groupedEscala[minInfo.name] = { color: minInfo.color, icon: minInfo.icon, parts: [] };
                     }
@@ -2485,8 +2724,17 @@ function renderizarHistoricoCultos() {
                 }
             });
 
+            if (vocaisList.length > 0) {
+                const minName = louvorMin.name || 'Louvor';
+                if (!groupedEscala[minName]) {
+                    groupedEscala[minName] = { color: louvorMin.color || 'brand', icon: louvorMin.icon || '⛪', parts: [] };
+                }
+                const labelVocal = vocaisList.length > 1 ? 'Vocalistas' : 'Vocalista';
+                groupedEscala[minName].parts.push(`🎤 ${labelVocal}: <span class="text-${louvorMin.color || 'brand'}-300 font-medium">${vocaisList.join(', ')}</span>`);
+            }
+
             let linhaInstrumentos = '';
-            if (canVerEscala && Object.keys(groupedEscala).length > 0) {
+            if ((canVerEscala || canVerCantor) && Object.keys(groupedEscala).length > 0) {
                 linhaInstrumentos = Object.entries(groupedEscala).map(([minName, info]) => {
                     return `<div class="px-4 py-1.5 text-xs text-slate-300 bg-slate-900/40 border-b border-slate-700/30 flex flex-wrap items-center gap-3">
                         <span class="font-bold text-${info.color}-400 mr-2">${info.icon} ${minName.toUpperCase()}</span>
@@ -2494,10 +2742,6 @@ function renderizarHistoricoCultos() {
                     </div>`;
                 }).join('');
             }
-
-            const linhaCantores = (canVerCantor && cantoresCultoStr)
-                ? `<div class="px-4 py-1.5 text-xs bg-slate-900/40 border-b border-slate-700/30"><span class="text-slate-400">🎤 Cantores: </span><span class="text-brand-300 font-medium">${cantoresCultoStr}</span></div>`
-                : '';
 
             let midiasCulto = service.service_media || [];
             if (midiasCulto.length === 0 && service.media_urls) {
@@ -2562,17 +2806,44 @@ function renderizarHistoricoCultos() {
                 `;
             });
 
+            const totalMusicas = songList.length;
+
             servicosHtml += `
-                <div class="bg-slate-800 border border-slate-700/60 rounded-xl overflow-hidden shadow-sm mb-3">
-                    <div class="bg-slate-850 px-4 py-2.5 flex justify-between items-center border-b border-slate-700/50">
-                        <span class="font-bold text-slate-200 text-xs uppercase">${titulo}</span>
-                        <span class="text-[10px] text-slate-400 font-semibold bg-slate-900 px-2 py-0.5 rounded-full">${dataFormatada}</span>
+                <div class="border border-slate-700/70 rounded-xl overflow-hidden bg-slate-900/60 mb-2.5 transition hover:border-slate-600 shadow-sm">
+                    <div onclick="toggleHistoricoCultoCard('${service.id}')" 
+                        class="flex items-center justify-between p-3.5 cursor-pointer hover:bg-slate-800/60 transition select-none flex-wrap gap-2.5">
+                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                            <span id="seta-hist-${service.id}" class="text-slate-400 text-xs font-bold transition-transform shrink-0">▼</span>
+                            <div class="min-w-0 flex items-center gap-2 flex-wrap">
+                                <span class="font-bold text-slate-200 text-xs uppercase truncate">${titulo}</span>
+                                <span class="text-[10px] text-slate-400 font-semibold bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800">${dataFormatada}</span>
+                                <span class="text-[10px] text-brand-400 font-bold bg-brand-950/80 px-2 py-0.5 rounded-full border border-brand-800/80">🎵 ${totalMusicas} ${totalMusicas === 1 ? 'música' : 'músicas'}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            ${totalMusicas > 0 ? `
+                                <button type="button" onclick="event.stopPropagation(); abrirModalCopiarPlaylist('${service.id}')" 
+                                    class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm flex items-center gap-1.5 cursor-pointer">
+                                    <span>📋</span> Copiar Playlist
+                                </button>
+                            ` : ''}
+                        </div>
                     </div>
-                    ${linhaMidias}
-                    ${linhaInstrumentos}
-                    ${linhaCantores}
-                    <div class="divide-y divide-slate-700/30">
-                        ${musicasHtml || '<p class="text-center text-slate-500 py-3 text-[11px]">Nenhuma música na setlist.</p>'}
+                    
+                    <div id="content-hist-${service.id}" class="hidden border-t border-slate-800/80 p-3.5 bg-slate-950/40 space-y-3">
+                        ${linhaMidias}
+                        ${linhaInstrumentos}
+                        <div class="divide-y divide-slate-800/60 bg-slate-900/70 rounded-xl border border-slate-800/80 overflow-hidden">
+                            ${musicasHtml || '<p class="text-center text-slate-500 py-3 text-[11px]">Nenhuma música cadastrada neste culto.</p>'}
+                        </div>
+                        ${totalMusicas > 0 ? `
+                            <div class="flex justify-end pt-1">
+                                <button type="button" onclick="abrirModalCopiarPlaylist('${service.id}')" 
+                                    class="bg-slate-800 hover:bg-slate-700 text-brand-400 hover:text-brand-300 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 cursor-pointer">
+                                    <span>📋</span> Copiar esta Playlist para outro Culto
+                                </button>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -2594,6 +2865,326 @@ function renderizarHistoricoCultos() {
     container.innerHTML = html;
 }
 window.renderizarHistoricoCultos = renderizarHistoricoCultos;
+
+// ===================== CONTROLE DO HISTÓRICO & CÓPIA DE PLAYLIST =====================
+
+function toggleHistoricoCultoCard(serviceId) {
+    const content = document.getElementById(`content-hist-${serviceId}`);
+    const arrow = document.getElementById(`seta-hist-${serviceId}`);
+    if (!content) return;
+
+    const isHidden = content.classList.contains('hidden');
+    if (isHidden) {
+        content.classList.remove('hidden');
+        if (arrow) arrow.textContent = '▲';
+    } else {
+        content.classList.add('hidden');
+        if (arrow) arrow.textContent = '▼';
+    }
+}
+
+let todosHistoricoAbertos = false;
+function toggleTodosHistorico() {
+    todosHistoricoAbertos = !todosHistoricoAbertos;
+    
+    // Grupos de meses
+    document.querySelectorAll('[id^="accordion-grupo-"]').forEach(el => {
+        if (todosHistoricoAbertos) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+    });
+    document.querySelectorAll('[id^="seta-grupo-"]').forEach(el => {
+        el.textContent = todosHistoricoAbertos ? '▲' : '▼';
+    });
+
+    // Cultos individuais
+    document.querySelectorAll('[id^="content-hist-"]').forEach(el => {
+        if (todosHistoricoAbertos) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+    });
+    document.querySelectorAll('[id^="seta-hist-"]').forEach(el => {
+        el.textContent = todosHistoricoAbertos ? '▲' : '▼';
+    });
+
+    const label = document.getElementById('btn-toggle-todos-historico-label');
+    if (label) {
+        label.textContent = todosHistoricoAbertos ? '⌃ Recolher Todos' : '⌄ Expandir Todos';
+    }
+}
+
+let playlistOrigemCopiando = null;
+
+function abrirModalCopiarPlaylist(serviceId) {
+    const rawServices = dadosGlobais.services || [];
+    const servOrigem = rawServices.find(s => s.id === serviceId);
+    
+    if (!servOrigem) {
+        if (typeof mostrarToast === 'function') mostrarToast('Culto de origem não encontrado.', 'erro');
+        return;
+    }
+
+    const songList = (servOrigem.service_songs || []).sort((a, b) => (a.order || a.song_order || 0) - (b.order || b.song_order || 0));
+    
+    if (songList.length === 0) {
+        if (typeof mostrarToast === 'function') mostrarToast('Este culto não possui músicas para copiar.', 'aviso');
+        return;
+    }
+
+    const musicasParaCopiar = songList.map(sSong => {
+        const version = sSong.song_versions || {};
+        const song = version.songs || sSong.songs || {};
+        return {
+            nome: song.title || version.title || sSong.song_name || sSong.title || '',
+            tom: version.key || sSong.key || sSong.tom || '',
+            variacao: version.variation || sSong.variation || sSong.variacao || 'Original',
+            vs: version.drive_vs_url || version.drive_url || song.drive_vs_url || song.drive_url || sSong.drive_vs_url || sSong.drive_url || sSong.vs || '',
+            yt: version.youtube_url || sSong.youtube_url || sSong.yt || '',
+            cantores: sSong.singers_list || sSong.singers || '',
+            song_version_id: sSong.song_version_id || version.id || null,
+            lyrics: version.lyrics || song.lyrics || sSong.lyrics || '',
+            chords: version.chords || song.chords || sSong.chords || '',
+            artist: song.artist || version.artist || sSong.artist || ''
+        };
+    });
+
+    playlistOrigemCopiando = {
+        serviceId: servOrigem.id,
+        titulo: servOrigem.title || 'Culto Histórico',
+        date: servOrigem.date || '',
+        musicas: musicasParaCopiar
+    };
+    window.playlistCopiada = playlistOrigemCopiando;
+
+    // Copia texto legível para a área de transferência do dispositivo
+    try {
+        const textoClipboard = `🎵 Playlist - ${servOrigem.title || 'Culto'}\n` +
+            musicasParaCopiar.map((m, i) => `${i + 1}. ${m.nome}${m.tom ? ` (Tom: ${m.tom})` : ''}${m.cantores ? ` - ${m.cantores}` : ''}`).join('\n');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(textoClipboard);
+        }
+    } catch(e) {}
+
+    const labelOrigem = document.getElementById('copiar-playlist-origem-label');
+    if (labelOrigem) {
+        const dateStr = servOrigem.date ? servOrigem.date.split('T')[0].split('-').reverse().join('/') : '';
+        labelOrigem.textContent = `Origem: ${servOrigem.title || 'Culto'} (${dateStr})`;
+    }
+
+    const badgeTotal = document.getElementById('copiar-playlist-total-badge');
+    if (badgeTotal) {
+        badgeTotal.textContent = `${musicasParaCopiar.length} ${musicasParaCopiar.length === 1 ? 'música' : 'músicas'}`;
+    }
+
+    const previewContainer = document.getElementById('copiar-playlist-preview-lista');
+    if (previewContainer) {
+        previewContainer.innerHTML = musicasParaCopiar.map((m, i) => {
+            return `<span class="bg-slate-900 border border-slate-700/80 text-slate-200 text-xs px-2.5 py-1 rounded-lg font-medium">
+                ${i + 1}. <strong>${m.nome}</strong> ${m.tom ? `<span class="text-brand-300 font-mono text-[11px]">(${m.tom})</span>` : ''}
+            </span>`;
+        }).join('');
+    }
+
+    const selectDestino = document.getElementById('copiar-playlist-destino-select');
+    if (selectDestino) {
+        let htmlOpts = `<option value="">— Selecione o culto de destino —</option>`;
+        
+        const modalCulto = document.getElementById('modal-culto');
+        if (modalCulto && !modalCulto.classList.contains('hidden')) {
+            htmlOpts += `<optgroup label="Editor de Culto Aberto">
+                <option value="__CULTO_EM_EDICAO__">✏️ Culto atualmente aberto no Editor</option>
+            </optgroup>`;
+        }
+
+        htmlOpts += `<optgroup label="Criar Novo Culto">
+            <option value="__NOVO_CULTO__">✨ Criar um Novo Culto com estas músicas</option>
+        </optgroup>`;
+
+        const cultosDestino = (dadosGlobais.services || [])
+            .filter(s => s.id !== serviceId && s.status !== 'arquivado')
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        if (cultosDestino.length > 0) {
+            htmlOpts += `<optgroup label="Cultos Agendados / Em Andamento">`;
+            cultosDestino.forEach(s => {
+                const dateStr = s.date ? s.date.split('T')[0].split('-').reverse().join('/') : '';
+                const tituloLimpo = (s.title || 'Culto').replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim();
+                htmlOpts += `<option value="${s.id}">${dateStr} • ${tituloLimpo}</option>`;
+            });
+            htmlOpts += `</optgroup>`;
+        }
+
+        selectDestino.innerHTML = htmlOpts;
+    }
+
+    const modal = document.getElementById('modal-copiar-playlist');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+function fecharModalCopiarPlaylist() {
+    const modal = document.getElementById('modal-copiar-playlist');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+async function confirmarCopiarPlaylist() {
+    if (!playlistOrigemCopiando || !playlistOrigemCopiando.musicas || playlistOrigemCopiando.musicas.length === 0) {
+        if (typeof mostrarToast === 'function') mostrarToast('Nenhuma música selecionada para cópia.', 'aviso');
+        return;
+    }
+
+    const selectDestino = document.getElementById('copiar-playlist-destino-select');
+    const destinoId = selectDestino?.value;
+
+    if (!destinoId) {
+        if (typeof mostrarToast === 'function') mostrarToast('Por favor, selecione o culto de destino.', 'aviso');
+        return;
+    }
+
+    const modo = document.querySelector('input[name="copiar-playlist-modo"]:checked')?.value || 'adicionar';
+    const incluirCantores = document.getElementById('copiar-playlist-incluir-cantores')?.checked ?? true;
+    const musicas = playlistOrigemCopiando.musicas;
+
+    // Caso A: Criar Novo Culto
+    if (destinoId === '__NOVO_CULTO__') {
+        fecharModalCopiarPlaylist();
+        if (typeof mostrarFormCulto === 'function') {
+            mostrarFormCulto(null);
+            if (typeof musicasCultoAtual !== 'undefined') {
+                musicasCultoAtual = musicas.map(m => ({
+                    nome: m.nome,
+                    tom: m.tom,
+                    variacao: m.variacao,
+                    vs: m.vs,
+                    yt: m.yt,
+                    cantores: incluirCantores ? (Array.isArray(m.cantores) ? m.cantores : (m.cantores ? m.cantores.split(',').map(s=>s.trim()) : [])) : [],
+                    song_version_id: m.song_version_id,
+                    lyrics: m.lyrics,
+                    chords: m.chords,
+                    artist: m.artist
+                }));
+                if (typeof renderizarMusicasCulto === 'function') renderizarMusicasCulto();
+                if (typeof atualizarContadoresAccordions === 'function') atualizarContadoresAccordions();
+            }
+            if (typeof mostrarToast === 'function') mostrarToast(`✨ ${musicas.length} músicas carregadas no novo culto! Defina a data e salve.`, 'sucesso');
+        }
+        return;
+    }
+
+    // Caso B: Injetar no Culto em Edição aberto
+    if (destinoId === '__CULTO_EM_EDICAO__') {
+        fecharModalCopiarPlaylist();
+        if (typeof musicasCultoAtual !== 'undefined') {
+            const novasFormatadas = musicas.map(m => ({
+                nome: m.nome,
+                tom: m.tom,
+                variacao: m.variacao,
+                vs: m.vs,
+                yt: m.yt,
+                cantores: incluirCantores ? (Array.isArray(m.cantores) ? m.cantores : (m.cantores ? m.cantores.split(',').map(s=>s.trim()) : [])) : [],
+                song_version_id: m.song_version_id,
+                lyrics: m.lyrics,
+                chords: m.chords,
+                artist: m.artist
+            }));
+
+            if (modo === 'substituir') {
+                musicasCultoAtual = novasFormatadas;
+            } else {
+                musicasCultoAtual.push(...novasFormatadas);
+            }
+            if (typeof renderizarMusicasCulto === 'function') renderizarMusicasCulto();
+            if (typeof atualizarContadoresAccordions === 'function') atualizarContadoresAccordions();
+            if (typeof mostrarToast === 'function') mostrarToast(`📋 Músicas adicionadas ao editor de culto!`, 'sucesso');
+        }
+        return;
+    }
+
+    // Caso C: Gravação direta no Supabase para um culto existente
+    const btnConfirmar = document.getElementById('btn-confirmar-copiar-playlist');
+    if (btnConfirmar) {
+        btnConfirmar.disabled = true;
+        btnConfirmar.textContent = 'Copiando...';
+    }
+
+    try {
+        if (!supabaseClient) throw new Error("Cliente Supabase não inicializado.");
+
+        const targetService = (dadosGlobais.services || []).find(s => s.id === destinoId);
+        const targetTitle = targetService?.title || 'o culto selecionado';
+
+        let startOrder = 1;
+
+        if (modo === 'substituir') {
+            await supabaseClient.from('service_songs').delete().eq('service_id', destinoId);
+        } else {
+            const { data: existingSongs } = await supabaseClient
+                .from('service_songs')
+                .select('song_order')
+                .eq('service_id', destinoId)
+                .order('song_order', { ascending: false })
+                .limit(1);
+            if (existingSongs && existingSongs.length > 0 && existingSongs[0].song_order) {
+                startOrder = existingSongs[0].song_order + 1;
+            }
+        }
+
+        for (let idx = 0; idx < musicas.length; idx++) {
+            const m = musicas[idx];
+            let vId = m.song_version_id;
+
+            if (!vId && m.nome) {
+                try {
+                    const { data: sData } = await supabaseClient
+                        .from('songs')
+                        .select('id, song_versions(id)')
+                        .eq('title', m.nome)
+                        .maybeSingle();
+                    if (sData?.song_versions?.[0]?.id) {
+                        vId = sData.song_versions[0].id;
+                    }
+                } catch(e) {}
+            }
+
+            if (vId) {
+                const singersVal = incluirCantores 
+                    ? (Array.isArray(m.cantores) ? m.cantores.join(', ') : (m.cantores || '')) 
+                    : '';
+                await supabaseClient.from('service_songs').insert({
+                    service_id: destinoId,
+                    song_version_id: vId,
+                    song_order: startOrder + idx,
+                    singers_list: singersVal
+                });
+            }
+        }
+
+        fecharModalCopiarPlaylist();
+        await carregarDados();
+        if (typeof mostrarToast === 'function') {
+            mostrarToast(`🎉 ${musicas.length} músicas copiadas com sucesso para "${targetTitle}"!`, 'sucesso');
+        }
+    } catch (err) {
+        console.error('Erro ao copiar playlist:', err);
+        if (typeof mostrarToast === 'function') {
+            mostrarToast(`Erro ao copiar playlist: ${err.message}`, 'erro');
+        }
+    } finally {
+        if (btnConfirmar) {
+            btnConfirmar.disabled = false;
+            btnConfirmar.innerHTML = `<span>📋</span> Copiar Playlist`;
+        }
+    }
+}
+
+window.toggleHistoricoCultoCard = toggleHistoricoCultoCard;
+window.toggleTodosHistorico = toggleTodosHistorico;
+window.abrirModalCopiarPlaylist = abrirModalCopiarPlaylist;
+window.fecharModalCopiarPlaylist = fecharModalCopiarPlaylist;
+window.confirmarCopiarPlaylist = confirmarCopiarPlaylist;
 
 
 

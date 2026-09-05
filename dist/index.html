@@ -3,12 +3,19 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#0f172a">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Liturge — Gestão de Louvor & Cultos</title>
-    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta property="og:title" content="Liturge — Gestão de Louvor & Cultos">
+    <meta property="og:description" content="Plataforma inteligente de ensaios, repertórios e escalas para os ministérios da igreja.">
+    <meta property="og:image" content="icon-512.png">
+    <meta property="og:type" content="website">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
@@ -33,6 +40,20 @@
                             800: 'var(--brand-800, #065f46)',
                             900: 'var(--brand-900, #064e3b)',
                             950: 'var(--brand-950, #022c22)',
+                        },
+                        slate: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: 'rgb(var(--theme-slate-700-rgb, 51 65 85) / <alpha-value>)',
+                            800: 'rgb(var(--theme-slate-800-rgb, 30 41 59) / <alpha-value>)',
+                            850: 'rgb(var(--theme-slate-850-rgb, 19 29 46) / <alpha-value>)',
+                            900: 'rgb(var(--theme-slate-900-rgb, 15 23 42) / <alpha-value>)',
+                            950: 'rgb(var(--theme-slate-950-rgb, 2 6 23) / <alpha-value>)',
                         }
                     }
                 }
@@ -52,6 +73,22 @@
             --brand-800: #065f46;
             --brand-900: #064e3b;
             --brand-950: #022c22;
+
+            --theme-slate-700: #334155;
+            --theme-slate-700-rgb: 51 65 85;
+            --theme-slate-800: #1e293b;
+            --theme-slate-800-rgb: 30 41 59;
+            --theme-slate-850: #131d2e;
+            --theme-slate-850-rgb: 19 29 46;
+            --theme-slate-900: #0f172a;
+            --theme-slate-900-rgb: 15 23 42;
+            --theme-slate-950: #020617;
+            --theme-slate-950-rgb: 2 6 23;
+        }
+
+        body {
+            background-color: rgb(var(--theme-slate-950-rgb, 2 6 23));
+            transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease;
         }
 
         /* Estilo para datas ocupadas por cultos no Flatpickr */
@@ -75,26 +112,66 @@
         }
     </style>
     <script>
-        // Recupera e aplica o tema salvo no localStorage imediatamente antes da renderização para evitar piscadas
+        // Recupera e aplica o tema salvo e dados essenciais no localStorage imediatamente antes da renderização para evitar piscadas
         try {
-            const cachedColor = localStorage.getItem('cached_theme_color');
+            // Passo 2: Pré-carregar dados de cache da igreja e do perfil
+            const cachedChurchStr = localStorage.getItem('cached_church_data');
+            const cachedUserStr = localStorage.getItem('cached_user_profile');
+            if (cachedChurchStr) {
+                try { window.__CACHED_CHURCH__ = JSON.parse(cachedChurchStr); } catch (e) {}
+            }
+            if (cachedUserStr) {
+                try { window.__CACHED_USER__ = JSON.parse(cachedUserStr); } catch (e) {}
+            }
+
+            let cachedColor = localStorage.getItem('cached_theme_color');
+            // Se a igreja em cache tiver cor temática definida, ela tem prioridade
+            if (window.__CACHED_CHURCH__ && window.__CACHED_CHURCH__.theme_color_secondary) {
+                cachedColor = window.__CACHED_CHURCH__.theme_color_secondary;
+            }
+
             if (cachedColor) {
                 const palettes = {
-                    emerald: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b', 950: '#022c22' },
-                    blue: { 50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a', 950: '#172554' },
-                    amber: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309', 800: '#92400e', 900: '#78350f', 950: '#451a03' },
-                    purple: { 50: '#faf5ff', 100: '#f3e8ff', 200: '#e9d5ff', 300: '#d8b4fe', 400: '#c084fc', 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce', 800: '#6b21a8', 900: '#581c87', 950: '#3b0764' },
-                    rose: { 50: '#fff1f2', 100: '#ffe4e6', 200: '#fecdd3', 300: '#fda4af', 400: '#fb7185', 500: '#f43f5e', 600: '#e11d48', 700: '#be123c', 800: '#9f1239', 900: '#881337', 950: '#4c0519' },
-                    indigo: { 50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81', 950: '#1e1b4b' },
-                    sky: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e', 950: '#082f49' },
-                    red: { 50: '#fef2f2', 100: '#fee2e2', 200: '#fecaca', 300: '#fca5a5', 400: '#f87171', 500: '#ef4444', 600: '#dc2626', 700: '#b91c1c', 800: '#991b1b', 900: '#7f1d1d', 950: '#450a0a' }
+                    emerald: {
+                        brand: { 50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b', 950: '#022c22' },
+                        surfaces: { 700: '20 83 63', 800: '12 56 43', 850: '8 43 32', 900: '5 33 24', 950: '2 20 14' }
+                    },
+                    indigo: {
+                        brand: { 50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc', 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca', 800: '#3730a3', 900: '#312e81', 950: '#1e1b4b' },
+                        surfaces: { 700: '38 45 107', 800: '24 28 71', 850: '17 21 54', 900: '12 15 41', 950: '5 6 22' }
+                    },
+                    amber: {
+                        brand: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309', 800: '#92400e', 900: '#78350f', 950: '#451a03' },
+                        surfaces: { 700: '79 54 28', 800: '51 35 18', 850: '39 26 13', 900: '29 19 8', 950: '17 11 4' }
+                    },
+                    purple: {
+                        brand: { 50: '#faf5ff', 100: '#f3e8ff', 200: '#e9d5ff', 300: '#d8b4fe', 400: '#c084fc', 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce', 800: '#6b21a8', 900: '#581c87', 950: '#3b0764' },
+                        surfaces: { 700: '61 35 107', 800: '40 22 71', 850: '30 15 54', 900: '22 10 41', 950: '11 4 22' }
+                    },
+                    blue: {
+                        brand: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e', 950: '#082f49' },
+                        surfaces: { 700: '24 72 122', 800: '15 47 82', 850: '11 36 64', 900: '7 26 48', 950: '3 14 27' }
+                    },
+                    rose: {
+                        brand: { 50: '#fff1f2', 100: '#ffe4e6', 200: '#fecdd3', 300: '#fda4af', 400: '#fb7185', 500: '#f43f5e', 600: '#e11d48', 700: '#be123c', 800: '#9f1239', 900: '#881337', 950: '#4c0519' },
+                        surfaces: { 700: '84 32 52', 800: '56 19 33', 850: '44 13 24', 900: '32 9 17', 950: '19 4 9' }
+                    },
+                    slate: {
+                        brand: { 50: '#f0fdfa', 100: '#ccfbf1', 200: '#99f6e4', 300: '#5eead4', 400: '#2dd4bf', 500: '#14b8a6', 600: '#0d9488', 700: '#0f766e', 800: '#115e59', 900: '#134e4a', 950: '#042f2e' },
+                        surfaces: { 700: '51 65 85', 800: '30 41 59', 850: '19 29 46', 900: '15 23 42', 950: '2 6 23' }
+                    },
+                    black: {
+                        brand: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e', 950: '#082f49' },
+                        surfaces: { 700: '39 39 42', 800: '24 24 27', 850: '17 17 20', 900: '9 9 11', 950: '0 0 0' }
+                    }
                 };
-                const palette = palettes[cachedColor.toLowerCase().trim()];
-                if (palette) {
+                const p = palettes[cachedColor.toLowerCase().trim()] || palettes.emerald;
+                if (p) {
                     const root = document.documentElement;
-                    Object.keys(palette).forEach(weight => {
-                        root.style.setProperty(`--brand-${weight}`, palette[weight]);
-                    });
+                    Object.keys(p.brand).forEach(w => root.style.setProperty(`--brand-${w}`, p.brand[w]));
+                    if (p.surfaces) {
+                        Object.keys(p.surfaces).forEach(w => root.style.setProperty(`--theme-slate-${w}-rgb`, p.surfaces[w]));
+                    }
                 }
             }
         } catch(e) {}
@@ -104,6 +181,36 @@
 </head>
 
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- ===================== PASSO 1: TELA DE CARREGAMENTO INICIAL (SPLASH OVERLAY) ===================== -->
+    <div id="app-splash-screen" class="fixed inset-0 z-[9999] bg-slate-950 flex flex-col items-center justify-center select-none transition-opacity duration-500 ease-out">
+        <div class="flex flex-col items-center gap-5 text-center px-6">
+            <!-- Ícone Elegante com Anel Giratório Sutil -->
+            <div class="relative flex items-center justify-center w-24 h-24">
+                <div class="absolute inset-0 rounded-3xl bg-brand-500/10 border border-brand-500/20 shadow-2xl shadow-brand-500/10 flex items-center justify-center animate-pulse"></div>
+                <div class="absolute -inset-1 rounded-3xl border-2 border-brand-500/20 border-t-brand-400 animate-spin pointer-events-none"></div>
+                <span class="text-4xl relative z-10 select-none">🎵</span>
+            </div>
+            <!-- Título e Subtítulo Dinâmico -->
+            <div class="space-y-1.5">
+                <h1 class="text-2xl font-black tracking-tight text-white flex items-center justify-center gap-1.5">
+                    Liturge
+                </h1>
+                <p id="splash-subtexto" class="text-xs text-slate-400 font-medium tracking-wide">
+                    Carregando ministérios e repertório...
+                </p>
+            </div>
+        </div>
+        <script>
+            // Atualiza imediatamente o subtítulo da splash com o nome da igreja em cache, se houver
+            try {
+                if (window.__CACHED_CHURCH__ && window.__CACHED_CHURCH__.name) {
+                    var _sub = document.getElementById('splash-subtexto');
+                    if (_sub) _sub.textContent = window.__CACHED_CHURCH__.name;
+                }
+            } catch (e) {}
+        </script>
+    </div>
 
     <!-- ===================== BANNER DE SIMULAÇÃO DE PERFIL ===================== -->
     <div id="banner-simulacao-perfil" class="hidden bg-gradient-to-r from-amber-600 via-indigo-600 to-emerald-600 text-white px-4 py-2 text-xs font-medium shadow-md flex items-center justify-between z-[100] sticky top-0">
@@ -128,42 +235,56 @@
     <div id="painel-admin-container"></div>
 
     <!-- ===================== SITE PRINCIPAL ===================== -->
-    <div class="container mx-auto px-4 py-8 max-w-6xl pb-60">
+    <div class="container mx-auto px-4 pt-3 md:pt-8 pb-60 max-w-6xl">
         
-        <!-- ===================== AUTH HEADER ===================== -->
-        <div id="auth-header-container" class="flex justify-end items-center gap-2 mb-6">
-            <button id="btn-login-header" onclick="abrirModalLoginUsuario()" class="hidden text-xs font-medium text-brand-300 hover:text-white transition px-3 py-1.5 border border-brand-500/30 rounded-lg bg-brand-500/10">
-                🔑 Entrar
+        <!-- ===================== TOP HEADER BAR ===================== -->
+        <header id="main-header-bar" class="flex items-center justify-between w-full mb-4 sm:mb-6 min-h-[36px]">
+            <!-- Canto Superior Esquerdo: Botão Menu Mobile (Três Listras Simples) -->
+            <button id="btn-menu-mobile" onclick="toggleSidebarMenu('sidebar-menu')" 
+                class="md:hidden p-2 -ml-1 text-slate-300 hover:text-white transition focus:outline-none active:scale-95 cursor-pointer" 
+                aria-label="Abrir Menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
             </button>
-            <button id="btn-signup-header" onclick="abrirModalCadastroUsuario()" class="hidden text-xs font-medium text-slate-300 hover:text-white transition px-3 py-1.5 border border-slate-700 rounded-lg bg-slate-800">
-                Criar Conta
-            </button>
-            <button id="btn-onboarding-header" onclick="abrirModalCadastroIgreja()" class="hidden text-xs font-medium text-white hover:bg-indigo-500 transition px-3.5 py-1.5 border border-indigo-500/80 rounded-lg bg-indigo-600 shadow-sm flex items-center gap-1.5">
-                ⛪ Cadastrar Minha Igreja
-            </button>
-            
-            <div id="user-session-bar" class="hidden flex items-center gap-3 bg-slate-800/80 border border-slate-700/50 rounded-full px-4 py-1.5 shadow-sm">
-                <button onclick="abrirMinhaConta()" class="flex flex-col items-end text-right group cursor-pointer" title="Minha Conta">
-                    <span id="user-session-name" class="text-[11px] font-bold text-white leading-tight group-hover:text-brand-300 transition">Usuário</span>
-                    <span id="user-session-role" class="text-[9px] text-brand-400 font-medium leading-tight tracking-wider uppercase">Voluntário</span>
+
+            <!-- Canto Superior Direito: Auth / Sessão do Usuário -->
+            <div id="auth-header-container" class="flex justify-end items-center gap-2 ml-auto">
+                <button id="btn-login-header" onclick="abrirModalLoginUsuario()" class="hidden text-xs font-medium text-brand-300 hover:text-white transition px-3 py-1.5 border border-brand-500/30 rounded-lg bg-brand-500/10">
+                    🔑 Entrar
                 </button>
-                <button onclick="abrirMinhaConta()" class="w-7 h-7 rounded-full bg-slate-700 hover:bg-slate-600 border border-slate-600 flex items-center justify-center text-xs transition cursor-pointer" title="Minha Conta">
-                    👤
+                <button id="btn-signup-header" onclick="abrirModalCadastroUsuario()" class="hidden text-xs font-medium text-slate-300 hover:text-white transition px-3 py-1.5 border border-slate-700 rounded-lg bg-slate-800">
+                    Criar Conta
                 </button>
-                <!-- Botão Admin -->
-                <button id="btn-admin-panel" onclick="abrirPainelAdmin()" class="hidden ml-2 text-indigo-400 hover:text-indigo-300 transition" title="Acessar Painel de Administração">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                    </svg>
+                <button id="btn-onboarding-header" onclick="abrirModalCadastroIgreja()" class="hidden text-xs font-medium text-white hover:bg-indigo-500 transition px-3.5 py-1.5 border border-indigo-500/80 rounded-lg bg-indigo-600 shadow-sm flex items-center gap-1.5">
+                    ⛪ Cadastrar Minha Igreja
                 </button>
-                <div class="h-4 w-px bg-slate-600 ml-1"></div>
-                <!-- Botão Sair -->
-                <button onclick="realizarLogoutUsuario()" class="ml-1 text-slate-400 hover:text-red-400 transition" title="Sair da Conta">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                </button>
+                
+                <div id="user-session-bar" class="hidden flex items-center gap-3 bg-slate-800/80 border border-slate-700/50 rounded-full px-4 py-1.5 shadow-sm">
+                    <button onclick="abrirMinhaConta()" class="flex flex-col items-end text-right group cursor-pointer" title="Minha Conta">
+                        <span id="user-session-name" class="text-[11px] font-bold text-white leading-tight group-hover:text-brand-300 transition">Usuário</span>
+                        <span id="user-session-role" class="text-[9px] text-brand-400 font-medium leading-tight tracking-wider uppercase">Voluntário</span>
+                    </button>
+                    <button onclick="abrirMinhaConta()" class="w-7 h-7 rounded-full bg-slate-700 hover:bg-slate-600 border border-slate-600 flex items-center justify-center text-xs transition cursor-pointer" title="Minha Conta">
+                        👤
+                    </button>
+                    <!-- Botão Admin -->
+                    <button id="btn-admin-panel" onclick="abrirPainelAdmin()" class="hidden ml-2 text-indigo-400 hover:text-indigo-300 transition" title="Acessar Painel de Administração">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </button>
+                    <div class="h-4 w-px bg-slate-600 ml-1"></div>
+                    <!-- Botão Sair -->
+                    <button onclick="realizarLogoutUsuario()" class="ml-1 text-slate-400 hover:text-red-400 transition" title="Sair da Conta">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    </button>
+                </div>
             </div>
-        </div>
+        </header>
 
         <!-- ===================== LANDING PAGE DE BOAS-VINDAS ===================== -->
         <div id="landing-boas-vindas" class="hidden max-w-2xl mx-auto text-center py-16 px-4 space-y-8 animate-fade-in">
@@ -234,13 +355,6 @@
             <!-- MÁSCARA DE FUNDO (BACKDROP) MENU MOBILE -->
             <div id="sidebar-backdrop" onclick="fecharSidebarMenu('sidebar-menu')" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-[60] md:hidden"></div>
 
-            <!-- MENU MOBILE TOGGLE -->
-            <div class="md:hidden w-full flex justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-sm mb-4">
-                <h1 class="text-xl font-bold text-brand-400 select-none cursor-default truncate" id="titulo-site-mobile">Menu</h1>
-                <button onclick="toggleSidebarMenu('sidebar-menu')" class="text-slate-300 hover:text-white p-2 focus:outline-none" aria-label="Abrir Menu">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-                </button>
-            </div>
 
             <!-- SIDEBAR (MENU SLIDE-OVER MOBILE & STICKY BOUNDED DESKTOP) -->
             <aside id="sidebar-menu" class="hidden md:flex flex-col gap-6 fixed md:sticky top-0 md:top-24 left-0 bottom-0 md:bottom-auto z-[70] md:z-40 h-[100dvh] md:h-auto max-h-[100dvh] md:max-h-[calc(100vh-7rem)] w-72 md:w-64 max-w-[85vw] md:max-w-none shrink-0 bg-slate-900 md:bg-transparent p-6 md:p-0 border-r md:border-none border-slate-800 shadow-2xl md:shadow-none overflow-y-auto sidebar-scroll-container custom-scrollbar mb-6 md:mb-0">
@@ -358,7 +472,7 @@
                             class="sm:w-1/2 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-brand-500">
                     </div>
                     <button
-                        onclick="enviarComentario('Mês Seguinte', 'indisponibilidade-autor', 'indisponibilidade-texto', 'indisponibilidade-status', 'Escala/Compromissos')"
+                        onclick="enviarComentario('Mês Seguinte', 'indisponibilidade-autor', 'indisponibilidade-texto', 'indisponibilidade-status', 'Indisponibilidade')"
                         class="bg-indigo-700 hover:bg-indigo-600 text-white px-4 py-2 rounded text-sm font-medium">Enviar
                         datas</button>
                     <p id="indisponibilidade-status" class="text-xs text-brand-400 hidden">Datas enviadas com sucesso!</p>
@@ -395,18 +509,20 @@
     <!-- Scripts do App em ordem de dependência -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/config.js?v=4.5"></script>
-    <script src="js/store.js?v=1.0"></script>
+    <script src="js/store.js?v=1.1"></script>
     <script src="js/db.js?v=1.0"></script>
     <script src="js/router.js?v=1.0"></script>
-    <script src="js/utils.js?v=4.26"></script>
+    <script src="js/utils.js?v=4.27"></script>
     <script src="js/player.js?v=4.9"></script>
-    <script src="js/admin.js?v=4.45"></script>
+    <script src="js/admin.js?v=4.52"></script>
     <script src="js/culto-editor.js?v=5.2"></script>
     <script src="js/holyrics-exporter.js?v=1.2"></script>
     <script src="js/almoxarifado.js?v=1.0"></script>
     <script src="js/analytics.js?v=2.2"></script>
-    <script src="js/agenda.js?v=1.2"></script>
-    <script src="js/app.js?v=6.2"></script>
+    <script src="js/agenda.js?v=1.3"></script>
+    <script src="js/disponibilidade.js?v=1.0"></script>
+    <script src="js/whatsapp-dispatcher.js?v=1.0"></script>
+    <script src="js/app.js?v=6.3"></script>
 </body>
 
 </html>

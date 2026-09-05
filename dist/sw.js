@@ -1,9 +1,12 @@
-const CACHE_NAME = 'liturge-v1';
+const CACHE_NAME = 'liturge-v23';
 
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
     './manifest.json',
+    './favicon.ico',
+    './icon-192.png',
+    './icon-512.png',
     './css/style.css',
     './js/config.js',
     './js/store.js',
@@ -14,22 +17,39 @@ const ASSETS_TO_CACHE = [
     './js/admin.js',
     './js/culto-editor.js',
     './js/holyrics-exporter.js',
+    './js/almoxarifado.js',
+    './js/analytics.js',
+    './js/agenda.js',
+    './js/disponibilidade.js',
+    './js/whatsapp-dispatcher.js',
     './js/app.js',
     './views/admin-panel.html',
     './views/secao-cultos.html',
     './views/secao-novas.html',
     './views/secao-repertorio.html',
     './views/secao-midia.html',
+    './views/secao-agenda.html',
+    './views/secao-almoxarifado.html',
+    './views/secao-analytics.html',
+    './views/secao-holyrics.html',
     './views/modais.html',
     './icon-192.png',
     './icon-512.png'
 ];
 
-// Instalação: Precaching do App Shell + Views HTML
+// Instalação: Precaching resiliente do App Shell + Views HTML
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then((cache) => cache.addAll(ASSETS_TO_CACHE))
+            .then(async (cache) => {
+                for (const asset of ASSETS_TO_CACHE) {
+                    try {
+                        await cache.add(asset);
+                    } catch (e) {
+                        // Não interrompe os demais arquivos caso algum retorne 404
+                    }
+                }
+            })
             .then(() => self.skipWaiting())
     );
 });

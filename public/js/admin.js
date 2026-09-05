@@ -1,14 +1,11 @@
 // ===================== ADMIN: LOGIN =====================
 
-const ADMIN_EMAIL = "joao.marcos.xavier.484@gmail.com";
-
 window.addEventListener('DOMContentLoaded', async () => {
     // Checa se já existe sessão ativa no Supabase Auth
     if (supabaseClient) {
         try {
             const { data } = await supabaseClient.auth.getSession();
             if (data && data.session) {
-                isAdmin = true;
                 const btnWrapper = document.getElementById('btn-admin-wrapper');
                 if (btnWrapper) btnWrapper.classList.remove('hidden');
             }
@@ -73,25 +70,58 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 function abrirModalAdmin() {
-    document.getElementById('modal-admin').classList.remove('hidden');
-    document.getElementById('input-senha-admin').value = '';
-    document.getElementById('erro-senha').classList.add('hidden');
-    setTimeout(() => document.getElementById('input-senha-admin').focus(), 100);
+    // Se o usuário já estiver logado e possuir privilégios, abre direto o painel
+    const user = (typeof usuarioLogado !== 'undefined' && usuarioLogado) ? usuarioLogado : null;
+    const role = user ? (user.system_role || user.role || 'membro') : null;
+    if (role === 'admin' || role === 'lider' || (typeof isAdmin !== 'undefined' && isAdmin)) {
+        abrirPainelAdmin();
+        return;
+    }
+    if (user && role !== 'admin' && role !== 'lider') {
+        if (typeof mostrarToast === 'function') {
+            mostrarToast('Seu perfil logado não possui permissão de Administrador ou Líder.', 'aviso');
+        }
+        return;
+    }
+
+    // Se não estiver logado, abre o modal de credenciais administrativas
+    const modalAdmin = document.getElementById('modal-admin');
+    if (modalAdmin) {
+        modalAdmin.classList.remove('hidden');
+        const emailInput = document.getElementById('input-email-admin');
+        const senhaInput = document.getElementById('input-senha-admin');
+        if (emailInput && !emailInput.value) emailInput.value = '';
+        if (senhaInput) senhaInput.value = '';
+        const erroSenha = document.getElementById('erro-senha');
+        if (erroSenha) erroSenha.classList.add('hidden');
+        setTimeout(() => {
+            if (emailInput && !emailInput.value) emailInput.focus();
+            else if (senhaInput) senhaInput.focus();
+        }, 100);
+    } else if (typeof abrirModalLoginUsuario === 'function') {
+        abrirModalLoginUsuario();
+    }
 }
 
 function fecharModalAdmin() {
-    document.getElementById('modal-admin').classList.add('hidden');
+    const modalAdmin = document.getElementById('modal-admin');
+    if (modalAdmin) modalAdmin.classList.add('hidden');
 }
 
 async function entrarAdmin() {
-    const inputSenha = document.getElementById('input-senha-admin');
-    const erroSenha = document.getElementById('erro-senha');
+    const inputEmail = document.getElementById('input-email-admin') || document.getElementById('login-email');
+    const inputSenha = document.getElementById('input-senha-admin') || document.getElementById('login-senha');
+    const erroSenha = document.getElementById('erro-senha') || document.getElementById('login-erro-msg');
     const btnEntrar = document.querySelector('#modal-admin button[onclick="entrarAdmin()"]') || document.querySelector('#modal-admin button:last-child');
+
+    const email = inputEmail ? inputEmail.value.trim().toLowerCase() : (usuarioLogado?.email || '');
     const senha = inputSenha ? inputSenha.value.trim() : '';
 
-    if (!senha) {
-        erroSenha.textContent = 'Digite a senha.';
-        erroSenha.classList.remove('hidden');
+    if (!email || !senha) {
+        if (erroSenha) {
+            erroSenha.textContent = 'Informe e-mail e senha.';
+            erroSenha.classList.remove('hidden');
+        }
         return;
     }
 
@@ -100,7 +130,7 @@ async function entrarAdmin() {
         btnEntrar.textContent = 'Validando...';
         btnEntrar.disabled = true;
     }
-    erroSenha.classList.add('hidden');
+    if (erroSenha) erroSenha.classList.add('hidden');
 
     try {
         if (!supabaseClient) {
@@ -108,22 +138,29 @@ async function entrarAdmin() {
         }
 
         const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email: ADMIN_EMAIL,
+            email: email,
             password: senha
         });
 
-        if (!error && data && (data.session || data.user)) {
-            isAdmin = true;
-            fecharModalAdmin();
-            abrirPainelAdmin();
-        } else {
-            erroSenha.textContent = 'Senha incorreta.';
-            erroSenha.classList.remove('hidden');
+        if (error || !data || (!data.session && !data.user)) {
+            throw error || new Error("Credenciais incorretas.");
+        }
+
+        if (typeof verificarSessaoAtiva === 'function') {
+            await verificarSessaoAtiva();
+        }
+
+        fecharModalAdmin();
+        abrirPainelAdmin();
+        if (typeof mostrarToast === 'function') {
+            mostrarToast('Acesso administrativo concedido!', 'sucesso');
         }
     } catch (error) {
-        console.error('Erro na autenticação Supabase:', error);
-        erroSenha.textContent = 'Senha incorreta.';
-        erroSenha.classList.remove('hidden');
+        console.error('Erro na autenticação administrativa:', error);
+        if (erroSenha) {
+            erroSenha.textContent = 'E-mail ou senha incorretos.';
+            erroSenha.classList.remove('hidden');
+        }
     } finally {
         if (btnEntrar) {
             btnEntrar.textContent = textoOriginalBtn;
@@ -233,15 +270,78 @@ async function onDropCulto(e, targetIndex) {
 function renderizarAdminListaCultos() {
     const container = document.getElementById('admin-lista-cultos');
     if (!container) return;
-    const rows = dadosGlobais.cultos;
-    let html = '';
+
+    const userToEvaluate = (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null) || usuarioLogado;
+    const roleUsuario = userToEvaluate ? (userToEvaluate.system_role || userToEvaluate.role || 'membro') : 'visitante';
+    const isLiderOuAdmin = roleUsuario === 'admin' || roleUsuario === 'lider';
+
+    const services = dadosGlobais.services || [];
+    const rows = dadosGlobais.cultos || [];
+
+    // Se temos dados relacionais de services
+    if (services.length > 0) {
+        let html = '';
+        services.forEach((s, bIdx) => {
+            let emMontagem = s.is_draft || s.status === 'aberto' || (s.title && s.title.toUpperCase().includes('EM MONTAGEM'));
+            let oculto = s.is_hidden || s.status === 'arquivado' || (s.title && s.title.toUpperCase().includes('OCULTO'));
+            if (s.notes) {
+                try {
+                    const pn = JSON.parse(s.notes);
+                    if (pn && typeof pn === 'object') {
+                        if (pn.em_montagem !== undefined) emMontagem = !!pn.em_montagem;
+                        else if (pn.is_draft !== undefined) emMontagem = !!pn.is_draft;
+                        if (pn.oculto !== undefined) oculto = !!pn.oculto;
+                        else if (pn.is_hidden !== undefined) oculto = !!pn.is_hidden;
+                    }
+                } catch(e){}
+            }
+
+            const cor = oculto ? 'border-slate-700 bg-slate-800/30 opacity-60'
+                : (emMontagem ? 'border-red-700/50 bg-red-900/20' : 'border-slate-700 bg-slate-800/60');
+            const corTexto = oculto ? 'text-slate-400' : (emMontagem ? 'text-red-300' : 'text-brand-300');
+            
+            const tituloExibicao = (s.title || 'Culto').replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim();
+
+            let dataBadge = '';
+            if (s.date) {
+                const parts = s.date.split('T')[0].split('-');
+                if (parts.length === 3) {
+                    dataBadge = `<span class="text-[11px] bg-slate-900/80 text-slate-400 px-2 py-0.5 rounded-md border border-slate-700 font-mono">${parts[2]}/${parts[1]}</span>`;
+                }
+            }
+
+            const legacyIndex = rows.findIndex(r => r && r[8] === s.id);
+            const editAction = legacyIndex !== -1 ? `editarCulto(${legacyIndex})` : `mostrarFormCulto(null)`;
+
+            const botaoExcluir = isLiderOuAdmin
+                ? `<button onclick="excluirCulto('${s.id}')" class="bg-slate-700 hover:bg-red-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 shadow-sm">🗑️ Excluir</button>`
+                : '';
+
+            html += `
+                <div class="flex items-center justify-between px-4 py-3 rounded-xl border ${cor} gap-3">
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                        ${dataBadge}
+                        <span class="text-sm font-semibold ${corTexto} uppercase truncate">${tituloExibicao}${oculto ? ' 🙈' : ''}${emMontagem ? ' 🛠️' : ''}</span>
+                    </div>
+                    <div class="flex gap-2 shrink-0">
+                        <button onclick="${editAction}" class="bg-slate-700 hover:bg-brand-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition">✏️ Editar</button>
+                        ${botaoExcluir}
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        return;
+    }
+
+    // Fallback legado caso services ainda não tenha populado
     let blocos = [];
     let blocoAtual = null;
     let blocoIndex = null;
 
     for (let i = 0; i < rows.length; i++) {
         const texto = rows[i][0] ? rows[i][0].toString() : '';
-        if (texto.includes("CULTO DE")) {
+        if (texto.includes("CULTO DE") || (rows[i][8] && rows[i][8].length > 10)) {
             if (blocoAtual !== null) blocos.push({ titulo: blocoAtual, startIndex: blocoIndex });
             blocoAtual = texto;
             blocoIndex = i;
@@ -250,37 +350,31 @@ function renderizarAdminListaCultos() {
     if (blocoAtual !== null) blocos.push({ titulo: blocoAtual, startIndex: blocoIndex });
 
     if (blocos.length === 0) {
-        container.innerHTML = '<p class="text-slate-500 text-sm">Nenhum culto encontrado no banco de dados.</p>';
+        container.innerHTML = '<p class="text-slate-500 text-sm py-4 text-center">Nenhum culto encontrado no banco de dados.</p>';
         return;
     }
 
-    const userToEvaluate = (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null) || usuarioLogado;
-    const roleUsuario = userToEvaluate ? (userToEvaluate.system_role || userToEvaluate.role || 'membro') : 'visitante';
-
+    let html = '';
     blocos.forEach((bloco, bIdx) => {
         const emMontagem = bloco.titulo.toUpperCase().includes('EM MONTAGEM');
         const oculto = bloco.titulo.toUpperCase().includes('OCULTO');
 
-        // Tanto admin quanto lider devem visualizar os cultos ocultados no painel admin (com o emoji 🙈 e estilo opaco)
-
         const cor = oculto ? 'border-slate-700 bg-slate-800/30 opacity-60'
             : (emMontagem ? 'border-red-700/50 bg-red-900/20' : 'border-slate-700 bg-slate-800/60');
         const corTexto = oculto ? 'text-slate-400' : (emMontagem ? 'text-red-300' : 'text-brand-300');
-        const tituloExibicao = bloco.titulo.replace(/ - OCULTO/i, '').trim();
+        const tituloExibicao = bloco.titulo.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim();
 
-        // Botão de Excluir só aparece para admin
-        const botaoExcluir = roleUsuario === 'admin'
-            ? `<button onclick="excluirCultoAdmin(${bloco.startIndex})" class="bg-slate-700 hover:bg-red-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs transition">🗑️ Excluir</button>`
+        const botaoExcluir = isLiderOuAdmin
+            ? `<button onclick="excluirCulto(${bloco.startIndex})" class="bg-slate-700 hover:bg-red-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition">🗑️ Excluir</button>`
             : '';
 
         html += `
-            <div draggable="true" ondragstart="onDragStartCulto(event, ${bIdx})" ondragover="onDragOverCulto(event)" ondrop="onDropCulto(event, ${bIdx})" class="flex items-center justify-between px-4 py-3 rounded-xl border ${cor} gap-3 cursor-move">
+            <div class="flex items-center justify-between px-4 py-3 rounded-xl border ${cor} gap-3">
                 <div class="flex items-center gap-3">
-                    <span class="text-slate-500 hover:text-slate-300 font-bold select-none text-base cursor-grab">⣿</span>
                     <span class="text-sm font-semibold ${corTexto} uppercase">${tituloExibicao}${oculto ? ' 🙈' : ''}</span>
                 </div>
                 <div class="flex gap-2 shrink-0">
-                    <button onclick="editarCulto(${bloco.startIndex})" class="bg-slate-700 hover:bg-brand-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs transition">✏️ Editar</button>
+                    <button onclick="editarCulto(${bloco.startIndex})" class="bg-slate-700 hover:bg-brand-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition">✏️ Editar</button>
                     ${botaoExcluir}
                 </div>
             </div>
@@ -291,38 +385,8 @@ function renderizarAdminListaCultos() {
 }
 
 async function excluirCultoAdmin(startIndex) {
-    if (!confirm('Deseja realmente excluir este culto?')) return;
-
-    try {
-        const rows = dadosGlobais.cultos;
-        if (!rows || !rows[startIndex]) {
-            throw new Error("Culto não encontrado.");
-        }
-
-        const tituloAlvo = rows[startIndex][0] ? rows[startIndex][0].toString() : '';
-        const tituloLimpo = tituloAlvo.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim();
-
-        if (supabaseClient) {
-            const { data: servicesData } = await supabaseClient
-                .from('services')
-                .select('id, title');
-
-            const targetService = (servicesData || []).find(s => {
-                const t = s.title ? s.title.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim() : '';
-                return s.title === tituloAlvo || t === tituloLimpo;
-            });
-
-            if (targetService && targetService.id) {
-                await supabaseClient.from('service_songs').delete().eq('service_id', targetService.id);
-                const { error } = await supabaseClient.from('services').delete().eq('id', targetService.id);
-                if (error) throw error;
-            }
-        }
-        await carregarDados();
-        mostrarToast('Culto excluído com sucesso!', 'sucesso');
-    } catch (err) {
-        console.error('Erro ao excluir culto:', err);
-        mostrarToast('Erro ao excluir culto.', 'erro');
+    if (typeof window.excluirCulto === 'function') {
+        await window.excluirCulto(startIndex);
     }
 }
 
@@ -390,7 +454,6 @@ function carregarConfiguracoesGlobaisAdmin() {
     if (selectCor && dadosGlobais.church && dadosGlobais.church.theme_color_secondary) {
         selectCor.value = dadosGlobais.church.theme_color_secondary;
     }
-    renderizarAdminListaMembros();
     carregarPermissoesPublicas();
 }
 
@@ -458,7 +521,12 @@ async function renderizarAdminListaEquipe() {
     try {
         let profiles = [];
         if (supabaseClient) {
-            const { data, error } = await supabaseClient.from('profiles').select('*').order('name', { ascending: true });
+            const currentChurchId = (typeof dadosGlobais !== 'undefined' && dadosGlobais.church?.id) 
+                ? dadosGlobais.church.id 
+                : (usuarioLogado?.church_id || null);
+            let query = supabaseClient.from('profiles').select('*').order('name', { ascending: true });
+            if (currentChurchId) query = query.eq('church_id', currentChurchId);
+            const { data, error } = await query;
             if (!error && data) profiles = data;
         }
 
@@ -648,11 +716,21 @@ async function renderizarAdminListaRepertorio() {
 
     try {
         if (supabaseClient) {
-            const { data, error } = await supabaseClient
+            const currentChurchId = (typeof dadosGlobais !== 'undefined' && dadosGlobais.church?.id) 
+                ? dadosGlobais.church.id 
+                : (usuarioLogado?.church_id || null);
+
+            let query = supabaseClient
                 .from('songs')
                 .select('id, title, artist, status, lyrics, song_versions(id, key, variation, drive_vs_url, youtube_url, lyrics)')
                 .neq('status', 'nova')
                 .order('title', { ascending: true });
+
+            if (currentChurchId) {
+                query = query.eq('church_id', currentChurchId);
+            }
+
+            const { data, error } = await query;
 
             if (!error && data) {
                 adminSongsCache = data;
@@ -767,11 +845,21 @@ async function renderizarAdminListaNovas() {
     try {
         let novas = [];
         if (supabaseClient) {
-            const { data, error } = await supabaseClient
+            const currentChurchId = (typeof dadosGlobais !== 'undefined' && dadosGlobais.church?.id) 
+                ? dadosGlobais.church.id 
+                : (usuarioLogado?.church_id || null);
+
+            let query = supabaseClient
                 .from('songs')
                 .select('id, title, status, lyrics, song_versions(id, key, variation)')
                 .eq('status', 'nova')
                 .order('title', { ascending: true });
+
+            if (currentChurchId) {
+                query = query.eq('church_id', currentChurchId);
+            }
+
+            const { data, error } = await query;
 
             if (!error && data) novas = data;
         }
@@ -838,21 +926,176 @@ async function aprovarMusicaNovaAdmin(songId) {
 
 // ===================== ADMIN: SOLICITAÇÕES =====================
 
-let solicitacoesSubAbaAtual = 'pendente';
+let solicitacoesSubAbaAtual = 'pendentes'; // 'pendentes' ou 'concluidas'
+let solicitacoesCategoriaAtual = 'todas'; // 'todas', 'ajuste_tom', 'musica_nova', 'culto_especifico', 'indisponibilidade'
+let solicitacoesMesAtual = 'todos'; // 'todos' ou 'YYYY-MM'
 let todasSolicitacoesCache = [];
 
+const METADATA_CATEGORIAS_SOLICITACOES = {
+    ajuste_tom: {
+        chave: 'ajuste_tom',
+        label: 'Ajuste de Tom',
+        icone: '🎸',
+        badgeClasse: 'bg-indigo-900/60 text-indigo-300 border-indigo-700/50'
+    },
+    musica_nova: {
+        chave: 'musica_nova',
+        label: 'Sugestão de Música Nova',
+        icone: '🌟',
+        badgeClasse: 'bg-amber-900/60 text-amber-300 border-amber-700/50'
+    },
+    culto_especifico: {
+        chave: 'culto_especifico',
+        label: 'Sugestão para Culto',
+        icone: '📅',
+        badgeClasse: 'bg-cyan-900/60 text-cyan-300 border-cyan-700/50'
+    },
+    indisponibilidade: {
+        chave: 'indisponibilidade',
+        label: 'Indisponibilidade',
+        icone: '🚫',
+        badgeClasse: 'bg-rose-900/60 text-rose-300 border-rose-700/50'
+    }
+};
+
+function normalizarCategoriaSolicitacao(item) {
+    if (!item) return 'ajuste_tom';
+    const cat = (item.category || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    const txt = (item.comment_text || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+    // 1. Indisponibilidade (aceita 'indisponibilidade', 'escala/compromissos', 'mes seguinte', etc.)
+    if (cat.includes('indisponib') || cat.includes('escala') || cat.includes('compromisso') || cat.includes('mes seguinte') || txt.includes('indisponib') || txt.includes('nao estarei disponivel')) {
+        return 'indisponibilidade';
+    }
+
+    // 2. Sugestão para culto específico
+    if (cat.includes('culto') || cat.includes('especifico')) {
+        return 'culto_especifico';
+    }
+
+    // 3. Sugestão de música nova
+    if ((cat.includes('nova') || cat.includes('musica nova') || cat.includes('repertorio geral')) && !cat.includes('tom')) {
+        return 'musica_nova';
+    }
+
+    // 4. Ajuste de tom
+    if (cat.includes('tom') || txt.includes('tom ') || txt.includes('ajuste de tom') || txt.includes('tom:')) {
+        return 'ajuste_tom';
+    }
+
+    // Fallbacks inteligentes por contexto de texto
+    if (txt.includes('dia ') || txt.includes('dias ') || txt.includes('ferias') || txt.includes('viagem')) {
+        return 'indisponibilidade';
+    }
+
+    return 'ajuste_tom';
+}
+
+function selecionarCategoriaSolicitacoes(cat) {
+    solicitacoesCategoriaAtual = cat;
+
+    const categorias = ['todas', 'ajuste_tom', 'musica_nova', 'culto_especifico', 'indisponibilidade'];
+    categorias.forEach(c => {
+        const btn = document.getElementById(`btn-solic-cat-${c}`);
+        if (!btn) return;
+        if (c === cat) {
+            btn.className = "px-3 py-2 rounded-xl font-semibold transition bg-brand-600 text-white shrink-0 flex items-center gap-1.5 shadow";
+        } else {
+            btn.className = "px-3 py-2 rounded-xl font-medium transition bg-slate-700/80 text-slate-300 hover:text-white shrink-0 flex items-center gap-1.5";
+        }
+    });
+
+    renderizarAdminListaSolicitacoes(false);
+}
+
 function filtrarSubAbaSolicitacoes(subAba) {
-    solicitacoesSubAbaAtual = subAba;
+    if (subAba === 'pendente' || subAba === 'pendentes') {
+        solicitacoesSubAbaAtual = 'pendentes';
+    } else {
+        solicitacoesSubAbaAtual = 'concluidas';
+    }
+
     const btnPendentes = document.getElementById('btn-solic-sub-pendentes');
     const btnConcluidas = document.getElementById('btn-solic-sub-concluidas');
 
-    const ativo = "px-4 py-2 rounded-xl text-xs font-semibold transition bg-brand-600 text-white shadow flex items-center gap-1.5";
-    const inativo = "px-4 py-2 rounded-xl text-xs font-semibold transition bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5";
+    const ativo = "flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold transition bg-brand-600 text-white flex items-center justify-center gap-1.5 shadow";
+    const inativo = "flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold transition bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center gap-1.5";
 
-    if (btnPendentes) btnPendentes.className = subAba === 'pendente' ? ativo : inativo;
-    if (btnConcluidas) btnConcluidas.className = subAba === 'concluidas' ? ativo : inativo;
+    if (btnPendentes) btnPendentes.className = solicitacoesSubAbaAtual === 'pendentes' ? ativo : inativo;
+    if (btnConcluidas) btnConcluidas.className = solicitacoesSubAbaAtual === 'concluidas' ? ativo : inativo;
 
     renderizarAdminListaSolicitacoes(false);
+}
+
+function selecionarMesSolicitacoes(mesAno) {
+    solicitacoesMesAtual = mesAno || 'todos';
+    renderizarAdminListaSolicitacoes(false);
+}
+
+function atualizarDropdownMesesSolicitacoes(itens) {
+    const select = document.getElementById('admin-filtro-mes-solicitacoes');
+    if (!select) return;
+
+    const mesesSet = new Set();
+    (itens || []).forEach(item => {
+        if (item.created_at && typeof item.created_at === 'string') {
+            const mesAno = item.created_at.substring(0, 7);
+            if (mesAno && mesAno.length === 7) mesesSet.add(mesAno);
+        }
+    });
+
+    const mesesOrdenados = Array.from(mesesSet).sort().reverse();
+    const valorAtual = select.value || solicitacoesMesAtual || 'todos';
+
+    let html = '<option value="todos">📅 Todos os meses</option>';
+    mesesOrdenados.forEach(mesAno => {
+        const partes = mesAno.split('-');
+        if (partes.length === 2) {
+            const ano = parseInt(partes[0]);
+            const mes = parseInt(partes[1]) - 1;
+            const dataRef = new Date(ano, mes, 1);
+            const nomeMes = dataRef.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+            const nomeMesCap = nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1);
+            html += `<option value="${mesAno}">${nomeMesCap}</option>`;
+        }
+    });
+
+    select.innerHTML = html;
+
+    if (mesesSet.has(valorAtual)) {
+        select.value = valorAtual;
+        solicitacoesMesAtual = valorAtual;
+    } else {
+        select.value = 'todos';
+        solicitacoesMesAtual = 'todos';
+    }
+}
+
+function salvarStatusSolicitacaoLocal(id, status) {
+    try {
+        const mapa = JSON.parse(localStorage.getItem('admin_solicitacoes_status') || '{}');
+        mapa[id] = status;
+        localStorage.setItem('admin_solicitacoes_status', JSON.stringify(mapa));
+    } catch (e) {
+        console.warn('Erro ao salvar status no localStorage:', e);
+    }
+}
+
+function obterStatusSolicitacaoLocal(id) {
+    try {
+        const mapa = JSON.parse(localStorage.getItem('admin_solicitacoes_status') || '{}');
+        return mapa[id] || null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function removerStatusSolicitacaoLocal(id) {
+    try {
+        const mapa = JSON.parse(localStorage.getItem('admin_solicitacoes_status') || '{}');
+        delete mapa[id];
+        localStorage.setItem('admin_solicitacoes_status', JSON.stringify(mapa));
+    } catch (e) {}
 }
 
 function filtrarListaSolicitacoesInput() {
@@ -867,19 +1110,40 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
         container.innerHTML = '<p class="text-slate-500 text-sm">Carregando solicitações...</p>';
         try {
             if (supabaseClient) {
-                const { data, error } = await supabaseClient
+                const currentChurchId = (typeof dadosGlobais !== 'undefined' && dadosGlobais.church?.id) 
+                    ? dadosGlobais.church.id 
+                    : (usuarioLogado?.church_id || null);
+
+                let query = supabaseClient
                     .from('availability_comments')
                     .select('*, profiles:user_id(id, name, ministry_id)')
                     .order('created_at', { ascending: false });
 
+                if (currentChurchId) {
+                    query = query.eq('church_id', currentChurchId);
+                }
+
+                const { data, error } = await query;
+
                 if (!error && data) {
+                    // Mescla o status do banco de dados com a persistência local espelho
+                    data.forEach(item => {
+                        const localStatus = obterStatusSolicitacaoLocal(item.id);
+                        if (localStatus) {
+                            item.status = localStatus;
+                        } else if (!item.status) {
+                            item.status = 'pendente';
+                        } else if (item.status && !localStatus) {
+                            salvarStatusSolicitacaoLocal(item.id, item.status);
+                        }
+                    });
                     todasSolicitacoesCache = data;
                 }
 
-                // Aproveita para buscar os profiles e user_ministry_roles para o filtro do líder
-                const { data: profData } = await supabaseClient
-                    .from('profiles')
-                    .select('*');
+                // Busca perfis e cargos ministeriais para escopo de líder
+                let profQuery = supabaseClient.from('profiles').select('*');
+                if (currentChurchId) profQuery = profQuery.eq('church_id', currentChurchId);
+                const { data: profData } = await profQuery;
                 const { data: umrData } = await supabaseClient
                     .from('user_ministry_roles')
                     .select('*');
@@ -898,6 +1162,9 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
                     });
                     window.todosPerfisCache = profData;
                 }
+
+                // Atualiza as opções do dropdown de meses
+                atualizarDropdownMesesSolicitacoes(todasSolicitacoesCache);
             }
         } catch (err) {
             console.error('Erro ao buscar solicitações do Supabase:', err);
@@ -908,8 +1175,9 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
     const roleUsuario = userToEvaluate ? (userToEvaluate.system_role || userToEvaluate.role || 'membro') : 'visitante';
     const ministryIdUsuario = userToEvaluate ? userToEvaluate.ministry_id : null;
 
-    let solicitacoesExibidas = todasSolicitacoesCache || [];
+    let solicitacoesPermitidas = todasSolicitacoesCache || [];
 
+    // Filtro de privacidade para Líder de Ministério
     if (roleUsuario === 'lider' && ministryIdUsuario) {
         const equipeIds = [];
         const equipeNomes = [];
@@ -930,50 +1198,97 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
             }
         }
 
-        solicitacoesExibidas = solicitacoesExibidas.filter(item => {
-            // Caso 1: O comentário tem profiles vinculado e o profile pertence ao ministério do líder
+        solicitacoesPermitidas = solicitacoesPermitidas.filter(item => {
             if (item.profiles) {
                 return item.profiles.ministry_id === ministryIdUsuario || equipeIds.includes(item.profiles.id);
             }
-            // Caso 2: user_id é nulo (comentário legado), tenta fazer o matching pelo nome que fica entre parênteses " - (Nome): "
             const matchParenteses = item.comment_text ? item.comment_text.match(/\(([^)]+)\)/) : null;
             if (matchParenteses && matchParenteses[1]) {
                 const autorNome = matchParenteses[1].toLowerCase().trim();
                 return equipeNomes.some(n => n.includes(autorNome) || autorNome.includes(n));
             }
-            // Por padrão, se não conseguir identificar e for líder, esconde para manter a privacidade
             return false;
         });
     }
 
-    const busca = (document.getElementById('admin-search-solicitacoes')?.value || '').toLowerCase();
+    // Classifica cada solicitação com a categoria normalizada
+    solicitacoesPermitidas.forEach(item => {
+        item._catNormalizada = normalizarCategoriaSolicitacao(item);
+    });
 
-    const pendentes = solicitacoesExibidas.filter(item => !item.status || item.status === 'pendente');
-    const concluidas = solicitacoesExibidas.filter(item => item.status && item.status !== 'pendente');
+    // 1. Atualizar badges de contagem de pendências por categoria no topo
+    const pendentesGerais = solicitacoesPermitidas.filter(item => !item.status || item.status === 'pendente');
+    const badgeCatTodas = document.getElementById('badge-solic-cat-todas');
+    const badgeCatTom = document.getElementById('badge-solic-cat-ajuste_tom');
+    const badgeCatNova = document.getElementById('badge-solic-cat-musica_nova');
+    const badgeCatCulto = document.getElementById('badge-solic-cat-culto_especifico');
+    const badgeCatIndisp = document.getElementById('badge-solic-cat-indisponibilidade');
 
-    const badgePendentes = document.getElementById('badge-solic-pendentes');
-    const badgeConcluidas = document.getElementById('badge-solic-concluidas');
-    if (badgePendentes) badgePendentes.textContent = pendentes.length;
-    if (badgeConcluidas) badgeConcluidas.textContent = concluidas.length;
+    if (badgeCatTodas) badgeCatTodas.textContent = pendentesGerais.length;
+    if (badgeCatTom) badgeCatTom.textContent = pendentesGerais.filter(i => i._catNormalizada === 'ajuste_tom').length;
+    if (badgeCatNova) badgeCatNova.textContent = pendentesGerais.filter(i => i._catNormalizada === 'musica_nova').length;
+    if (badgeCatCulto) badgeCatCulto.textContent = pendentesGerais.filter(i => i._catNormalizada === 'culto_especifico').length;
+    if (badgeCatIndisp) badgeCatIndisp.textContent = pendentesGerais.filter(i => i._catNormalizada === 'indisponibilidade').length;
 
-    let listaExibida = solicitacoesSubAbaAtual === 'pendente' ? pendentes : concluidas;
+    // 2. Filtrar pela Categoria Selecionada
+    let listaFiltrada = solicitacoesPermitidas;
+    if (solicitacoesCategoriaAtual !== 'todas') {
+        listaFiltrada = listaFiltrada.filter(item => item._catNormalizada === solicitacoesCategoriaAtual);
+    }
 
+    // 3. Filtrar pelo Mês Selecionado
+    if (solicitacoesMesAtual !== 'todos') {
+        listaFiltrada = listaFiltrada.filter(item => {
+            return item.created_at && typeof item.created_at === 'string' && item.created_at.startsWith(solicitacoesMesAtual);
+        });
+    }
+
+    // 4. Separar por status (Pendentes vs Concluídas) e atualizar os badges da sub-aba
+    const pendentesSubAba = listaFiltrada.filter(item => !item.status || item.status === 'pendente');
+    const concluidasSubAba = listaFiltrada.filter(item => item.status && item.status !== 'pendente');
+
+    const badgeSubPendentes = document.getElementById('badge-solic-pendentes');
+    const badgeSubConcluidas = document.getElementById('badge-solic-concluidas');
+    if (badgeSubPendentes) badgeSubPendentes.textContent = pendentesSubAba.length;
+    if (badgeSubConcluidas) badgeSubConcluidas.textContent = concluidasSubAba.length;
+
+    let listaExibida = solicitacoesSubAbaAtual === 'pendentes' ? pendentesSubAba : concluidasSubAba;
+
+    // 5. Aplicar Busca Textual
+    const busca = (document.getElementById('admin-search-solicitacoes')?.value || '').toLowerCase().trim();
     if (busca) {
         listaExibida = listaExibida.filter(item => {
             const cat = (item.category || '').toLowerCase();
             const txt = (item.comment_text || '').toLowerCase();
-            return cat.includes(busca) || txt.includes(busca);
+            const autor = (item.profiles?.name || '').toLowerCase();
+            return cat.includes(busca) || txt.includes(busca) || autor.includes(busca);
         });
     }
 
+    // Se estiver vazia, exibir mensagem contextualizada
     if (listaExibida.length === 0) {
-        container.innerHTML = `<p class="text-slate-500 text-sm py-4 text-center">Nenhuma solicitação ${solicitacoesSubAbaAtual === 'pendente' ? 'pendente' : 'no histórico'}.</p>`;
+        const catLabel = solicitacoesCategoriaAtual === 'todas' 
+            ? '' 
+            : ` em "${METADATA_CATEGORIAS_SOLICITACOES[solicitacoesCategoriaAtual]?.label || solicitacoesCategoriaAtual}"`;
+        const statusLabel = solicitacoesSubAbaAtual === 'pendentes' ? 'pendente' : 'concluída';
+        const mesLabel = solicitacoesMesAtual === 'todos' ? '' : ' neste mês';
+
+        container.innerHTML = `
+            <div class="py-12 text-center bg-slate-800/30 rounded-2xl border border-slate-700/50">
+                <p class="text-2xl mb-2">📭</p>
+                <p class="text-slate-400 text-sm font-medium">Nenhuma solicitação ${statusLabel}${catLabel}${mesLabel}.</p>
+                <p class="text-slate-500 text-xs mt-1">Altere a categoria, mês ou status para visualizar outros registros.</p>
+            </div>
+        `;
         return;
     }
 
+    // 6. Renderizar Cards
     container.innerHTML = listaExibida.map(item => {
         const idEscapado = (item.id || '').toString().replace(/'/g, "\\'");
-        const categoria = item.category || 'Ajuste de Tom';
+        const catChave = item._catNormalizada || 'ajuste_tom';
+        const metaCat = METADATA_CATEGORIAS_SOLICITACOES[catChave] || { label: item.category || 'Solicitação', icone: '💬', badgeClasse: 'bg-slate-700 text-slate-300' };
+        
         const texto = item.comment_text || '';
         const status = item.status || 'pendente';
         const dataStr = item.created_at
@@ -989,34 +1304,45 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
             badgeStatusHtml = '<span class="bg-amber-900/60 text-amber-300 border border-amber-700/50 text-xs px-2.5 py-0.5 rounded-full font-medium">⏳ Pendente</span>';
         }
 
-        const isTom = categoria.toLowerCase().includes('tom');
+        const isTom = catChave === 'ajuste_tom';
         const textoEscapado = texto.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
+        // Nome do autor do perfil ou extraído do texto
+        const autorNome = item.profiles?.name || '';
 
         return `
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl border border-slate-700/80 bg-slate-800/80 hover:bg-slate-800 transition gap-3 shadow-sm">
-                <div class="space-y-1">
+                <div class="space-y-1.5 w-full">
                     <div class="flex items-center gap-2 flex-wrap">
-                        <span class="bg-indigo-900/60 text-indigo-300 border border-indigo-700/50 text-xs px-2.5 py-0.5 rounded-full font-medium">💬 ${categoria}</span>
+                        <span class="${metaCat.badgeClasse} border text-xs px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1">
+                            <span>${metaCat.icone}</span>
+                            <span>${metaCat.label}</span>
+                        </span>
                         ${badgeStatusHtml}
-                        ${dataStr ? `<span class="text-xs text-slate-500">${dataStr}</span>` : ''}
+                        ${dataStr ? `<span class="text-xs text-slate-500 font-mono">🕒 ${dataStr}</span>` : ''}
+                        ${autorNome ? `<span class="text-xs bg-slate-900/80 border border-slate-700 text-slate-300 px-2 py-0.5 rounded-md font-medium">👤 ${autorNome}</span>` : ''}
                     </div>
-                    <p class="text-sm text-white font-medium mt-1 leading-relaxed">${texto}</p>
+                    <p class="text-sm text-white font-medium mt-1 leading-relaxed break-words">${texto}</p>
                 </div>
-                <div class="flex gap-2 shrink-0 flex-wrap">
+                <div class="flex items-center gap-2 shrink-0 flex-wrap mt-2 sm:mt-0">
                     ${status === 'pendente' ? `
                         ${isTom ? `
                             <button onclick="abrirModalAprovarTomAdmin('${idEscapado}', '${textoEscapado}')" class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg text-xs transition font-medium flex items-center gap-1 shadow">
                                 🎶 Aprovar & Alterar Tom
                             </button>
                         ` : `
-                            <button onclick="alterarStatusSolicitacaoAdmin('${idEscapado}', 'aprovado')" class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg text-xs transition font-medium flex items-center gap-1">
+                            <button onclick="alterarStatusSolicitacaoAdmin('${idEscapado}', 'aprovado')" class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg text-xs transition font-medium flex items-center gap-1 shadow">
                                 ✅ Aprovar
                             </button>
                         `}
                         <button onclick="alterarStatusSolicitacaoAdmin('${idEscapado}', 'rejeitado')" class="bg-red-800/80 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs transition font-medium flex items-center gap-1">
                             ❌ Rejeitar
                         </button>
-                    ` : ''}
+                    ` : `
+                        <button onclick="alterarStatusSolicitacaoAdmin('${idEscapado}', 'pendente')" class="bg-slate-700 hover:bg-slate-600 text-amber-300 hover:text-white px-3 py-1.5 rounded-lg text-xs transition font-medium flex items-center gap-1" title="Reabrir como pendente">
+                            ↩️ Reabrir
+                        </button>
+                    `}
                     <button onclick="excluirSolicitacaoAdmin('${idEscapado}')" class="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs transition font-medium">
                         🗑️ Excluir
                     </button>
@@ -1028,21 +1354,45 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
 
 async function alterarStatusSolicitacaoAdmin(id, novoStatus) {
     try {
-        if (!supabaseClient || !id) throw new Error("Cliente ou ID inválido.");
+        if (!id) throw new Error("ID inválido.");
 
-        const { error } = await supabaseClient
-            .from('availability_comments')
-            .update({ status: novoStatus })
-            .eq('id', id);
+        // 1. Salva imediatamente na persistência local espelho
+        salvarStatusSolicitacaoLocal(id, novoStatus);
 
-        if (error) {
-            console.warn('Aviso ao atualizar campo status no Supabase:', error);
-        }
-
+        // 2. Atualiza o item em memória no cache
         const item = todasSolicitacoesCache.find(s => s.id == id);
         if (item) item.status = novoStatus;
 
-        mostrarToast(novoStatus === 'aprovado' ? 'Solicitação aprovada com sucesso!' : 'Solicitação marcada como rejeitada.', novoStatus === 'aprovado' ? 'sucesso' : 'aviso');
+        // 3. Tenta persistir no Supabase
+        if (supabaseClient) {
+            try {
+                const { error } = await supabaseClient
+                    .from('availability_comments')
+                    .update({ status: novoStatus })
+                    .eq('id', id);
+
+                if (error) {
+                    console.warn('Aviso ao atualizar campo status no Supabase (mantido no cache local):', error);
+                }
+            } catch (sbErr) {
+                console.warn('Exceção ao persistir no Supabase (mantido no cache local):', sbErr);
+            }
+        }
+
+        let mensagemToast = 'Solicitação atualizada!';
+        let tipoToast = 'sucesso';
+        if (novoStatus === 'aprovado') {
+            mensagemToast = 'Solicitação aprovada com sucesso!';
+            tipoToast = 'sucesso';
+        } else if (novoStatus === 'rejeitado') {
+            mensagemToast = 'Solicitação marcada como rejeitada.';
+            tipoToast = 'aviso';
+        } else if (novoStatus === 'pendente') {
+            mensagemToast = 'Solicitação reaberta como pendente!';
+            tipoToast = 'aviso';
+        }
+
+        mostrarToast(mensagemToast, tipoToast);
         renderizarAdminListaSolicitacoes(false);
     } catch (err) {
         console.error('Erro ao alterar status da solicitação:', err);
@@ -1051,15 +1401,21 @@ async function alterarStatusSolicitacaoAdmin(id, novoStatus) {
 }
 
 async function excluirSolicitacaoAdmin(id) {
+    if (!confirm('Deseja realmente excluir esta solicitação permanentemente?')) return;
+
     try {
-        if (!supabaseClient || !id) throw new Error("Cliente ou ID inválido.");
+        if (!id) throw new Error("ID inválido.");
 
-        const { error } = await supabaseClient
-            .from('availability_comments')
-            .delete()
-            .eq('id', id);
+        removerStatusSolicitacaoLocal(id);
 
-        if (error) throw error;
+        if (supabaseClient) {
+            const { error } = await supabaseClient
+                .from('availability_comments')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+        }
 
         todasSolicitacoesCache = todasSolicitacoesCache.filter(s => s.id != id);
         renderizarAdminListaSolicitacoes(false);
@@ -1092,6 +1448,133 @@ function alternarModoAprovacaoTom(modo) {
     }
 }
 
+// ===================== CORRESPONDÊNCIA INTELIGENTE DE MÚSICA & TOM =====================
+
+function normalizarTextoComparacao(str) {
+    return (str || '')
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // remove acentos e crases
+        .replace(/[^a-z0-9]/g, " ")     // substitui pontuação por espaço
+        .replace(/\s+/g, " ")           // reduz múltiplos espaços para um só
+        .trim();
+}
+
+function extrairDadosSolicitacaoTom(textoSolic) {
+    let nomeMusica = '';
+    let autor = '';
+    let mensagem = textoSolic || '';
+
+    // Padrão canônico salvo pelo app: "Nome da Música - (Autor): Mensagem"
+    const matchCanonic = (textoSolic || '').match(/^(.*?)\s*-\s*\((.*?)\):\s*(.*)$/s);
+    if (matchCanonic) {
+        nomeMusica = matchCanonic[1].trim();
+        autor = matchCanonic[2].trim();
+        mensagem = matchCanonic[3].trim();
+    } else {
+        const idxParenteses = textoSolic.indexOf(' - (');
+        if (idxParenteses !== -1) {
+            nomeMusica = textoSolic.substring(0, idxParenteses).trim();
+            mensagem = textoSolic.substring(idxParenteses + 4).trim();
+        } else {
+            const partes = textoSolic.split('-');
+            if (partes.length > 1) {
+                nomeMusica = partes[0].trim();
+                mensagem = partes.slice(1).join('-').trim();
+            }
+        }
+    }
+
+    return { nomeMusica, autor, mensagem };
+}
+
+function encontrarMusicaCorrespondente(nomeMusicaAlvo, todasMusicas, textoCompleto) {
+    if (!todasMusicas || todasMusicas.length === 0) return null;
+
+    const normAlvo = normalizarTextoComparacao(nomeMusicaAlvo);
+
+    // 1. Casamento Exato Normalizado pelo nome extraído
+    if (normAlvo) {
+        const matchExato = todasMusicas.find(s => normalizarTextoComparacao(s.title) === normAlvo);
+        if (matchExato) return matchExato;
+    }
+
+    // 2. Se for Medley com barras "/" (ex: "Te Agradeço / Grande É o Senhor / Abra Os Olhos...")
+    if (nomeMusicaAlvo && nomeMusicaAlvo.includes('/')) {
+        const faixasMedley = nomeMusicaAlvo.split('/').map(f => f.trim()).filter(Boolean);
+        for (const faixa of faixasMedley) {
+            const normFaixa = normalizarTextoComparacao(faixa);
+            if (normFaixa) {
+                const matchFaixa = todasMusicas.find(s => normalizarTextoComparacao(s.title) === normFaixa);
+                if (matchFaixa) return matchFaixa;
+            }
+        }
+    }
+
+    // 3. Casamento por Início de Título ou Contenção com Palavras Inteiras
+    if (normAlvo && normAlvo.length >= 3) {
+        // Ordena pelo tamanho do título decrescente para dar prioridade a títulos específicos
+        const musicasOrdenadas = [...todasMusicas].sort((a, b) => (b.title || '').length - (a.title || '').length);
+        
+        const matchPrefixo = musicasOrdenadas.find(s => {
+            const normTitulo = normalizarTextoComparacao(s.title);
+            return normTitulo.startsWith(normAlvo) || normAlvo.startsWith(normTitulo);
+        });
+        if (matchPrefixo) return matchPrefixo;
+
+        const regexPalavra = new RegExp(`(?:^|\\s)${normAlvo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\s|$)`, 'i');
+        const matchContem = musicasOrdenadas.find(s => regexPalavra.test(normalizarTextoComparacao(s.title)));
+        if (matchContem) return matchContem;
+    }
+
+    // 4. Fallback seguro: se não encontrou pelo nome extraído, busca títulos contidos no texto completo,
+    // mas apenas títulos com mais de 3 caracteres como palavra delimitada (evita "Rio" dentro de "necessário")
+    if (textoCompleto) {
+        const musicasOrdenadas = [...todasMusicas]
+            .filter(s => (s.title || '').trim().length >= 4)
+            .sort((a, b) => b.title.length - a.title.length);
+
+        const normTexto = normalizarTextoComparacao(textoCompleto);
+        const matchTexto = musicasOrdenadas.find(s => {
+            const normTitulo = normalizarTextoComparacao(s.title);
+            if (normTitulo.length < 4) return false;
+            const regex = new RegExp(`(?:^|\\s)${normTitulo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:\\s|$)`, 'i');
+            return regex.test(normTexto);
+        });
+        if (matchTexto) return matchTexto;
+    }
+
+    return null;
+}
+
+function extrairTomSugeridoSeguro(texto) {
+    if (!texto) return '';
+
+    // Se for indicação de transposição relativa (ex: "1 tom a baixo", "tom abaixo", "baixar tom"), não extrai nota
+    const ehRelativo = /\b(?:\d+\s*)?tom\s*(?:a\s*baixo|abaixo|a\s*cima|acima|menos|mais)\b/i.test(texto) ||
+                       /\b(?:baixar|descer|subir|aumentar)\s+(?:o\s+)?tom\b/i.test(texto);
+    if (ehRelativo) {
+        return '';
+    }
+
+    // Padrões de notas reais como "tom C", "tom: G", "mudar para Dm", "em F#", "novo tom Bb"
+    const regexTom = /\b(?:tom(?:\s*[:=-]|\s+para|\s+de)?|mudar\s+para|ir\s+para|fazer\s+em|tocar\s+em|em)\s+([A-G][b#]?(?:m|maj|min)?)(?!\w)/i;
+    const match = texto.match(regexTom);
+    if (match && match[1]) {
+        const nota = match[1].trim();
+        if (nota.toUpperCase() === 'A') {
+            const indexApos = match.index + match[0].length;
+            const resto = texto.slice(indexApos).trim().toLowerCase();
+            if (resto.startsWith('baixo') || resto.startsWith('cima') || resto.startsWith('mais') || resto.startsWith('menos')) {
+                return '';
+            }
+        }
+        return nota.toUpperCase();
+    }
+
+    return '';
+}
+
 function abrirModalAprovarTomAdmin(solicId, textoSolic) {
     const modal = document.getElementById('modal-aprovar-tom-admin');
     if (!modal) return;
@@ -1117,22 +1600,30 @@ function abrirModalAprovarTomAdmin(solicId, textoSolic) {
         selectMusica.appendChild(option);
     });
 
-    const songEncontrada = todasMusicas.find(s => textoSolic.toLowerCase().includes(s.title.toLowerCase()));
+    // 1. Extrai nome da música e mensagem
+    const { nomeMusica, mensagem } = extrairDadosSolicitacaoTom(textoSolic);
+
+    // 2. Encontra a música correta com o algoritmo inteligente
+    const songEncontrada = encontrarMusicaCorrespondente(nomeMusica, todasMusicas, textoSolic);
     if (songEncontrada) {
         selectMusica.value = songEncontrada.id;
         atualizarVersoesSelectAprovarTom();
-    }
-
-    const matchTom = textoSolic.match(/tom\s+([A-G][b#]?m?)/i);
-    if (matchTom && matchTom[1]) {
-        document.getElementById('aprovar-tom-input-novo-tom').value = matchTom[1].toUpperCase();
     } else {
-        document.getElementById('aprovar-tom-input-novo-tom').value = '';
+        selectMusica.value = '';
+        atualizarVersoesSelectAprovarTom();
     }
 
-    document.getElementById('aprovar-tom-input-variacao-nova').value = 'Tom Abaixo';
+    // 3. Extrai o tom sugerido com proteção contra falsos positivos
+    const tomDetectado = extrairTomSugeridoSeguro(mensagem);
+    document.getElementById('aprovar-tom-input-novo-tom').value = tomDetectado;
+
+    // 4. Configura sugestão de variação
+    const ehAcima = /\b(?:a\s*cima|acima|subir|aumentar)\b/i.test(mensagem);
+    document.getElementById('aprovar-tom-input-variacao-nova').value = ehAcima ? 'Tom Acima' : 'Tom Abaixo';
     document.getElementById('aprovar-tom-input-vs-nova').value = '';
     document.getElementById('aprovar-tom-input-yt-nova').value = '';
+    const fileInput = document.getElementById('aprovar-tom-input-vs-file');
+    if (fileInput) fileInput.value = '';
 
     alternarModoAprovacaoTom('existente');
     modal.classList.remove('hidden');
@@ -1141,6 +1632,8 @@ function abrirModalAprovarTomAdmin(solicId, textoSolic) {
 function fecharModalAprovarTomAdmin() {
     const modal = document.getElementById('modal-aprovar-tom-admin');
     if (modal) modal.classList.add('hidden');
+    const fileInput = document.getElementById('aprovar-tom-input-vs-file');
+    if (fileInput) fileInput.value = '';
 }
 
 function atualizarVersoesSelectAprovarTom() {
@@ -1154,18 +1647,24 @@ function atualizarVersoesSelectAprovarTom() {
     const novas = (typeof Store !== 'undefined' ? Store.getNovas() : dadosGlobais.novas) || [];
     const song = [...repertorio, ...novas].find(s => s.id == songId);
 
-    if (song && song.song_versions) {
-        song.song_versions.forEach(v => {
+    // Suporta tanto song.song_versions quanto song.versions
+    const versoes = (song && (song.song_versions || song.versions)) || [];
+
+    if (versoes.length > 0) {
+        versoes.forEach(v => {
             const option = document.createElement('option');
             option.value = v.id;
-            const tomAtual = v.key || v.key_note || 'N/A';
+            const tomAtual = v.key || v.key_note || 'Padrão';
             const variacao = v.variation || v.variation_name || 'Original';
             option.textContent = `Versão: ${variacao} (Tom: ${tomAtual})`;
             selectVersao.appendChild(option);
         });
-        if (song.song_versions.length > 0) {
-            selectVersao.value = song.song_versions[0].id;
-        }
+        selectVersao.value = versoes[0].id;
+    } else {
+        const option = document.createElement('option');
+        option.value = "";
+        option.textContent = "Nenhuma versão encontrada (use Criar Nova Versão)";
+        selectVersao.appendChild(option);
     }
 }
 
@@ -1247,17 +1746,48 @@ async function confirmarAprovacaoTomAdmin() {
 // ===================== SUPABASE STORAGE UPLOAD HELPERS =====================
 
 /**
- * Envia um arquivo físico para o Supabase Storage e retorna sua URL pública oficial.
- * Possui fallback automático para o bucket 'media-inbox' caso o bucket secundário não exista.
+ * Envia um arquivo físico prioritariamente para o Cloudflare R2 via Worker.
+ * Caso o Worker falhe, realiza fallback automático para o Supabase Storage (bucket 'media-inbox').
  */
-async function uploadArquivoSupabase(file, bucketName = 'media-inbox', subFolder = 'musicas') {
-    if (!supabaseClient) throw new Error("Cliente Supabase não está inicializado.");
+async function uploadArquivoSupabase(file, bucketName = 'media-inbox', subFolder = 'vs_tracks') {
     if (!file) return null;
+
+    const churchId = (typeof dadosGlobais !== 'undefined' && dadosGlobais.church?.id)
+        || (typeof usuarioLogado !== 'undefined' && usuarioLogado?.church_id)
+        || 'geral';
 
     const ext = file.name.split('.').pop() || 'bin';
     const nomeLimpo = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_");
+    const fileName = `${Date.now()}_${nomeLimpo}.${ext}`;
+
+    // 1. TENTATIVA 1: Cloudflare R2 através do Cloudflare Worker
+    try {
+        const filePathR2 = `${churchId}/${subFolder}/${fileName}`;
+        const workerUrl = `https://liturge-upload-worker.erickrosquero.workers.dev/${filePathR2}`;
+        const response = await fetch(workerUrl, {
+            method: 'PUT',
+            body: file,
+            headers: { 'Content-Type': file.type || 'application/octet-stream' }
+        });
+
+        if (response.ok) {
+            const resData = await response.json();
+            if (resData && resData.file_url) {
+                console.log("Upload realizado com sucesso no Cloudflare R2:", resData.file_url);
+                return resData.file_url;
+            }
+        } else {
+            console.warn("Cloudflare Worker retornou status não-ok:", response.status);
+        }
+    } catch (r2Err) {
+        console.warn("Falha no envio para Cloudflare R2, acionando fallback para Supabase Storage:", r2Err);
+    }
+
+    // 2. FALLBACK DE CONTINGÊNCIA: Supabase Storage
+    if (!supabaseClient) throw new Error("Cliente Supabase não está inicializado.");
+
     let targetBucket = bucketName || 'media-inbox';
-    let filePath = `${subFolder}/${Date.now()}_${nomeLimpo}.${ext}`;
+    let filePath = `${subFolder}/${fileName}`;
 
     let { data, error } = await supabaseClient
         .storage
@@ -1271,7 +1801,7 @@ async function uploadArquivoSupabase(file, bucketName = 'media-inbox', subFolder
     if (error && (error.message?.toLowerCase().includes('not found') || error.statusCode === 404 || error.status === 400 || error.error === 'Bucket not found')) {
         console.warn(`Bucket '${targetBucket}' não encontrado. Fazendo fallback automático para 'media-inbox'...`);
         targetBucket = 'media-inbox';
-        filePath = `${Date.now()}_${nomeLimpo}.${ext}`;
+        filePath = `${fileName}`;
 
         const resFallback = await supabaseClient
             .storage
@@ -1305,6 +1835,8 @@ function abrirModalMusicaAdmin() {
     if (!modal) return;
 
     document.getElementById('admin-musica-titulo').value = '';
+    const artistaEl = document.getElementById('admin-musica-artista');
+    if (artistaEl) artistaEl.value = '';
     document.getElementById('admin-musica-tom').value = '';
     document.getElementById('admin-musica-variacao').value = '';
     document.getElementById('admin-musica-vs').value = '';
@@ -1323,6 +1855,7 @@ function fecharModalMusicaAdmin() {
 
 async function salvarMusicaAdmin() {
     const titulo = document.getElementById('admin-musica-titulo').value.trim();
+    const artista = document.getElementById('admin-musica-artista')?.value.trim() || '';
     const tom = document.getElementById('admin-musica-tom').value.trim();
     const variacao = document.getElementById('admin-musica-variacao').value.trim() || 'Original';
     let vsUrl = document.getElementById('admin-musica-vs').value.trim();
@@ -1356,6 +1889,7 @@ async function salvarMusicaAdmin() {
             title: titulo,
             status: status
         };
+        if (artista) songPayload.artist = artista;
         if (churchId) songPayload.church_id = churchId;
 
         // 1. Inserir na tabela 'songs'
@@ -1490,7 +2024,7 @@ async function abrirModalEditarMusicaAdmin(songId) {
         if (supabaseClient) {
             const { data, error } = await supabaseClient
                 .from('songs')
-                .select('id, title, status, song_versions(id, key, variation, drive_vs_url, youtube_url)')
+                .select('id, title, artist, status, song_versions(id, key, variation, drive_vs_url, youtube_url)')
                 .eq('id', songId)
                 .single();
             if (!error && data) song = data;
@@ -1509,6 +2043,8 @@ async function abrirModalEditarMusicaAdmin(songId) {
 
     document.getElementById('edit-admin-song-id').value = song.id;
     document.getElementById('edit-admin-musica-titulo').value = song.title || '';
+    const artistaEl = document.getElementById('edit-admin-musica-artista');
+    if (artistaEl) artistaEl.value = song.artist || '';
     document.getElementById('edit-admin-musica-status').value = song.status || 'ativo';
 
     const containerVersoes = document.getElementById('edit-admin-lista-versoes');
@@ -1563,6 +2099,7 @@ function fecharModalEditarMusicaAdmin() {
 async function salvarEdicaoMusicaAdmin() {
     const songId = document.getElementById('edit-admin-song-id').value;
     const titulo = document.getElementById('edit-admin-musica-titulo').value.trim();
+    const artista = document.getElementById('edit-admin-musica-artista')?.value.trim() || '';
     const status = document.getElementById('edit-admin-musica-status').value;
 
     if (!songId || !titulo) {
@@ -1578,10 +2115,17 @@ async function salvarEdicaoMusicaAdmin() {
 
         const { error: songErr } = await supabaseClient
             .from('songs')
-            .update({ title: titulo, status: status })
+            .update({ title: titulo, artist: artista, status: status })
             .eq('id', songId);
 
         if (songErr) throw songErr;
+
+        const cached = adminSongsCache.find(s => s.id === songId);
+        if (cached) {
+            cached.title = titulo;
+            cached.artist = artista;
+            cached.status = status;
+        }
 
         const versionElements = document.querySelectorAll('#edit-admin-lista-versoes [data-version-id]');
         for (const el of versionElements) {
@@ -2011,19 +2555,17 @@ async function limparTodasMusicasAdmin() {
         if (!supabaseClient) throw new Error("Cliente Supabase não está inicializado.");
 
         const currentChurchId = (typeof dadosGlobais !== 'undefined' && dadosGlobais.church?.id) ? dadosGlobais.church.id : null;
+        if (!currentChurchId) throw new Error("Igreja ativa não identificada.");
 
-        // 1. Apagar versões de músicas
-        await supabaseClient.from('song_versions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-
-        // 2. Apagar músicas da igreja
-        let deleteSongsQuery = supabaseClient.from('songs').delete();
-        if (currentChurchId) {
-            deleteSongsQuery = deleteSongsQuery.eq('church_id', currentChurchId);
-        } else {
-            deleteSongsQuery = deleteSongsQuery.neq('id', '00000000-0000-0000-0000-000000000000');
+        // 1. Obter IDs das músicas da igreja para apagar suas versões
+        const { data: churchSongs } = await supabaseClient.from('songs').select('id').eq('church_id', currentChurchId);
+        const songIds = (churchSongs || []).map(s => s.id);
+        if (songIds.length > 0) {
+            await supabaseClient.from('song_versions').delete().in('song_id', songIds);
         }
 
-        const { error: errSongs } = await deleteSongsQuery;
+        // 2. Apagar músicas da igreja
+        const { error: errSongs } = await supabaseClient.from('songs').delete().eq('church_id', currentChurchId);
         if (errSongs) throw errSongs;
 
         // 3. Atualizar Store e UI
@@ -2205,11 +2747,20 @@ async function limparApenasLetrasAdmin() {
     try {
         if (!supabaseClient) throw new Error("Cliente Supabase não está inicializado.");
 
-        // 1. Limpar coluna lyrics em 'songs'
-        await supabaseClient.from('songs').update({ lyrics: '' }).neq('id', '00000000-0000-0000-0000-000000000000');
+        const currentChurchId = (typeof dadosGlobais !== 'undefined' && dadosGlobais.church?.id) 
+            ? dadosGlobais.church.id 
+            : (usuarioLogado?.church_id || null);
+        if (!currentChurchId) throw new Error("Igreja ativa não identificada.");
 
-        // 2. Limpar coluna lyrics em 'song_versions'
-        await supabaseClient.from('song_versions').update({ lyrics: '' }).neq('id', '00000000-0000-0000-0000-000000000000');
+        // 1. Limpar coluna lyrics em 'songs' da igreja ativa
+        await supabaseClient.from('songs').update({ lyrics: '' }).eq('church_id', currentChurchId);
+
+        // 2. Limpar coluna lyrics em 'song_versions' da igreja ativa
+        const { data: churchSongs } = await supabaseClient.from('songs').select('id').eq('church_id', currentChurchId);
+        const songIds = (churchSongs || []).map(s => s.id);
+        if (songIds.length > 0) {
+            await supabaseClient.from('song_versions').update({ lyrics: '' }).in('song_id', songIds);
+        }
 
         await carregarDados();
         if (typeof renderizarAdminRepertorio === 'function') renderizarAdminRepertorio();
@@ -2426,13 +2977,18 @@ async function abrirModalEditarCifraAdmin(songId) {
         if (supabaseClient) {
             const { data, error } = await supabaseClient
                 .from('songs')
-                .select('id, title, chords, song_versions(id, key, variation, chords)')
+                .select('id, title, artist, chords, song_versions(id, key, variation, chords)')
                 .eq('id', songId)
                 .single();
             if (!error && data) songData = data;
         }
     } catch (e) {
         console.warn("Erro ao carregar cifra do Supabase:", e);
+    }
+
+    if (!songData) {
+        const rep = (adminSongsCache || []).find(s => s.id === songId);
+        if (rep) songData = rep;
     }
 
     if (!songData) {
@@ -2450,6 +3006,7 @@ async function abrirModalEditarCifraAdmin(songId) {
     stateModalCifras = {
         songId: songData.id,
         songTitle: songData.title || 'Sem Título',
+        songArtist: songData.artist || '',
         songChords: songData.chords || '',
         versions: versions,
         activeVersionId: null,
@@ -2458,7 +3015,15 @@ async function abrirModalEditarCifraAdmin(songId) {
 
     document.getElementById('edit-cifra-admin-song-id').value = songData.id;
     const titleEl = document.getElementById('edit-cifra-admin-titulo-musica');
-    if (titleEl) titleEl.textContent = songData.title || '';
+    if (titleEl) {
+        titleEl.textContent = songData.title ? `${songData.title}${songData.artist ? ' — ' + songData.artist : ''}` : '';
+    }
+
+    const buscaMusicaEl = document.getElementById('edit-cifra-busca-musica');
+    if (buscaMusicaEl) buscaMusicaEl.value = songData.title || '';
+
+    const buscaArtistaEl = document.getElementById('edit-cifra-busca-artista');
+    if (buscaArtistaEl) buscaArtistaEl.value = songData.artist || '';
 
     const padraoEl = document.getElementById('edit-cifra-admin-padrao');
     if (padraoEl) padraoEl.value = songData.chords || '';
@@ -2484,35 +3049,26 @@ function renderizarBotoesVersoesCifraAdmin() {
     const container = document.getElementById('edit-cifra-admin-botoes-versoes');
     if (!container) return;
 
-    const outrasVersoes = stateModalCifras.versions.filter(v => 
-        v.variation && v.variation.toLowerCase() !== 'original'
-    );
-
-    const listaVersoes = outrasVersoes.length > 0 ? outrasVersoes : stateModalCifras.versions.slice(1);
-
-    if (listaVersoes.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-500 italic">Esta música não possui outras versões cadastradas.</p>';
+    if (!stateModalCifras.versions || stateModalCifras.versions.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500">Nenhuma versão cadastrada.</p>';
         return;
     }
 
-    container.innerHTML = listaVersoes.map(v => {
-        const ativo = stateModalCifras.activeVersionId === v.id;
-        const cls = ativo
-            ? 'bg-brand-600 text-white font-semibold border-brand-500 shadow'
-            : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border-slate-600';
-
-        const label = `${v.variation || 'Versão'} (${v.key || 'Tom N/A'})`;
-
+    container.innerHTML = stateModalCifras.versions.map(v => {
+        const isActive = stateModalCifras.activeVersionId === v.id;
+        const btnClass = isActive
+            ? 'bg-brand-600 text-white font-bold'
+            : 'bg-slate-700 hover:bg-slate-600 text-slate-300';
         return `
             <button type="button" onclick="selecionarVersaoCifraAdmin('${v.id}')"
-                class="px-3 py-1.5 rounded-lg text-xs border transition ${cls}">
-                🎵 ${label}
+                class="text-xs px-3 py-1.5 rounded-lg border border-slate-600 transition ${btnClass}">
+                ${v.variation || 'Versão'} (${v.key || 'Tom N/A'})
             </button>
         `;
     }).join('');
 }
 
-function selecionarVersaoCifraAdmin(versionId) {
+function selecionarVersaoCifraAdmin(vId) {
     if (stateModalCifras.activeVersionId) {
         const conteudoEl = document.getElementById('edit-cifra-admin-versao-conteudo');
         const vAntiga = stateModalCifras.versions.find(v => v.id === stateModalCifras.activeVersionId);
@@ -2521,14 +3077,13 @@ function selecionarVersaoCifraAdmin(versionId) {
         }
     }
 
-    stateModalCifras.activeVersionId = versionId;
-    const vNova = stateModalCifras.versions.find(v => v.id === versionId);
-
+    stateModalCifras.activeVersionId = vId;
     renderizarBotoesVersoesCifraAdmin();
 
     const container = document.getElementById('edit-cifra-admin-versao-container');
     const label = document.getElementById('edit-cifra-admin-versao-label');
     const conteudo = document.getElementById('edit-cifra-admin-versao-conteudo');
+    const vNova = stateModalCifras.versions.find(v => v.id === vId);
 
     if (container && vNova) {
         container.classList.remove('hidden');
@@ -2538,7 +3093,11 @@ function selecionarVersaoCifraAdmin(versionId) {
 }
 
 async function buscarCifraAutomaticaAdmin() {
-    const titulo = stateModalCifras.songTitle || 'Música';
+    const inputTitulo = document.getElementById('edit-cifra-busca-musica')?.value.trim();
+    const inputArtista = document.getElementById('edit-cifra-busca-artista')?.value.trim();
+
+    const titulo = inputTitulo || stateModalCifras.songTitle || 'Música';
+    const artista = (inputArtista !== undefined && inputArtista !== null) ? inputArtista : (stateModalCifras.songArtist || '');
     const songId = stateModalCifras.songId;
     let tomAlvo = 'C';
 
@@ -2562,16 +3121,28 @@ async function buscarCifraAutomaticaAdmin() {
         let cifraEncontrada = '';
 
         try {
-            const queryUrl = `https://api.vagalume.com.br/search.php?art=&mus=${encodeURIComponent(titulo)}&extra=cifra`;
-            const resp = await fetch(queryUrl);
+            // 1ª Tentativa: busca refinada com artista e música
+            let queryUrl = `https://api.vagalume.com.br/search.php?art=${encodeURIComponent(artista)}&mus=${encodeURIComponent(titulo)}&extra=cifra`;
+            let resp = await fetch(queryUrl);
+            let data = null;
             if (resp.ok) {
-                const data = await resp.json();
-                if (data && data.mus && data.mus[0] && data.mus[0].cifra) {
-                    const rawCifra = data.mus[0].cifra.text || '';
-                    const rawTom = data.mus[0].cifra.key || 'C';
-                    if (rawCifra) {
-                        cifraEncontrada = typeof transporCifra === 'function' ? transporCifra(rawCifra, rawTom, tomAlvo) : rawCifra;
-                    }
+                try { data = await resp.json(); } catch (e) {}
+            }
+
+            // 2ª Tentativa (fallback): se não encontrou e artista foi informado, tenta apenas pelo título da música
+            if ((!data || !data.mus || !data.mus[0] || !data.mus[0].cifra) && artista) {
+                queryUrl = `https://api.vagalume.com.br/search.php?art=&mus=${encodeURIComponent(titulo)}&extra=cifra`;
+                resp = await fetch(queryUrl);
+                if (resp.ok) {
+                    try { data = await resp.json(); } catch (e) {}
+                }
+            }
+
+            if (data && data.mus && data.mus[0] && data.mus[0].cifra) {
+                const rawCifra = data.mus[0].cifra.text || '';
+                const rawTom = data.mus[0].cifra.key || 'C';
+                if (rawCifra) {
+                    cifraEncontrada = typeof transporCifra === 'function' ? transporCifra(rawCifra, rawTom, tomAlvo) : rawCifra;
                 }
             }
         } catch (e) {
@@ -2579,39 +3150,10 @@ async function buscarCifraAutomaticaAdmin() {
         }
 
         if (!cifraEncontrada) {
-            const titleNorm = (titulo || '').toLowerCase();
-            if (titleNorm.includes('1000') || titleNorm.includes('mil graus')) {
-                const cifraExact1000 = `[Intro] F  C  Em  Am\n        F  C  G\n        F  C  Em  Am\n        F  C  G  C\n\n[Primeira Parte]\n\nC\n  Na presença dos homens\n\nNa presença dos anjos\n          F   Em   Am\nSempre eu Te louva__rei\n    Dm7  Em  F\nTe lou__va__rei\nC\n  Mesmo estando em guerra\n\nVou celebrando minha vitória\n          F   Em   Am\nEu Te louva__rei\n    Dm7  Em  F\nTe lou__va__rei\n\n[Refrão]\n\nSobre toda a Terra\n             F  G\nNovo som se ouvirá\n              C\nTua alegria é a nossa força\n               F  G\nDeus de maravilhas\n            Am\nQue maravilha é Te louvar\n\n[Segunda Parte]\n\nC\n  Eu entro na Sua presença\n  Dm7\nPra receber o Seu poder\n  Em\nE quanto mais vejo Tua glória\n  F                      G\nMais vejo a minha vitória\n\n[Refrão]\n\nSobre toda a Terra\n             F  G\nNovo som se ouvirá\n              C\nTua alegria é a nossa força\n               F  G\nDeus de maravilhas\n            Am\nQue maravilha é Te louvar\n\n[Ponte]\n\n             F                    G\n1000 graus de unção e poder\n             Em                   Am\n1000 graus de unção e poder\n                     F               G              C\nReceba a cura, receba a libertação e a força do Senhor`;
-                cifraEncontrada = typeof transporCifra === 'function' ? transporCifra(cifraExact1000, 'C', tomAlvo) : cifraExact1000;
-            } else {
-                const cachedSong = (adminSongsCache || []).find(s => s.id === songId);
-                const letraBase = (cachedSong && cachedSong.lyrics) ? cachedSong.lyrics : '';
-                const linhasLetra = letraBase.split('\n').filter(l => l.trim().length > 0);
-                const sequenciaAcordesG = ['G', 'D/F#', 'Em7', 'C9', 'Am7', 'Bm7'];
-                const linhasCifradas = [];
-
-                linhasCifradas.push(`[Intro] G  D/F#  Em7  C9\n`);
-                linhasCifradas.push(`[Primeira Parte]\n`);
-
-                if (linhasLetra.length > 0) {
-                    let chordIdx = 0;
-                    const metade = Math.floor(linhasLetra.length / 2);
-                    linhasLetra.forEach((linha, idx) => {
-                        const textoLinha = linha.trim();
-                        if (idx === metade) {
-                            linhasCifradas.push(`\n[Refrão]\n`);
-                        }
-                        const acorde = sequenciaAcordesG[chordIdx % sequenciaAcordesG.length];
-                        linhasCifradas.push(`${acorde}`);
-                        linhasCifradas.push(`  ${textoLinha}\n`);
-                        chordIdx++;
-                    });
-                } else {
-                    linhasCifradas.push(`G\n  ${titulo}\n\nD/F#\n  Vem com Tua glória\n\nEm7\n  Santo é o Teu nome\n\nC9\n  Eternamente amém`);
-                }
-                const baseG = linhasCifradas.join('\n');
-                cifraEncontrada = typeof transporCifra === 'function' ? transporCifra(baseG, 'G', tomAlvo) : baseG;
-            }
+            const container = document.getElementById('edit-cifra-previa-container');
+            if (container) container.classList.add('hidden');
+            mostrarToast('Cifra não encontrada na API automática. Use o botão "🌐 Abrir Cifra Club" e depois "📋 Colar Cifra"!', 'aviso');
+            return;
         }
 
         stateModalCifras.previaTexto = cifraEncontrada;
@@ -2632,6 +3174,15 @@ async function buscarCifraAutomaticaAdmin() {
         if (btn) { btn.disabled = false; btn.textContent = '🔍 Buscar Cifra Automática'; }
     }
 }
+
+function abrirPesquisaCifraClubExterno() {
+    const inputTitulo = document.getElementById('edit-cifra-busca-musica')?.value.trim();
+    const inputArtista = document.getElementById('edit-cifra-busca-artista')?.value.trim();
+    const termo = [inputTitulo || stateModalCifras.songTitle, inputArtista || stateModalCifras.songArtist].filter(Boolean).join(' ');
+    const url = `https://www.cifraclub.com.br/?q=${encodeURIComponent(termo)}`;
+    window.open(url, '_blank');
+}
+window.abrirPesquisaCifraClubExterno = abrirPesquisaCifraClubExterno;
 
 function aplicarPreviaCifra() {
     if (!stateModalCifras.previaTexto) return;
@@ -2667,12 +3218,12 @@ async function salvarCifrasAdmin() {
         const conteudoEl = document.getElementById('edit-cifra-admin-versao-conteudo');
         const vAtiva = stateModalCifras.versions.find(v => v.id === stateModalCifras.activeVersionId);
         if (vAtiva && conteudoEl) {
-            vAtiva.chords = conteudoEl.value;
+            vAtiva.chords = typeof sanitizarTextoCifraClub === 'function' ? sanitizarTextoCifraClub(conteudoEl.value) : conteudoEl.value;
         }
     }
 
     const padraoEl = document.getElementById('edit-cifra-admin-padrao');
-    const chordsPadrao = padraoEl ? padraoEl.value : '';
+    const chordsPadrao = padraoEl ? (typeof sanitizarTextoCifraClub === 'function' ? sanitizarTextoCifraClub(padraoEl.value) : padraoEl.value) : '';
 
     const btn = document.getElementById('btn-salvar-edit-cifra-admin');
     if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
@@ -2688,9 +3239,10 @@ async function salvarCifrasAdmin() {
         if (songErr) throw songErr;
 
         for (const v of stateModalCifras.versions) {
+            const vChordsLimpo = typeof sanitizarTextoCifraClub === 'function' ? sanitizarTextoCifraClub(v.chords) : v.chords;
             await supabaseClient
                 .from('song_versions')
-                .update({ chords: v.chords })
+                .update({ chords: vChordsLimpo })
                 .eq('id', v.id);
         }
         fecharModalEditarCifraAdmin();
@@ -2733,7 +3285,7 @@ async function colarCifraClubDireto() {
 
     // Tentar detectar o tom de origem da cifra colada (ex: Tom: C ou [Tom: C])
     let tomOrigem = 'C';
-    const matchTom = textoCifra.match(/Tom:s*([A-G][#b]?)/i);
+    const matchTom = textoCifra.match(/Tom:\s*([A-G][#b]?)/i);
     if (matchTom && matchTom[1]) {
         tomOrigem = matchTom[1].toUpperCase();
     }
@@ -2786,6 +3338,12 @@ function abrirModalMinisterioAdmin(minData = null) {
 
     const tituloEl = document.getElementById('modal-ministerio-titulo');
     if (tituloEl) tituloEl.textContent = minData ? '✏️ Editar Ministério' : '🏢 Novo Ministério';
+
+    const canUploadCb = document.getElementById('ministerio-admin-can-upload-media');
+    if (canUploadCb) {
+        canUploadCb.checked = !!(minData && minData.can_upload_media);
+    }
+
     modal.classList.remove('hidden');
 }
 
@@ -2794,11 +3352,23 @@ function fecharModalMinisterioAdmin() {
     if (modal) modal.classList.add('hidden');
 }
 
-function abrirModalFuncaoAdmin(ministerioId = null) {
+function abrirModalFuncaoAdmin(ministerioId = null, roleData = null) {
     const modal = document.getElementById('modal-funcao-admin');
     if (!modal) return;
     const selectMin = document.getElementById('funcao-admin-ministerio-id');
-    document.getElementById('funcao-admin-nome').value = '';
+    const inputNome = document.getElementById('funcao-admin-nome');
+    const inputId = document.getElementById('funcao-admin-id');
+    const titleEl = document.getElementById('modal-funcao-admin-titulo');
+
+    if (inputId) inputId.value = roleData ? roleData.id : '';
+    if (inputNome) inputNome.value = roleData ? (roleData.name || '') : '';
+    if (titleEl) titleEl.textContent = roleData ? '✏️ Editar Função' : '➕ Nova Função no Ministério';
+
+    const scope = roleData?.scale_scope || (roleData && (roleData.name.toLowerCase().includes('cantor') || roleData.name.toLowerCase().includes('vocal')) ? 'song' : 'service');
+    const rService = document.getElementById('funcao-escopo-service');
+    const rSong = document.getElementById('funcao-escopo-song');
+    if (scope === 'song' && rSong) rSong.checked = true;
+    else if (rService) rService.checked = true;
 
     if (selectMin) {
         selectMin.innerHTML = '<option value="">Selecione um ministério...</option>';
@@ -2806,7 +3376,8 @@ function abrirModalFuncaoAdmin(ministerioId = null) {
             const opt = document.createElement('option');
             opt.value = m.id;
             opt.textContent = `${m.icon || '🏢'} ${m.name}`;
-            if (ministerioId && m.id === ministerioId) opt.selected = true;
+            const targetMinId = roleData ? (roleData.ministry_id || ministerioId) : ministerioId;
+            if (targetMinId && m.id === targetMinId) opt.selected = true;
             selectMin.appendChild(opt);
         });
     }
@@ -2828,20 +3399,31 @@ async function renderizarAdminMinisterios() {
         let ministries = dadosGlobais.ministries || [];
         let profiles = [];
 
+        const currentChurchId = (dadosGlobais.church && dadosGlobais.church.id) 
+            || (usuarioLogado && usuarioLogado.church_id);
+
         if (supabaseClient) {
-            const { data: minData, error: minErr } = await supabaseClient
+            let minQuery = supabaseClient
                 .from('ministries')
                 .select('*, ministry_roles(*)')
                 .order('name');
+            if (currentChurchId) {
+                minQuery = minQuery.eq('church_id', currentChurchId);
+            }
+            const { data: minData, error: minErr } = await minQuery;
             if (!minErr && minData) {
                 ministries = minData;
                 dadosGlobais.ministries = minData;
             }
 
-            const { data: profData } = await supabaseClient
+            let profQuery = supabaseClient
                 .from('profiles')
                 .select('*')
                 .order('name');
+            if (currentChurchId) {
+                profQuery = profQuery.eq('church_id', currentChurchId);
+            }
+            const { data: profData } = await profQuery;
 
             const { data: umrData } = await supabaseClient
                 .from('user_ministry_roles')
@@ -2929,11 +3511,20 @@ async function renderizarAdminMinisterios() {
             });
 
             const badgesRolesHtml = roles.map(r => {
+                const isSong = r.scale_scope === 'song' || (r.name && (r.name.toLowerCase().includes('cantor') || r.name.toLowerCase().includes('vocal')));
+                const scopeBadge = isSong
+                    ? `<span class="text-[9px] bg-purple-900/60 text-purple-300 border border-purple-700/50 px-1.5 py-0.2 rounded font-semibold" title="Escalado em cada música individual">🎵 Por Música</span>`
+                    : `<span class="text-[9px] bg-indigo-900/60 text-indigo-300 border border-indigo-700/50 px-1.5 py-0.2 rounded font-semibold" title="Escalado no culto geral">⛪ Culto</span>`;
+                const botaoEditarRole = roleUsuario === 'admin'
+                    ? `<button onclick='abrirModalFuncaoAdmin("${min.id}", ${JSON.stringify(r).replace(/'/g, "&apos;")})' class="text-slate-400 hover:text-white font-bold text-[10px] ml-0.5" title="Editar Função">✏️</button>`
+                    : '';
                 const botaoDeletarRole = roleUsuario === 'admin'
                     ? `<button onclick="excluirFuncaoMinisterioAdmin('${r.id}')" class="text-slate-400 hover:text-red-400 font-bold text-[10px] ml-0.5" title="Excluir Função">✕</button>`
                     : '';
                 return `<span class="bg-slate-900 border border-slate-700 text-slate-300 text-[11px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1">
                     ${r.name || r.role_name}
+                    ${scopeBadge}
+                    ${botaoEditarRole}
                     ${botaoDeletarRole}
                  </span>`;
             }).join('');
@@ -2982,6 +3573,10 @@ async function renderizarAdminMinisterios() {
                 ? `<button onclick="abrirModalFuncaoAdmin('${min.id}')" class="text-xs text-brand-400 hover:text-brand-300 font-medium">+ Adicionar Função</button>`
                 : '';
 
+            const mediaBadge = min.can_upload_media 
+                ? `<span class="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded-full font-semibold inline-flex items-center gap-1">📁 Upload de Mídias</span>`
+                : '';
+
             html += `
                 <div class="bg-slate-800/80 border ${corEstilo.split(' ')[0]} rounded-2xl p-5 shadow-lg flex flex-col justify-between space-y-4">
                     <div>
@@ -2989,7 +3584,10 @@ async function renderizarAdminMinisterios() {
                             <div class="flex items-center gap-3">
                                 <span class="text-2xl p-2 bg-slate-900/60 border border-slate-700/60 rounded-xl">${min.icon || '🏢'}</span>
                                 <div>
-                                    <h3 class="font-bold text-base text-white">${min.name}</h3>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h3 class="font-bold text-base text-white">${min.name}</h3>
+                                        ${mediaBadge}
+                                    </div>
                                     <p class="text-xs text-slate-400">${min.description || 'Sem descrição cadastrada.'}</p>
                                 </div>
                             </div>
@@ -3115,9 +3713,15 @@ async function salvarMinisterioAdmin() {
             if (cb) permissions[key] = !!cb.checked;
         });
 
-        const payload = { name, description, icon, color, permissions };
-        let error = null;
+        const can_upload_media = !!document.getElementById('ministerio-admin-can-upload-media')?.checked;
+        const churchId = (dadosGlobais.church && dadosGlobais.church.id) || (usuarioLogado && usuarioLogado.church_id);
 
+        const payload = { name, description, icon, color, permissions, can_upload_media };
+        if (!id && churchId) {
+            payload.church_id = churchId;
+        }
+
+        let error = null;
         if (id) {
             const { error: err } = await supabaseClient.from('ministries').update(payload).eq('id', id);
             error = err;
@@ -3131,6 +3735,14 @@ async function salvarMinisterioAdmin() {
         fecharModalMinisterioAdmin();
         if (typeof mostrarToast === 'function') mostrarToast('Ministério salvo com sucesso!', 'sucesso');
         await renderizarAdminMinisterios();
+        if (typeof aplicarVisibilidadePermissoes === 'function') aplicarVisibilidadePermissoes();
+        if (typeof popularSelectsInstrumentos === 'function') popularSelectsInstrumentos();
+        const wizardModal = document.getElementById('modal-onboarding-wizard');
+        if (wizardModal && !wizardModal.classList.contains('hidden')) {
+            if (typeof renderizarOnboardingStep === 'function') {
+                renderizarOnboardingStep(window.onboardingCurrentStep || 1);
+            }
+        }
     } catch (err) {
         console.error('Erro ao salvar ministério:', err);
         if (typeof mostrarToast === 'function') mostrarToast(`Erro ao salvar ministério: ${err.message}`, 'erro');
@@ -3138,8 +3750,10 @@ async function salvarMinisterioAdmin() {
 }
 
 async function salvarFuncaoAdmin() {
+    const id = document.getElementById('funcao-admin-id')?.value;
     const ministry_id = document.getElementById('funcao-admin-ministerio-id').value;
     const name = document.getElementById('funcao-admin-nome').value.trim();
+    const scale_scope = document.querySelector('input[name="funcao-admin-escopo"]:checked')?.value || 'service';
 
     if (!ministry_id || !name) {
         if (typeof mostrarToast === 'function') mostrarToast('Selecione o ministério e digite o nome da função.', 'aviso');
@@ -3149,15 +3763,32 @@ async function salvarFuncaoAdmin() {
     try {
         if (!supabaseClient) throw new Error('Cliente Supabase não inicializado.');
 
-        const { error } = await supabaseClient
-            .from('ministry_roles')
-            .insert([{ ministry_id, name }]);
+        let error = null;
+        if (id) {
+            const { error: err } = await supabaseClient
+                .from('ministry_roles')
+                .update({ ministry_id, name, scale_scope })
+                .eq('id', id);
+            error = err;
+        } else {
+            const { error: err } = await supabaseClient
+                .from('ministry_roles')
+                .insert([{ ministry_id, name, scale_scope }]);
+            error = err;
+        }
 
         if (error) throw error;
 
         fecharModalFuncaoAdmin();
-        if (typeof mostrarToast === 'function') mostrarToast('Função adicionada com sucesso!', 'sucesso');
+        if (typeof mostrarToast === 'function') mostrarToast(id ? 'Função atualizada com sucesso!' : 'Função adicionada com sucesso!', 'sucesso');
         await renderizarAdminMinisterios();
+        if (typeof popularSelectsInstrumentos === 'function') popularSelectsInstrumentos();
+        const wizardModal = document.getElementById('modal-onboarding-wizard');
+        if (wizardModal && !wizardModal.classList.contains('hidden')) {
+            if (typeof renderizarOnboardingStep === 'function') {
+                renderizarOnboardingStep(window.onboardingCurrentStep || 1);
+            }
+        }
     } catch (err) {
         console.error('Erro ao salvar função:', err);
         if (typeof mostrarToast === 'function') mostrarToast(`Erro ao salvar função: ${err.message}`, 'erro');
@@ -3611,6 +4242,12 @@ async function excluirMinisterioAdmin(id) {
         if (typeof carregarDados === 'function') await carregarDados();
         await renderizarAdminMinisterios();
         if (typeof renderizarAdminListaMembros === 'function') renderizarAdminListaMembros();
+        const wizardModal = document.getElementById('modal-onboarding-wizard');
+        if (wizardModal && !wizardModal.classList.contains('hidden')) {
+            if (typeof renderizarOnboardingStep === 'function') {
+                renderizarOnboardingStep(window.onboardingCurrentStep || 1);
+            }
+        }
     } catch (err) {
         console.error('Erro ao excluir ministério:', err);
         if (typeof mostrarToast === 'function') mostrarToast(`Erro ao excluir: ${err.message}`, 'erro');
@@ -3635,6 +4272,12 @@ async function excluirFuncaoMinisterioAdmin(id) {
         if (typeof mostrarToast === 'function') mostrarToast('Função excluída com sucesso!', 'sucesso');
         if (typeof carregarDados === 'function') await carregarDados();
         await renderizarAdminMinisterios();
+        const wizardModal = document.getElementById('modal-onboarding-wizard');
+        if (wizardModal && !wizardModal.classList.contains('hidden')) {
+            if (typeof renderizarOnboardingStep === 'function') {
+                renderizarOnboardingStep(window.onboardingCurrentStep || 1);
+            }
+        }
     } catch (err) {
         console.error('Erro ao excluir função:', err);
         if (typeof mostrarToast === 'function') mostrarToast(`Erro ao excluir: ${err.message}`, 'erro');
@@ -3806,12 +4449,14 @@ async function lidarComUploadMidia(files) {
 
                 const resData = await response.json();
                 const fileUrl = resData.file_url || '';
+                const targetMinistryId = document.getElementById('upload-midia-ministerio-destino')?.value || null;
 
-                // 3. Inserir registro na tabela church_media
+                // 3. Inserir registro na tabela church_media associando ao ministério selecionado
                 const { error: insertErr } = await supabaseClient
                     .from('church_media')
                     .insert([{
                         church_id: churchId,
+                        ministry_id: targetMinistryId || null,
                         file_name: file.name,
                         file_url: fileUrl,
                         file_size_bytes: file.size,
@@ -3856,6 +4501,101 @@ async function lidarComUploadMidia(files) {
     }
 }
 
+let midiasAdminCache = [];
+let filtroMidiaMinisterioAtivo = '';
+
+function filtrarMidiasPorMinisterio(minId) {
+    filtroMidiaMinisterioAtivo = minId || '';
+    renderizarGridMidiasFiltradas();
+}
+window.filtrarMidiasPorMinisterio = filtrarMidiasPorMinisterio;
+
+function renderizarGridMidiasFiltradas() {
+    const grid = document.getElementById('lista-midias-grid');
+    if (!grid) return;
+
+    let midias = midiasAdminCache || [];
+    if (filtroMidiaMinisterioAtivo) {
+        midias = midias.filter(m => m.ministry_id === filtroMidiaMinisterioAtivo);
+    }
+
+    if (midias.length === 0) {
+        grid.innerHTML = `
+            <div class="col-span-full py-12 text-center text-slate-500">
+                <p class="text-3xl mb-2">📭</p>
+                <p class="text-sm font-medium">Nenhuma mídia encontrada para este filtro.</p>
+                <p class="text-xs text-slate-600 mt-1">Selecione outro ministério ou envie novos arquivos acima.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '';
+    for (const item of midias) {
+        const url = item.file_url || '';
+        const fileName = item.file_name || 'arquivo';
+        const mime = (item.mime_type || '').toLowerCase();
+        const sizeBytes = Number(item.file_size_bytes || 0);
+        const sizeFormatted = sizeBytes > 0 ? (sizeBytes / (1024 * 1024)).toFixed(2) + ' MB' : '';
+        const minObj = (dadosGlobais.ministries || []).find(m => m.id === item.ministry_id);
+        const minBadge = minObj 
+            ? `<span class="inline-block text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-indigo-300 border border-slate-700 font-medium mb-1 truncate max-w-full">${minObj.icon || '🏢'} ${minObj.name}</span>`
+            : `<span class="inline-block text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-medium mb-1">Geral</span>`;
+
+        let previewHtml = '';
+        if (mime.startsWith('image/')) {
+            previewHtml = `
+                <div class="h-32 bg-slate-950 overflow-hidden flex items-center justify-center relative">
+                    <img src="${url}" alt="${fileName}" class="w-full h-full object-cover transition duration-300 group-hover:scale-105" loading="lazy" />
+                    <span class="absolute top-2 right-2 text-[10px] bg-black/60 backdrop-blur-sm text-white px-1.5 py-0.5 rounded">IMG</span>
+                </div>
+            `;
+        } else if (mime.startsWith('video/')) {
+            previewHtml = `
+                <div class="h-32 bg-slate-950 flex flex-col items-center justify-center relative text-slate-400">
+                    <span class="text-3xl mb-1">🎬</span>
+                    <span class="text-[10px] uppercase tracking-wider font-bold">Vídeo</span>
+                    <span class="absolute top-2 right-2 text-[10px] bg-indigo-900/80 text-indigo-200 px-1.5 py-0.5 rounded">VÍDEO</span>
+                </div>
+            `;
+        } else {
+            previewHtml = `
+                <div class="h-32 bg-slate-950 flex flex-col items-center justify-center relative text-slate-400">
+                    <span class="text-3xl mb-1">📄</span>
+                    <span class="text-[10px] uppercase tracking-wider font-bold">Arquivo</span>
+                    <span class="absolute top-2 right-2 text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">DOC</span>
+                </div>
+            `;
+        }
+
+        const safeMediaId = item.id;
+        const safeNameEscaped = fileName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const safeUrlEscaped = url.replace(/'/g, "\\'");
+
+        html += `
+            <div class="bg-slate-900 border border-slate-700/80 rounded-xl shadow-sm flex flex-col hover:border-indigo-500/60 transition group overflow-hidden">
+                ${previewHtml}
+                <div class="p-3 flex-1 flex flex-col justify-between">
+                    <div>
+                        <div class="mb-1">${minBadge}</div>
+                        <p class="text-xs text-slate-200 font-medium truncate mb-1" title="${fileName}">${fileName}</p>
+                        ${sizeFormatted ? `<span class="inline-block text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono mb-2">${sizeFormatted}</span>` : ''}
+                    </div>
+                    <div class="flex items-center justify-between mt-auto pt-2 border-t border-slate-800/80">
+                        <div class="flex items-center gap-2.5">
+                            <a href="${url}" target="_blank" download="${fileName}" class="text-indigo-400 hover:text-indigo-300 text-xs font-medium">Baixar</a>
+                            <button onclick="abrirModalVincularMidia('${safeNameEscaped}', '${safeUrlEscaped}')" class="text-emerald-400 hover:text-emerald-300 text-xs font-medium opacity-80 sm:opacity-0 group-hover:opacity-100 transition">Vincular</button>
+                        </div>
+                        <button onclick="excluirMidiaAdmin('${safeMediaId}')" class="text-slate-500 hover:text-red-400 text-xs opacity-80 sm:opacity-0 group-hover:opacity-100 transition font-medium">Excluir</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    grid.innerHTML = html;
+}
+
 async function carregarMidiasAdmin() {
     setupUploadMidias();
 
@@ -3874,6 +4614,26 @@ async function carregarMidiasAdmin() {
         || (typeof window !== 'undefined' && (window.dadosGlobais?.church?.id || window.usuarioLogado?.church_id));
 
     try {
+        // Popular selects de ministérios no cabeçalho de mídias
+        const selectFiltro = document.getElementById('filtro-midia-ministerio');
+        const selectDestino = document.getElementById('upload-midia-ministerio-destino');
+        if (selectFiltro && dadosGlobais.ministries) {
+            const valAtual = selectFiltro.value;
+            let opts = '<option value="">📂 Todos os Ministérios</option>';
+            dadosGlobais.ministries.forEach(m => {
+                opts += `<option value="${m.id}" ${valAtual === m.id ? 'selected' : ''}>${m.icon || '🏢'} ${m.name}</option>`;
+            });
+            selectFiltro.innerHTML = opts;
+        }
+        if (selectDestino && dadosGlobais.ministries) {
+            const valAtual = selectDestino.value;
+            let opts = '<option value="">📂 Geral da Igreja (Sem ministério)</option>';
+            dadosGlobais.ministries.forEach(m => {
+                opts += `<option value="${m.id}" ${valAtual === m.id ? 'selected' : ''}>${m.icon || '🏢'} ${m.name}</option>`;
+            });
+            selectDestino.innerHTML = opts;
+        }
+
         // 1. Buscar informações de limite e uso de armazenamento da igreja
         let storageUsedBytes = 0;
         let storageLimitMb = 1024;
@@ -3901,103 +4661,14 @@ async function carregarMidiasAdmin() {
 
         if (error) throw error;
 
+        midiasAdminCache = midias || [];
+
         // Se storage_used_bytes estiver zerado mas houver mídias no banco, calcular a soma dos arquivos
         if (storageUsedBytes === 0 && midias && midias.length > 0) {
             storageUsedBytes = midias.reduce((acc, m) => acc + Number(m.file_size_bytes || 0), 0);
         }
 
-        // 3. Montar barra de progresso visual de uso do armazenamento
-        const usedMb = (storageUsedBytes / (1024 * 1024)).toFixed(1);
-        const limitBytes = storageLimitMb * 1024 * 1024;
-        const percentRaw = limitBytes > 0 ? (storageUsedBytes / limitBytes) * 100 : 0;
-        const percent = Math.min(100, Math.max(0, percentRaw)).toFixed(1);
-
-        const barColorClass = Number(percent) >= 90 ? 'bg-red-500' : (Number(percent) >= 75 ? 'bg-amber-500' : 'bg-indigo-500');
-
-        const progressBarHtml = `
-            <div class="col-span-full bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 shadow-sm mb-2">
-                <div class="flex items-center justify-between text-xs mb-2">
-                    <span class="text-slate-300 font-semibold flex items-center gap-2">
-                        <span class="text-base">💾</span> Armazenamento em Nuvem (Cloudflare R2)
-                    </span>
-                    <span class="text-slate-300">
-                        <strong class="text-white text-sm font-bold">${usedMb} MB</strong> / ${storageLimitMb} MB <span class="text-slate-400 font-normal">(${percent}%)</span>
-                    </span>
-                </div>
-                <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-700/60 p-[1px]">
-                    <div class="${barColorClass} h-full rounded-full transition-all duration-500" style="width: ${percent}%"></div>
-                </div>
-                ${Number(percent) >= 90 ? '<p class="text-red-400 text-[11px] mt-2 font-medium">⚠️ Espaço quase esgotado. Exclua mídias antigas para liberar espaço.</p>' : ''}
-            </div>
-        `;
-
-        if (!midias || midias.length === 0) {
-            grid.innerHTML = progressBarHtml + `
-                <div class="col-span-full py-12 text-center text-slate-500">
-                    <p class="text-3xl mb-2">📭</p>
-                    <p class="text-sm font-medium">Nenhuma mídia encontrada na sua igreja.</p>
-                    <p class="text-xs text-slate-600 mt-1">Utilize a área de upload acima para enviar fotos, vídeos ou documentos.</p>
-                </div>
-            `;
-            return;
-        }
-
-        // 4. Montar os cards das mídias
-        let html = progressBarHtml;
-
-        for (const item of midias) {
-            const url = item.file_url || '';
-            const fileName = item.file_name || 'arquivo';
-            const mime = (item.mime_type || '').toLowerCase();
-            const sizeBytes = Number(item.file_size_bytes || 0);
-
-            let sizeFormatted = '';
-            if (sizeBytes >= 1024 * 1024) {
-                sizeFormatted = `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
-            } else if (sizeBytes > 0) {
-                sizeFormatted = `${(sizeBytes / 1024).toFixed(0)} KB`;
-            }
-
-            const isImage = mime.startsWith('image/') || fileName.match(/\.(jpeg|jpg|gif|png|webp|svg)$/i);
-            const isVideo = mime.startsWith('video/') || fileName.match(/\.(mp4|webm|ogg|mov|m4v)$/i);
-            const isPdf = mime.includes('pdf') || fileName.match(/\.pdf$/i);
-
-            let previewHtml = '';
-            if (isImage) {
-                previewHtml = `<img src="${url}" alt="${fileName}" class="w-full h-32 object-cover rounded-t-xl bg-slate-950" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'w-full h-32 bg-slate-800 flex items-center justify-center text-3xl\\'>🖼️</div>'">`;
-            } else if (isVideo) {
-                previewHtml = `<video src="${url}" class="w-full h-32 object-cover rounded-t-xl bg-slate-950" preload="metadata" muted controls></video>`;
-            } else if (isPdf) {
-                previewHtml = `<div class="w-full h-32 bg-slate-800 flex flex-col items-center justify-center rounded-t-xl text-3xl">📑<span class="text-[10px] text-slate-400 mt-1">PDF</span></div>`;
-            } else {
-                previewHtml = `<div class="w-full h-32 bg-slate-800 flex items-center justify-center rounded-t-xl text-3xl">📄</div>`;
-            }
-
-            const safeMediaId = item.id;
-            const safeNameEscaped = fileName.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-            const safeUrlEscaped = url.replace(/'/g, "\\'");
-
-            html += `
-                <div class="bg-slate-900 border border-slate-700/80 rounded-xl shadow-sm flex flex-col hover:border-indigo-500/60 transition group overflow-hidden">
-                    ${previewHtml}
-                    <div class="p-3 flex-1 flex flex-col justify-between">
-                        <div>
-                            <p class="text-xs text-slate-200 font-medium truncate mb-1" title="${fileName}">${fileName}</p>
-                            ${sizeFormatted ? `<span class="inline-block text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono mb-2">${sizeFormatted}</span>` : ''}
-                        </div>
-                        <div class="flex items-center justify-between mt-auto pt-2 border-t border-slate-800/80">
-                            <div class="flex items-center gap-2.5">
-                                <a href="${url}" target="_blank" download="${fileName}" class="text-indigo-400 hover:text-indigo-300 text-xs font-medium">Baixar</a>
-                                <button onclick="abrirModalVincularMidia('${safeNameEscaped}', '${safeUrlEscaped}')" class="text-emerald-400 hover:text-emerald-300 text-xs font-medium opacity-80 sm:opacity-0 group-hover:opacity-100 transition">Vincular</button>
-                            </div>
-                            <button onclick="excluirMidiaAdmin('${safeMediaId}')" class="text-slate-500 hover:text-red-400 text-xs opacity-80 sm:opacity-0 group-hover:opacity-100 transition font-medium">Excluir</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        grid.innerHTML = html;
+        renderizarGridMidiasFiltradas();
     } catch (err) {
         console.error("Erro ao carregar mídias da tabela church_media:", err);
         grid.innerHTML = '<p class="text-red-400 text-sm col-span-full">Erro ao carregar mídias do Supabase. Verifique se a tabela "church_media" existe e se as políticas RLS estão configuradas.</p>';
@@ -4207,16 +4878,28 @@ async function renderizarAdminListaMembros() {
     try {
         let profiles = [];
         if (supabaseClient) {
-            const currentChurchId = (typeof dadosGlobais !== 'undefined' && dadosGlobais.church?.id) ? dadosGlobais.church.id : null;
-            let query = supabaseClient.from('profiles').select('id, name, email, system_role, role, ministry_id, ministries');
+            const currentChurchId = (typeof dadosGlobais !== 'undefined' && dadosGlobais.church?.id) 
+                ? dadosGlobais.church.id 
+                : (usuarioLogado?.church_id || null);
+
+            let query = supabaseClient.from('profiles').select('id, name, email, system_role, role, ministry_id');
             if (currentChurchId) query = query.eq('church_id', currentChurchId);
 
             const { data, error } = await query;
-            if (!error && data) profiles = data;
+            if (!error && data) {
+                profiles = data;
+            } else if (error) {
+                console.error("Erro ao consultar membros da igreja:", error);
+            }
         }
 
-        if (profiles.length === 0 && dadosGlobais.voluntarios) {
-            profiles = dadosGlobais.voluntarios;
+        if (profiles.length === 0 && dadosGlobais.voluntarios && Array.isArray(dadosGlobais.voluntarios)) {
+            const currentChurchId = (typeof dadosGlobais !== 'undefined' && dadosGlobais.church?.id) 
+                ? dadosGlobais.church.id 
+                : (usuarioLogado?.church_id || null);
+            profiles = currentChurchId 
+                ? dadosGlobais.voluntarios.filter(v => v.church_id === currentChurchId) 
+                : dadosGlobais.voluntarios;
         }
 
         const userToEvaluate = (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null) || usuarioLogado;
@@ -4935,6 +5618,420 @@ window.salvarEdicaoIgrejaAdmin = salvarEdicaoIgrejaAdmin;
 window.excluirIntegranteMinisterioAdmin = excluirIntegranteMinisterioAdmin;
 window.excluirMinisterioAdmin = excluirMinisterioAdmin;
 window.excluirFuncaoMinisterioAdmin = excluirFuncaoMinisterioAdmin;
+window.selecionarCategoriaSolicitacoes = selecionarCategoriaSolicitacoes;
+window.filtrarSubAbaSolicitacoes = filtrarSubAbaSolicitacoes;
+window.selecionarMesSolicitacoes = selecionarMesSolicitacoes;
+window.filtrarListaSolicitacoesInput = filtrarListaSolicitacoesInput;
+window.renderizarAdminListaSolicitacoes = renderizarAdminListaSolicitacoes;
+window.alterarStatusSolicitacaoAdmin = alterarStatusSolicitacaoAdmin;
+window.excluirSolicitacaoAdmin = excluirSolicitacaoAdmin;
+window.abrirModalAprovarTomAdmin = abrirModalAprovarTomAdmin;
+window.fecharModalAprovarTomAdmin = fecharModalAprovarTomAdmin;
+window.atualizarVersoesSelectAprovarTom = atualizarVersoesSelectAprovarTom;
+window.alternarModoAprovacaoTom = alternarModoAprovacaoTom;
+window.confirmarAprovacaoTomAdmin = confirmarAprovacaoTomAdmin;
+
+// ===================== ASSISTENTE DE ONBOARDING INICIAL =====================
+
+let onboardingCurrentStep = 1;
+
+function abrirModalOnboardingWizard() {
+    const modal = document.getElementById('modal-onboarding-wizard');
+    if (!modal) return;
+
+    const churchNameEl = document.getElementById('onboarding-church-name');
+    if (churchNameEl) {
+        churchNameEl.textContent = dadosGlobais.church?.name || 'Sua Igreja';
+    }
+
+    onboardingCurrentStep = 1;
+    modal.classList.remove('hidden');
+    renderizarOnboardingStep(1);
+}
+window.abrirModalOnboardingWizard = abrirModalOnboardingWizard;
+
+function fecharModalOnboardingWizard() {
+    const modal = document.getElementById('modal-onboarding-wizard');
+    if (modal) modal.classList.add('hidden');
+}
+window.fecharModalOnboardingWizard = fecharModalOnboardingWizard;
+
+async function navegarOnboardingStep(delta) {
+    if (delta > 0 && onboardingCurrentStep === 4) {
+        await concluirOnboardingWizard();
+        return;
+    }
+
+    const nextStep = onboardingCurrentStep + delta;
+    if (nextStep >= 1 && nextStep <= 4) {
+        onboardingCurrentStep = nextStep;
+        renderizarOnboardingStep(nextStep);
+    }
+}
+window.navegarOnboardingStep = navegarOnboardingStep;
+
+async function renderizarOnboardingStep(step) {
+    // 1. Atualizar Stepper UI
+    for (let i = 1; i <= 4; i++) {
+        const indicator = document.getElementById(`onboarding-step-indicator-${i}`);
+        const content = document.getElementById(`onboarding-step-content-${i}`);
+
+        if (content) {
+            content.classList.toggle('hidden', i !== step);
+        }
+
+        if (indicator) {
+            if (i === step) {
+                indicator.className = 'p-2 rounded-xl border border-brand-500 bg-brand-500/20 text-brand-300 font-bold transition flex flex-col items-center gap-1';
+            } else if (i < step) {
+                indicator.className = 'p-2 rounded-xl border border-emerald-600/60 bg-emerald-950/30 text-emerald-400 transition flex flex-col items-center gap-1';
+            } else {
+                indicator.className = 'p-2 rounded-xl border border-slate-800 bg-slate-900/60 text-slate-500 transition flex flex-col items-center gap-1';
+            }
+        }
+    }
+
+    // 2. Atualizar Botões de Navegação
+    const btnVoltar = document.getElementById('btn-onboarding-voltar');
+    const btnAvancar = document.getElementById('btn-onboarding-avancar');
+
+    if (btnVoltar) {
+        btnVoltar.disabled = step === 1;
+        btnVoltar.className = step === 1 
+            ? 'bg-slate-800 text-slate-600 px-4 py-2 rounded-xl text-xs font-semibold cursor-not-allowed transition'
+            : 'bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer';
+    }
+
+    if (btnAvancar) {
+        if (step === 4) {
+            btnAvancar.innerHTML = '<span>✨ Concluir Configuração</span>';
+            btnAvancar.className = 'bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-emerald-900/30 transition flex items-center gap-1.5 cursor-pointer';
+        } else {
+            btnAvancar.innerHTML = '<span>Avançar</span> →';
+            btnAvancar.className = 'bg-brand-600 hover:bg-brand-500 text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-brand-900/30 transition flex items-center gap-1.5 cursor-pointer';
+        }
+    }
+
+    const churchId = dadosGlobais.church?.id || usuarioLogado?.church_id;
+
+    // 3. Renderizar Conteúdo Específico de cada Passo
+    if (step === 1) {
+        // Passo 1: Ministérios e Funções
+        const containerMin = document.getElementById('onboarding-lista-ministerios');
+        if (!containerMin) return;
+
+        let ministries = dadosGlobais.ministries || [];
+        if (supabaseClient && churchId) {
+            const { data } = await supabaseClient.from('ministries').select('*, ministry_roles(*)').eq('church_id', churchId).order('name');
+            if (data) {
+                ministries = data;
+                dadosGlobais.ministries = data;
+            }
+        }
+
+        if (ministries.length === 0) {
+            containerMin.innerHTML = '<div class="text-center py-6 text-slate-500 bg-slate-950/40 rounded-2xl border border-slate-800">Nenhum ministério encontrado. Clique em "+ Novo Ministério" para adicionar.</div>';
+            return;
+        }
+
+        containerMin.innerHTML = ministries.map(min => {
+            const roles = min.ministry_roles || [];
+            const rolesBadges = roles.map(r => {
+                const isSong = r.scale_scope === 'song' || (r.name && (r.name.toLowerCase().includes('cantor') || r.name.toLowerCase().includes('vocal')));
+                return `<span class="bg-slate-900 border border-slate-700/80 text-slate-300 text-[10px] px-2 py-0.5 rounded-full inline-flex items-center gap-1 font-medium">
+                    ${r.name}
+                    ${isSong ? '<span class="text-purple-300 font-bold">🎵 Por Música</span>' : '<span class="text-indigo-300 font-bold">⛪ Culto</span>'}
+                    <button onclick='abrirModalFuncaoAdmin(\"${min.id}\", ${JSON.stringify(r).replace(/'/g, "&apos;")})' class="text-slate-400 hover:text-white font-bold text-[10px] ml-0.5" title="Editar Função">✏️</button>
+                    <button onclick="excluirFuncaoMinisterioAdmin('${r.id}')" class="text-red-400 hover:text-red-300 font-bold text-[10px] ml-0.5" title="Excluir Função">✕</button>
+                </span>`;
+            }).join('');
+
+            const mediaUploadBadge = min.can_upload_media 
+                ? '<span class="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded-full font-semibold">📁 Upload de Mídias Ativo</span>'
+                : '<span class="text-[10px] bg-slate-800 text-slate-500 px-2 py-0.5 rounded-full">Sem Upload de Mídias</span>';
+
+            return `
+                <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-3.5 flex flex-col gap-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg p-1.5 bg-slate-900 rounded-lg border border-slate-800">${min.icon || '🏢'}</span>
+                            <span class="font-bold text-sm text-white">${min.name}</span>
+                            ${mediaUploadBadge}
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="abrirModalFuncaoAdmin('${min.id}')" class="text-xs text-brand-400 hover:text-brand-300 font-medium px-2 py-1 rounded bg-slate-900/80 border border-brand-500/30">+ Função</button>
+                            <button onclick='abrirModalMinisterioAdmin(${JSON.stringify(min).replace(/'/g, "&apos;")})' class="text-slate-400 hover:text-white text-xs px-2 py-1 rounded bg-slate-800/80 border border-slate-700">✏️ Editar</button>
+                            <button onclick="excluirMinisterioAdmin('${min.id}')" class="text-red-400 hover:text-red-300 text-xs px-1.5 py-1 rounded bg-slate-800/80 border border-slate-700" title="Excluir Ministério">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-800/60">
+                        <span class="text-[10px] text-slate-500 font-medium mr-1">Funções:</span>
+                        ${rolesBadges || '<span class="text-[10px] text-slate-500 italic">Nenhuma função ainda. Clique em "+ Função" acima.</span>'}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } else if (step === 2) {
+        // Passo 2: Permissões Públicas e Ministérios
+        const gridPublic = document.getElementById('onboarding-grid-permissoes-publicas');
+        if (gridPublic) {
+            const defaultPermissions = {
+                ver_escala: false,
+                ver_letra: true,
+                ver_cifra: false,
+                ver_vs: false,
+                ver_youtube: true,
+                ver_cantor: true,
+                ver_midia: false,
+                enviar_solic_musica: false,
+                enviar_sugestao_culto: true,
+                ver_repertorio: true,
+                ver_musicas_novas: false,
+                ver_aba_midias_upadas: false,
+                ver_agenda: true,
+                gerar_script_holyrics: false,
+                ver_almoxarifado: false
+            };
+
+            const labels = {
+                ver_escala: '📅 Ver Escala de Voluntários',
+                ver_letra: '📜 Ver Botão e Texto da Letra',
+                ver_cifra: '🎸 Ver Botão e Texto da Cifra',
+                ver_vs: '▶ Ver e Ouvir Áudio / VS',
+                ver_youtube: '📺 Ver Botão do YouTube',
+                ver_cantor: '🎤 Ver Vocalistas Escalados',
+                ver_midia: '🖼️ Ver Mídias de Projeção',
+                enviar_solic_musica: '💬 Pedir Ajuste de Tom',
+                enviar_sugestao_culto: '💡 Sugerir Música no Culto',
+                ver_repertorio: '🎼 Acessar Aba Repertório',
+                ver_musicas_novas: '🌟 Acessar Aba Músicas Novas',
+                ver_aba_midias_upadas: '📥 Acessar Aba Mídias Upadas',
+                ver_agenda: '📅 Acessar Aba Agenda & Eventos',
+                gerar_script_holyrics: '📋 Exportar Holyrics',
+                ver_almoxarifado: '📦 Ver Almoxarifado'
+            };
+
+            let churchPerms = dadosGlobais.church?.public_permissions || {};
+            if (typeof churchPerms === 'string') {
+                try { churchPerms = JSON.parse(churchPerms); } catch(e){}
+            }
+
+            gridPublic.innerHTML = Object.keys(defaultPermissions).map(key => {
+                const checked = typeof churchPerms[key] !== 'undefined' ? !!churchPerms[key] : !!defaultPermissions[key];
+                return `
+                    <label class="flex items-center gap-2 p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 cursor-pointer select-none">
+                        <input type="checkbox" id="onboarding-pub-${key}" onchange="salvarPermissaoPublicaOnboarding('${key}', this.checked)" ${checked ? 'checked' : ''} class="accent-brand-500 rounded">
+                        <span>${labels[key] || key}</span>
+                    </label>
+                `;
+            }).join('');
+        }
+
+    } else if (step === 3) {
+        // Passo 3: Equipe Inicial
+        const selectMinMembro = document.getElementById('onboarding-membro-ministerio');
+        if (selectMinMembro) {
+            let opts = '<option value="">Selecione o ministério principal...</option>';
+            (dadosGlobais.ministries || []).forEach(m => {
+                opts += `<option value="${m.id}">${m.icon || '🏢'} ${m.name}</option>`;
+            });
+            selectMinMembro.innerHTML = opts;
+        }
+
+        renderizarMembrosOnboarding();
+
+    } else if (step === 4) {
+        // Passo 4: Mídias por Ministério
+        const containerMidias = document.getElementById('onboarding-lista-midias-permissoes');
+        if (!containerMidias) return;
+
+        const ministries = dadosGlobais.ministries || [];
+        if (ministries.length === 0) {
+            containerMidias.innerHTML = '<p class="text-xs text-slate-500">Nenhum ministério cadastrado.</p>';
+            return;
+        }
+
+        containerMidias.innerHTML = ministries.map(min => {
+            const isChecked = min.can_upload_media === true;
+            return `
+                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900 border border-slate-800">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-lg">${min.icon || '🏢'}</span>
+                        <div>
+                            <span class="text-xs font-bold text-white block">${min.name}</span>
+                            <span class="text-[10px] text-slate-400 block">${min.description || 'Equipe interna'}</span>
+                        </div>
+                    </div>
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" onchange="alternarUploadMidiaMinisterioOnboarding('${min.id}', this.checked)" ${isChecked ? 'checked' : ''} class="w-4 h-4 accent-brand-500 rounded">
+                        <span class="text-xs text-slate-300 font-medium">Permitir Upload</span>
+                    </label>
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+async function alternarUploadMidiaMinisterioOnboarding(minId, checked) {
+    try {
+        if (!supabaseClient) return;
+        await supabaseClient.from('ministries').update({ can_upload_media: checked }).eq('id', minId);
+        const target = (dadosGlobais.ministries || []).find(m => m.id === minId);
+        if (target) target.can_upload_media = checked;
+        if (typeof mostrarToast === 'function') {
+            mostrarToast(checked ? 'Upload de mídias liberado para o ministério!' : 'Upload de mídias desativado para o ministério.', 'sucesso');
+        }
+    } catch(e) {
+        console.error('Erro ao atualizar can_upload_media:', e);
+    }
+}
+window.alternarUploadMidiaMinisterioOnboarding = alternarUploadMidiaMinisterioOnboarding;
+
+async function salvarPermissaoPublicaOnboarding(key, checked) {
+    try {
+        if (!supabaseClient) return;
+        const churchId = dadosGlobais.church?.id || usuarioLogado?.church_id;
+        if (!churchId) return;
+
+        let pub = dadosGlobais.church?.public_permissions || {};
+        if (typeof pub === 'string') {
+            try { pub = JSON.parse(pub); } catch(e){ pub = {}; }
+        }
+        pub[key] = checked;
+
+        await supabaseClient.from('churches').update({ public_permissions: pub }).eq('id', churchId);
+        if (dadosGlobais.church) dadosGlobais.church.public_permissions = pub;
+        if (typeof aplicarVisibilidadePermissoes === 'function') aplicarVisibilidadePermissoes();
+    } catch(e) {
+        console.error('Erro ao atualizar permissão pública:', e);
+    }
+}
+window.salvarPermissaoPublicaOnboarding = salvarPermissaoPublicaOnboarding;
+
+async function salvarMembroOnboarding() {
+    const nome = document.getElementById('onboarding-membro-nome')?.value?.trim();
+    const email = document.getElementById('onboarding-membro-email')?.value?.trim();
+    const senha = document.getElementById('onboarding-membro-senha')?.value;
+    const role = document.getElementById('onboarding-membro-role')?.value || 'voluntario';
+    const ministryId = document.getElementById('onboarding-membro-ministerio')?.value || null;
+    const btn = document.getElementById('btn-onboarding-salvar-membro');
+
+    if (!nome || !email) {
+        if (typeof mostrarToast === 'function') mostrarToast('Preencha nome e e-mail do membro.', 'aviso');
+        return;
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Adicionando...'; }
+
+    try {
+        if (!supabaseClient) throw new Error("Cliente Supabase não inicializado.");
+        const churchId = dadosGlobais.church?.id || usuarioLogado?.church_id;
+
+        let newUserId = null;
+        if (senha && senha.length >= 6) {
+            const { data: authRes, error: authErr } = await supabaseClient.auth.signUp({
+                email,
+                password: senha,
+                options: { data: { full_name: nome, name: nome, church_id: churchId, role: role, system_role: role } }
+            });
+            if (!authErr && authRes && authRes.user) {
+                newUserId = authRes.user.id;
+            }
+        }
+
+        const profilePayload = {
+            church_id: churchId,
+            name: nome,
+            email: email,
+            role: role,
+            system_role: role,
+            ministry_id: ministryId || null
+        };
+        if (newUserId) profilePayload.id = newUserId;
+
+        const { error: profErr } = await supabaseClient.from('profiles').insert([profilePayload]);
+        if (profErr) throw profErr;
+
+        // Limpar campos
+        document.getElementById('onboarding-membro-nome').value = '';
+        document.getElementById('onboarding-membro-email').value = '';
+        document.getElementById('onboarding-membro-senha').value = '';
+
+        if (typeof mostrarToast === 'function') mostrarToast('Integrante adicionado com sucesso!', 'sucesso');
+        await renderizarMembrosOnboarding();
+
+    } catch(err) {
+        console.error("Erro ao salvar membro no onboarding:", err);
+        if (typeof mostrarToast === 'function') mostrarToast(`Erro: ${err.message}`, 'erro');
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '+ Adicionar Membro à Lista'; }
+    }
+}
+window.salvarMembroOnboarding = salvarMembroOnboarding;
+
+async function renderizarMembrosOnboarding() {
+    const listEl = document.getElementById('onboarding-lista-membros');
+    if (!listEl) return;
+
+    const churchId = dadosGlobais.church?.id || usuarioLogado?.church_id;
+    if (!churchId || !supabaseClient) return;
+
+    const { data: profiles } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('church_id', churchId)
+        .order('created_at', { ascending: false });
+
+    if (!profiles || profiles.length === 0) {
+        listEl.innerHTML = '<p class="text-slate-500 text-xs text-center py-4">Nenhum integrante adicionado ainda.</p>';
+        return;
+    }
+
+    listEl.innerHTML = profiles.map(p => {
+        const minObj = (dadosGlobais.ministries || []).find(m => m.id === p.ministry_id);
+        return `
+            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+                <div class="truncate">
+                    <span class="font-bold text-white block truncate">${p.name}</span>
+                    <span class="text-[10px] text-slate-400 block truncate">${p.email || 'Sem e-mail'} • ${minObj ? minObj.name : 'Sem ministério'}</span>
+                </div>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 uppercase font-semibold border border-slate-700 shrink-0">${p.system_role || p.role || 'voluntario'}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+async function concluirOnboardingWizard() {
+    const churchId = dadosGlobais.church?.id || usuarioLogado?.church_id;
+    if (!churchId || !supabaseClient) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('churches')
+            .update({ onboarding_completed: true })
+            .eq('id', churchId);
+
+        if (error) throw error;
+
+        if (dadosGlobais.church) {
+            dadosGlobais.church.onboarding_completed = true;
+        }
+
+        fecharModalOnboardingWizard();
+        if (typeof mostrarToast === 'function') {
+            mostrarToast('🎉 Configuração inicial concluída com sucesso! Bem-vindo(a) ao sistema.', 'sucesso');
+        }
+
+        if (typeof carregarDados === 'function') {
+            await carregarDados();
+        }
+    } catch(e) {
+        console.error("Erro ao concluir onboarding:", e);
+        if (typeof mostrarToast === 'function') mostrarToast(`Erro ao concluir onboarding: ${e.message}`, 'erro');
+    }
+}
+window.concluirOnboardingWizard = concluirOnboardingWizard;
 
 
 

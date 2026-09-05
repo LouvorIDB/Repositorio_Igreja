@@ -10,7 +10,7 @@ function obterChurchIdAtual() {
     return window.dadosGlobais?.church?.id 
         || (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil?.church_id) 
         || (typeof usuarioLogado !== 'undefined' && usuarioLogado?.church_id) 
-        || 'ae125cfd-96ef-4324-b1f0-f96a4f34eecf';
+        || null;
 }
 
 /**
@@ -18,44 +18,56 @@ function obterChurchIdAtual() {
  */
 function obterEventosIgreja() {
     const churchId = obterChurchIdAtual();
+    if (!churchId) {
+        eventosMemoria = [];
+        return [];
+    }
     
     // Tenta carregar do localStorage por igreja
     const salvos = localStorage.getItem(`louvoridb_events_${churchId}`);
     if (salvos) {
         try {
-            eventosMemoria = JSON.parse(salvos);
+            const parsed = JSON.parse(salvos);
+            if (Array.isArray(parsed)) {
+                // Purga qualquer resquício de eventos de demonstração/mock legados
+                const limpos = parsed.filter(e => {
+                    if (e.id === 'evt-1' || e.id === 'evt-2') return false;
+                    const t = (e.title || '').toLowerCase();
+                    if ((t.includes('aniversário da igreja') || t.includes('culto de jovens')) && (e.location === 'Templo Principal' || e.location === 'Salão Jovem')) {
+                        return false;
+                    }
+                    return true;
+                });
+                if (limpos.length !== parsed.length) {
+                    eventosMemoria = limpos;
+                    salvarEventosMemoria(churchId);
+                } else {
+                    eventosMemoria = limpos;
+                }
+            } else {
+                eventosMemoria = [];
+            }
         } catch(e) {
             eventosMemoria = [];
         }
-    } else if (eventosMemoria.length === 0) {
-        // Eventos de demonstração iniciais se estiver vazio
-        eventosMemoria = [
-            {
-                id: 'evt-1',
-                church_id: churchId,
-                title: '🎉 Aniversário da Igreja',
-                date: `${anoAtualAgenda}-${String(mesAtualAgenda + 1).padStart(2, '0')}-22`,
-                time: '20:00',
-                location: 'Templo Principal',
-                description: 'Culto especial em celebração ao aniversário da nossa igreja.'
-            },
-            {
-                id: 'evt-2',
-                church_id: churchId,
-                title: '🔥 Culto de Jovens',
-                date: `${anoAtualAgenda}-${String(mesAtualAgenda + 1).padStart(2, '0')}-15`,
-                time: '19:00',
-                location: 'Salão Jovem',
-                description: 'Noite de louvor, palavra e comunhão para toda a juventude.'
-            }
-        ];
-        salvarEventosMemoria(churchId);
+    } else {
+        eventosMemoria = [];
     }
+
+    // Limpa também chaves legadas de teste sem tenant se existirem
+    try {
+        localStorage.removeItem('louvoridb_events');
+        if (churchId !== 'ae125cfd-96ef-4324-b1f0-f96a4f34eecf') {
+            localStorage.removeItem('louvoridb_events_ae125cfd-96ef-4324-b1f0-f96a4f34eecf');
+        }
+    } catch(e){}
+
     return eventosMemoria;
 }
 
 function salvarEventosMemoria(churchIdParam) {
     const churchId = churchIdParam || obterChurchIdAtual();
+    if (!churchId) return;
     localStorage.setItem(`louvoridb_events_${churchId}`, JSON.stringify(eventosMemoria));
 }
 
@@ -196,7 +208,34 @@ function renderizarListaEventosProximos() {
     const container = document.getElementById('lista-eventos-proximos');
     if (!container) return;
 
-    const eventos = obterEventosIgreja();
+    // 1. Eventos locais / cadastrados
+    const eventos = [...obterEventosIgreja()];
+
+    // 2. Cultos marcados para aparecer em "Próximos Eventos"
+    const rawServices = window.dadosGlobais?.services || [];
+    rawServices.forEach(s => {
+        let pn = {};
+        if (s.notes) {
+            try { pn = typeof s.notes === 'string' ? JSON.parse(s.notes) : s.notes; } catch(e){}
+        }
+        if (pn.destaque_evento || pn.exibir_em_eventos) {
+            const dStr = s.date ? s.date.split('T')[0] : '';
+            let tStr = '';
+            if (s.date && s.date.includes('T')) {
+                tStr = s.date.split('T')[1].substring(0, 5);
+            }
+            eventos.push({
+                id: s.id,
+                is_service: true,
+                title: s.title,
+                date: dStr,
+                time: tStr,
+                location: pn.location || 'Templo Principal',
+                description: pn.description || s.description || ''
+            });
+        }
+    });
+
     const hObj = new Date();
     const anoH = hObj.getFullYear();
     const mesH = String(hObj.getMonth() + 1).padStart(2, '0');
@@ -218,10 +257,23 @@ function renderizarListaEventosProximos() {
 
     container.innerHTML = proximos.map(evt => {
         const parts = evt.date.split('-');
-        const dataFmt = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        const dataFmt = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : evt.date;
+
+        const acoesBtn = podeEditar ? (
+            evt.is_service ? `
+                <div class="flex items-center gap-1">
+                    <button onclick="editarEventoPorId('${evt.id}', '${evt.date}')" class="text-slate-400 hover:text-white p-1 text-xs" title="Editar Culto">✏️</button>
+                </div>
+            ` : `
+                <div class="flex items-center gap-1">
+                    <button onclick="abrirModalEventoAdmin('${evt.id}')" class="text-slate-400 hover:text-white p-1 text-xs" title="Editar">✏️</button>
+                    <button onclick="excluirEventoAgenda('${evt.id}')" class="text-slate-400 hover:text-red-400 p-1 text-xs" title="Excluir">🗑️</button>
+                </div>
+            `
+        ) : '';
 
         return `
-            <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-xl space-y-2.5 hover:border-slate-700 transition">
+            <div class="bg-slate-900 border ${evt.is_service ? 'border-amber-500/40 bg-slate-900/90 shadow-sm' : 'border-slate-800'} p-3.5 rounded-xl space-y-2.5 hover:border-slate-700 transition">
                 ${evt.image_url ? `
                     <div class="rounded-lg overflow-hidden border border-slate-800 bg-slate-950">
                         <img src="${evt.image_url}" alt="${evt.title}" class="w-full max-h-36 object-cover hover:scale-105 transition duration-300">
@@ -229,15 +281,13 @@ function renderizarListaEventosProximos() {
                 ` : ''}
                 <div class="flex items-start justify-between gap-2">
                     <div>
-                        <h4 class="text-sm font-bold text-white">${evt.title}</h4>
-                        <p class="text-xs text-brand-400 font-medium">📅 ${dataFmt} ${evt.time ? `às ${evt.time}` : ''}</p>
-                    </div>
-                    ${podeEditar ? `
-                        <div class="flex items-center gap-1">
-                            <button onclick="abrirModalEventoAdmin('${evt.id}')" class="text-slate-400 hover:text-white p-1 text-xs" title="Editar">✏️</button>
-                            <button onclick="excluirEventoAgenda('${evt.id}')" class="text-slate-400 hover:text-red-400 p-1 text-xs" title="Excluir">🗑️</button>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            ${evt.is_service ? '<span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">🌟 CULTO</span>' : ''}
+                            <h4 class="text-sm font-bold text-white">${evt.title}</h4>
                         </div>
-                    ` : ''}
+                        <p class="text-xs text-brand-400 font-medium mt-0.5">📅 ${dataFmt} ${evt.time ? `às ${evt.time}` : ''}</p>
+                    </div>
+                    ${acoesBtn}
                 </div>
                 ${evt.location ? `<p class="text-xs text-slate-400 flex items-center gap-1">📍 <span>${evt.location}</span></p>` : ''}
                 ${evt.description ? `<p class="text-xs text-slate-300 border-t border-slate-800/80 pt-1.5 leading-relaxed">${evt.description}</p>` : ''}
@@ -368,20 +418,36 @@ function abrirModalDetalhesDia(dataStr) {
             }
 
             html += `
-                <div class="bg-slate-900 border border-slate-700/80 hover:border-brand-500/80 p-3.5 rounded-xl flex items-center justify-between gap-3 transition shadow-sm">
-                    <div class="space-y-1 min-w-0 flex-1">
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] bg-brand-950 text-brand-400 border border-brand-800/80 px-2 py-0.5 rounded-md font-bold uppercase">⛪ Culto</span>
-                            ${timeStr ? `<span class="text-xs text-slate-400 font-semibold">⏰ ${timeStr}</span>` : ''}
+                <div class="bg-slate-900 border border-slate-700/80 hover:border-brand-500/80 p-3.5 rounded-xl flex flex-col gap-3 transition shadow-sm">
+                    <!-- Informações do Culto (Parte Superior - 100% visíveis) -->
+                    <div class="space-y-1.5 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-[10px] bg-brand-950 text-brand-400 border border-brand-800/80 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">⛪ Culto</span>
+                            ${timeStr ? `<span class="text-xs text-slate-300 font-semibold flex items-center gap-1"><span>⏰</span> <span>${timeStr}</span></span>` : ''}
                         </div>
-                        <p class="text-sm font-bold text-white truncate">${s.title || 'Culto de Adoração'}</p>
+                        <p class="text-sm font-bold text-white break-words leading-snug">${s.title || 'Culto de Adoração'}</p>
                         ${sLoc ? `<p class="text-xs text-slate-400 flex items-center gap-1">📍 <span>${sLoc}</span></p>` : ''}
                     </div>
-                    ${isLiderOuAdmin ? `
-                        <button onclick="fecharModalDetalhesDia(); ${editAction}" class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0">
-                            ✏️ Editar
+
+                    <!-- Botões de Ação (Parte Inferior) -->
+                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/80 flex-wrap">
+                        <button onclick="abrirModalExportarCalendario('${s.id}')" 
+                            class="bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/70 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm" 
+                            title="Adicionar este culto à minha agenda">
+                            <span>📲</span> <span>Exportar Agenda</span>
                         </button>
-                    ` : ''}
+                        ${isLiderOuAdmin ? `
+                            <button onclick="fecharModalDetalhesDia(); ${editAction}" 
+                                class="bg-brand-600 hover:bg-brand-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer shadow-sm">
+                                <span>✏️</span> <span>Editar</span>
+                            </button>
+                            <button onclick="excluirCulto('${s.id}')" 
+                                class="bg-slate-800 hover:bg-red-700 text-slate-400 hover:text-white border border-slate-700 hover:border-red-600 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer" 
+                                title="Excluir este culto">
+                                <span>🗑️</span>
+                            </button>
+                        ` : ''}
+                    </div>
                 </div>
             `;
         });
@@ -389,31 +455,42 @@ function abrirModalDetalhesDia(dataStr) {
         // Renderizar Eventos
         evtsDoDia.forEach(evt => {
             html += `
-                <div class="bg-slate-900 border border-slate-700/80 hover:border-purple-500/80 p-3.5 rounded-xl flex items-start justify-between gap-3 transition shadow-sm">
-                    <div class="flex items-start gap-3 min-w-0 flex-1">
+                <div class="bg-slate-900 border border-slate-700/80 hover:border-purple-500/80 p-3.5 rounded-xl flex flex-col gap-3 transition shadow-sm">
+                    <!-- Informações do Evento (Parte Superior - 100% visíveis) -->
+                    <div class="flex items-start gap-3">
                         ${evt.image_url ? `
-                            <img src="${evt.image_url}" alt="${evt.title}" class="w-14 h-14 rounded-lg object-cover border border-slate-700 shrink-0">
+                            <img src="${evt.image_url}" alt="${evt.title}" class="w-16 h-16 rounded-lg object-cover border border-slate-700 shrink-0">
                         ` : ''}
-                        <div class="space-y-1 min-w-0 flex-1">
-                            <div class="flex items-center gap-2">
-                                <span class="text-[10px] bg-purple-950 text-purple-300 border border-purple-800/80 px-2 py-0.5 rounded-md font-bold uppercase">🎉 Evento</span>
-                                ${evt.time ? `<span class="text-xs text-slate-400 font-semibold">⏰ ${evt.time}</span>` : ''}
+                        <div class="space-y-1.5 min-w-0 flex-1">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-[10px] bg-purple-950 text-purple-300 border border-purple-800/80 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">🎉 Evento</span>
+                                ${evt.time ? `<span class="text-xs text-slate-300 font-semibold flex items-center gap-1"><span>⏰</span> <span>${evt.time}</span></span>` : ''}
                             </div>
-                            <p class="text-sm font-bold text-white truncate">${evt.title}</p>
+                            <p class="text-sm font-bold text-white break-words leading-snug">${evt.title}</p>
                             ${evt.location ? `<p class="text-xs text-slate-400 flex items-center gap-1">📍 <span>${evt.location}</span></p>` : ''}
                             ${evt.description ? `<p class="text-xs text-slate-300 pt-1 leading-relaxed border-t border-slate-800/80 mt-1">${evt.description}</p>` : ''}
                         </div>
                     </div>
-                    ${isLiderOuAdmin ? `
-                        <div class="flex items-center gap-1 shrink-0">
-                            <button onclick="fecharModalDetalhesDia(); abrirModalEventoAdmin('${evt.id}');" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition">
-                                ✏️ Editar
+
+                    <!-- Botões de Ação (Parte Inferior) -->
+                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/80 flex-wrap">
+                        <button onclick="abrirModalExportarCalendario('${evt.id}')" 
+                            class="bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/70 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-sm" 
+                            title="Adicionar este evento à minha agenda">
+                            <span>📲</span> <span>Exportar Agenda</span>
+                        </button>
+                        ${isLiderOuAdmin ? `
+                            <button onclick="fecharModalDetalhesDia(); abrirModalEventoAdmin('${evt.id}');" 
+                                class="bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer shadow-sm">
+                                <span>✏️</span> <span>Editar</span>
                             </button>
-                            <button onclick="excluirEventoAgenda('${evt.id}')" class="bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800/60 p-1.5 rounded-lg text-xs transition" title="Excluir">
-                                🗑️
+                            <button onclick="excluirEventoAgenda('${evt.id}')" 
+                                class="bg-slate-800 hover:bg-red-700 text-slate-400 hover:text-white border border-slate-700 hover:border-red-600 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer" 
+                                title="Excluir este evento">
+                                <span>🗑️</span>
                             </button>
-                        </div>
-                    ` : ''}
+                        ` : ''}
+                    </div>
                 </div>
             `;
         });
@@ -583,7 +660,7 @@ async function salvarEventoAdmin(e) {
         }
 
         const userToEvaluate = (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null) || (window.usuarioLogado || null);
-        const churchId = userToEvaluate?.church_id || window.dadosGlobais?.church?.id || 'ae125cfd-96ef-4324-b1f0-f96a4f34eecf';
+        const churchId = userToEvaluate?.church_id || window.dadosGlobais?.church?.id || obterChurchIdAtual();
 
         let eventos = obterEventosIgreja();
 
@@ -636,7 +713,7 @@ function excluirEventoAgenda(eventoId) {
     if (!confirm('Deseja realmente excluir este evento?')) return;
 
     const userToEvaluate = (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null) || (window.usuarioLogado || null);
-    const churchId = userToEvaluate?.church_id || window.dadosGlobais?.church?.id || 'ae125cfd-96ef-4324-b1f0-f96a4f34eecf';
+    const churchId = userToEvaluate?.church_id || window.dadosGlobais?.church?.id || obterChurchIdAtual();
 
     eventosMemoria = obterEventosIgreja().filter(e => e.id !== eventoId);
     salvarEventosMemoria(churchId);
@@ -830,15 +907,41 @@ function renderizarEventosLateral(eventos) {
     }
 
     container.innerHTML = eventosMes.map(evt => {
-        const dStr = evt.date ? evt.date.split('T')[0] : '';
+        let dStr = evt.date ? evt.date.split('T')[0] : '';
+        let horaFormatada = evt.time || '';
+        
+        // Se a data veio em formato ISO ou UTC (ex: 2026-09-16T23:00:00+00:00)
+        if (evt.date && evt.date.includes('T')) {
+            if (evt.date.includes('Z') || evt.date.includes('+')) {
+                const d = new Date(evt.date);
+                if (!isNaN(d.getTime())) {
+                    const diaD = String(d.getDate()).padStart(2, '0');
+                    const mesD = String(d.getMonth() + 1).padStart(2, '0');
+                    const anoD = d.getFullYear();
+                    dStr = `${diaD}/${mesD}/${anoD}`;
+                    horaFormatada = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                }
+            } else {
+                const parts = evt.date.split('T');
+                const p = parts[0].split('-');
+                if (p.length === 3) dStr = `${p[2]}/${p[1]}/${p[0]}`;
+                if (parts[1]) horaFormatada = parts[1].substring(0, 5);
+            }
+        } else if (dStr && dStr.includes('-')) {
+            const p = dStr.split('-');
+            if (p.length === 3) dStr = `${p[2]}/${p[1]}/${p[0]}`;
+        }
+
+        const subtitulo = horaFormatada ? `📅 ${dStr} às ${horaFormatada}` : `📅 ${dStr}`;
+
         return `
             <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg flex items-center justify-between group">
-                <div>
+                <div class="min-w-0 flex-1 mr-2">
                     <p class="text-xs font-bold text-white truncate max-w-[150px]">${evt.title}</p>
-                    <p class="text-[10px] text-slate-400">${evt.date} ${evt.time ? `às ${evt.time}` : ''}</p>
+                    <p class="text-[10px] text-slate-400 truncate">${subtitulo}</p>
                 </div>
-                <div class="flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition">
-                    <button onclick="editarEventoPorId('${evt.id}', '${dStr}')" class="text-slate-400 hover:text-white p-1" title="Editar Evento">✏️</button>
+                <div class="flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition shrink-0">
+                    <button onclick="editarEventoPorId('${evt.id}', '${evt.date}')" class="text-slate-400 hover:text-white p-1" title="Editar Evento">✏️</button>
                 </div>
             </div>
         `;
@@ -859,8 +962,12 @@ async function carregarE_RenderizarCultosRecorrentes() {
         const churchId = obterChurchIdAtual();
         
         let regras = [];
-        if (supabaseClient) {
-            const { data, error } = await supabaseClient.from('recurrent_services').select('*').order('day_of_week', { ascending: true });
+        if (supabaseClient && churchId) {
+            const { data, error } = await supabaseClient
+                .from('recurrent_services')
+                .select('*')
+                .eq('church_id', churchId)
+                .order('day_of_week', { ascending: true });
             if (!error && data) regras = data;
         }
 
@@ -973,17 +1080,20 @@ async function logicGerarCultos(nomeCulto, diaSemana, horario, meses, churchId) 
             
             const titleStr = `${diaStr}/${mesStr} - CULTO DE ${nomeCulto.toUpperCase()}`;
             
-            const [hH, mM] = horario.split(':');
-            const dateIso = new Date(anoStr, curr.getMonth(), curr.getDate(), parseInt(hH || 19), parseInt(mM || 0)).toISOString();
+            const [hH, mM] = (horario || '19:00').split(':');
+            const hStr = String(parseInt(hH || 19, 10)).padStart(2, '0');
+            const mStr = String(parseInt(mM || 0, 10)).padStart(2, '0');
+            const dateLocalIso = `${anoStr}-${mesStr}-${diaStr}T${hStr}:${mStr}:00`;
 
             // Prevenir duplicatas checando se já existe esse culto nessa data exata (verificando o titleStr)
-            const jaExiste = (window.dadosGlobais?.cultos || []).some(row => row[0] === titleStr);
+            const jaExiste = (window.dadosGlobais?.cultos || []).some(row => row && row[0] === titleStr) ||
+                             (window.dadosGlobais?.services || []).some(s => s.title === titleStr);
 
             if (!jaExiste) {
                 datasCultos.push({
                     church_id: churchId,
                     title: titleStr,
-                    date: dateIso
+                    date: dateLocalIso
                 });
             }
         }
@@ -1023,7 +1133,7 @@ async function excluirRegraRecorrente(regraId) {
 }
 
 /**
- * LIMPEZA DE DUPLICATAS
+ * LIMPEZA EM MASSA DE CULTOS GERADOS
  */
 function abrirLimpezaEmMassa() {
     const nome = prompt("LIMPEZA: Digite o nome do culto que deseja EXCLUIR do calendário futuramente. (Ex: 'DOMINGO' apagará todos os 'CULTO DE DOMINGO' do mês que vem em diante)");
@@ -1037,7 +1147,7 @@ function abrirLimpezaEmMassa() {
 async function excluirServicosDuplicados(nomeCulto) {
     try {
         const churchId = obterChurchIdAtual();
-        const hojeIso = new Date().toISOString(); // Apaga do futuro
+        const hojeIso = new Date().toISOString().split('T')[0];
 
         // Precisamos primeiro buscar os IDs (a query no supabase com ilike e gt)
         const { data, error } = await supabaseClient
@@ -1055,6 +1165,13 @@ async function excluirServicosDuplicados(nomeCulto) {
         }
 
         const ids = data.map(c => c.id);
+        await supabaseClient.from('service_songs').delete().in('service_id', ids);
+        await supabaseClient.from('service_scales').delete().in('service_id', ids);
+        await supabaseClient.from('service_media').delete().in('service_id', ids);
+        try {
+            await supabaseClient.from('availability_comments').delete().in('service_id', ids);
+        } catch(e) {}
+
         const { error: deleteError } = await supabaseClient
             .from('services')
             .delete()
@@ -1072,6 +1189,52 @@ async function excluirServicosDuplicados(nomeCulto) {
         if (typeof mostrarToast === 'function') mostrarToast('Erro ao limpar duplicatas: ' + err.message, 'erro');
     }
 }
+
+/**
+ * AUTO-CORREÇÃO DE CULTOS ANTIGOS COM DESVIO UTC (+3H)
+ */
+async function corrigirHorariosCultosUtc() {
+    try {
+        const churchId = obterChurchIdAtual();
+        if (!supabaseClient || !churchId) return;
+
+        const { data, error } = await supabaseClient
+            .from('services')
+            .select('id, date, title')
+            .eq('church_id', churchId);
+
+        if (error || !data) return;
+
+        let atualizados = 0;
+        for (const s of data) {
+            if (s.date && (s.date.includes('Z') || s.date.includes('+'))) {
+                const d = new Date(s.date);
+                if (!isNaN(d.getTime())) {
+                    const dia = String(d.getDate()).padStart(2, '0');
+                    const mes = String(d.getMonth() + 1).padStart(2, '0');
+                    const ano = d.getFullYear();
+                    const h = String(d.getHours()).padStart(2, '0');
+                    const m = String(d.getMinutes()).padStart(2, '0');
+                    const novoIso = `${ano}-${mes}-${dia}T${h}:${m}:00`;
+                    
+                    await supabaseClient.from('services').update({ date: novoIso }).eq('id', s.id);
+                    atualizados++;
+                }
+            }
+        }
+
+        if (atualizados > 0) {
+            if (typeof mostrarToast === 'function') mostrarToast(`⏰ ${atualizados} cultos corrigidos para o horário local!`, 'sucesso');
+            if (typeof carregarDados === 'function') await carregarDados();
+            renderizarAdminCultosEventos();
+        } else {
+            if (typeof mostrarToast === 'function') mostrarToast('Todos os cultos já estão com os horários corretos.', 'info');
+        }
+    } catch(e) {
+        console.error('Erro ao auto-corrigir cultos:', e);
+    }
+}
+window.corrigirHorariosCultosUtc = corrigirHorariosCultosUtc;
 
 // Exportações Globais Atualizadas
 window.carregarAgenda = carregarAgenda;
@@ -1135,3 +1298,603 @@ async function salvarMesAtivo() {
 
 window.carregarMesAtivoUI = carregarMesAtivoUI;
 window.salvarMesAtivo = salvarMesAtivo;
+
+/**
+ * =========================================================================
+ * EXPORTAÇÃO PARA CALENDÁRIO MOBILE (.ICS / GOOGLE / APPLE / SAMSUNG)
+ * =========================================================================
+ */
+
+let periodoExportacaoAtual = '30d';
+let itensExportacaoCarregados = [];
+let itemPreSelecionadoExportId = null;
+
+/**
+ * Coleta todos os cultos e eventos futuros unificados
+ */
+function obterTodosItensProgramacao() {
+    const itens = [];
+    const idsVistos = new Set();
+
+    // 1. Cultos do banco (services)
+    const rawServices = window.dadosGlobais?.services || [];
+    rawServices.forEach(s => {
+        let pn = {};
+        if (s.notes) {
+            try { pn = typeof s.notes === 'string' ? JSON.parse(s.notes) : s.notes; } catch(e){}
+        }
+
+        let dStr = '';
+        let tStr = '19:30';
+
+        if (s.date) {
+            if (s.date.includes('T')) {
+                const parts = s.date.split('T');
+                dStr = parts[0];
+                if (parts[1]) tStr = parts[1].substring(0, 5);
+            } else {
+                dStr = s.date;
+            }
+        }
+
+        if (!dStr) return;
+
+        const itemId = s.id || `serv-${dStr}-${tStr}`;
+        if (!idsVistos.has(itemId)) {
+            idsVistos.add(itemId);
+            itens.push({
+                id: itemId,
+                tipo: 'culto',
+                title: s.title || 'Culto de Adoração',
+                dateIso: dStr,
+                timeStr: tStr,
+                location: pn.location || s.location || 'Templo Principal',
+                description: pn.description || s.description || 'Programação de culto da igreja.'
+            });
+        }
+    });
+
+    // 2. Fallback de cultos formatados da planilha se não houver no banco
+    if (itens.length === 0 && window.dadosGlobais?.cultos) {
+        window.dadosGlobais.cultos.forEach(row => {
+            if (Array.isArray(row) && row[0]) {
+                const match = String(row[0]).match(/^(\d{2})\/(\d{2})/);
+                if (match) {
+                    const dStr = `${anoAtualAgenda}-${match[2]}-${match[1]}`;
+                    const cId = row[8] || `culto-row-${dStr}`;
+                    if (!idsVistos.has(cId)) {
+                        idsVistos.add(cId);
+                        itens.push({
+                            id: cId,
+                            tipo: 'culto',
+                            title: row[0],
+                            dateIso: dStr,
+                            timeStr: '19:30',
+                            location: 'Templo Principal',
+                            description: 'Culto de Adoração'
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+    // 3. Eventos locais / cadastrados
+    const eventos = obterEventosIgreja();
+    eventos.forEach(evt => {
+        if (!evt.date) return;
+        const dStr = evt.date.includes('T') ? evt.date.split('T')[0] : evt.date;
+        const tStr = evt.time || '19:30';
+        const evtId = evt.id || `evt-${dStr}-${tStr}`;
+
+        if (!idsVistos.has(evtId)) {
+            idsVistos.add(evtId);
+            itens.push({
+                id: evtId,
+                tipo: evt.is_service ? 'culto' : 'evento',
+                title: evt.title || 'Evento da Igreja',
+                dateIso: dStr,
+                timeStr: tStr,
+                location: evt.location || 'Templo Principal',
+                description: evt.description || ''
+            });
+        }
+    });
+
+    // Ordenar cronologicamente
+    itens.sort((a, b) => {
+        const dtA = `${a.dateIso}T${a.timeStr || '00:00'}`;
+        const dtB = `${b.dateIso}T${b.timeStr || '00:00'}`;
+        return dtA.localeCompare(dtB);
+    });
+
+    return itens;
+}
+
+/**
+ * Abre o modal de exportação para calendário
+ * @param {string|null} preSelectedId ID de culto/evento específico (opcional)
+ */
+function abrirModalExportarCalendario(preSelectedId = null) {
+    const modal = document.getElementById('modal-exportar-calendario');
+    if (!modal) return;
+
+    itemPreSelecionadoExportId = preSelectedId;
+    periodoExportacaoAtual = preSelectedId ? 'todos' : '30d';
+
+    // Atualizar botões de filtro
+    atualizarBotoesFiltroPeriodo();
+
+    // Carregar e renderizar itens
+    renderizarItensModalExportacao();
+
+    modal.classList.remove('hidden');
+}
+
+/**
+ * Fecha o modal de exportação
+ */
+function fecharModalExportarCalendario() {
+    const modal = document.getElementById('modal-exportar-calendario');
+    if (modal) modal.classList.add('hidden');
+    itemPreSelecionadoExportId = null;
+}
+
+/**
+ * Altera o período do filtro de exportação
+ */
+function mudarPeriodoExportacao(periodo) {
+    periodoExportacaoAtual = periodo;
+    itemPreSelecionadoExportId = null;
+    atualizarBotoesFiltroPeriodo();
+    renderizarItensModalExportacao();
+}
+
+function atualizarBotoesFiltroPeriodo() {
+    const periodos = ['30d', 'mes', '90d', 'todos'];
+    periodos.forEach(p => {
+        const btn = document.getElementById(`btn-periodo-${p}`);
+        if (!btn) return;
+        if (p === periodoExportacaoAtual) {
+            btn.className = 'btn-filtro-export px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-600 text-white transition shadow-sm';
+        } else {
+            btn.className = 'btn-filtro-export px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
+        }
+    });
+}
+
+/**
+ * Alterna exibição do container de opções de lembretes
+ */
+function alternarVisualizacaoLembretesExport() {
+    const checkbox = document.getElementById('export-lembrete-ativo');
+    const container = document.getElementById('container-opcoes-lembrete');
+    if (!container || !checkbox) return;
+    if (checkbox.checked) {
+        container.classList.remove('hidden');
+    } else {
+        container.classList.add('hidden');
+    }
+}
+
+/**
+ * Filtra e renderiza os itens no modal de exportação
+ */
+function renderizarItensModalExportacao() {
+    const container = document.getElementById('lista-itens-exportar-calendario');
+    if (!container) return;
+
+    const todosItens = obterTodosItensProgramacao();
+    const filtroTipo = document.getElementById('filtro-tipo-exportacao')?.value || 'todos';
+
+    // Determinar limites de data
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const hojeStr = hoje.toISOString().split('T')[0];
+
+    let limiteFim = null;
+    let mesFiltroStr = null;
+
+    if (periodoExportacaoAtual === '30d') {
+        const dFim = new Date(hoje);
+        dFim.setDate(dFim.getDate() + 30);
+        limiteFim = dFim.toISOString().split('T')[0];
+    } else if (periodoExportacaoAtual === 'mes') {
+        const mesFmt = String(mesAtualAgenda + 1).padStart(2, '0');
+        mesFiltroStr = `${anoAtualAgenda}-${mesFmt}`;
+    } else if (periodoExportacaoAtual === '90d') {
+        const dFim = new Date(hoje);
+        dFim.setDate(dFim.getDate() + 90);
+        limiteFim = dFim.toISOString().split('T')[0];
+    }
+
+    // Filtrar itens
+    const itensFiltrados = todosItens.filter(item => {
+        // Filtro de tipo
+        if (filtroTipo === 'cultos' && item.tipo !== 'culto') return false;
+        if (filtroTipo === 'eventos' && item.tipo !== 'evento') return false;
+
+        // Se veio de um clique em item pré-selecionado específico
+        if (itemPreSelecionadoExportId) {
+            return item.id === itemPreSelecionadoExportId;
+        }
+
+        // Filtro de data: apenas de hoje em diante (não exportar passado por padrão)
+        if (item.dateIso < hojeStr) return false;
+
+        if (mesFiltroStr) {
+            return item.dateIso.startsWith(mesFiltroStr);
+        }
+
+        if (limiteFim) {
+            return item.dateIso <= limiteFim;
+        }
+
+        return true;
+    });
+
+    itensExportacaoCarregados = itensFiltrados;
+
+    if (itensFiltrados.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 space-y-2">
+                <span class="text-3xl">🗓️</span>
+                <p class="text-xs font-semibold text-slate-300">Nenhum culto ou evento encontrado neste período.</p>
+                <p class="text-[11px] text-slate-500">Tente selecionar outro período acima ou cadastre novos eventos.</p>
+            </div>
+        `;
+        atualizarContadorSelecaoExportacao();
+        return;
+    }
+
+    const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+    container.innerHTML = itensFiltrados.map((item, idx) => {
+        const [ano, mes, dia] = item.dateIso.split('-');
+        const dObj = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
+        const diaSemana = diasSemana[dObj.getDay()] || '';
+        const dataFmt = `${dia}/${mes}/${ano}`;
+
+        const isChecked = true; // Selecionado por padrão
+
+        const isCulto = item.tipo === 'culto';
+        const badgeCor = isCulto ? 'bg-cyan-950 text-cyan-300 border-cyan-800/80' : 'bg-purple-950 text-purple-300 border-purple-800/80';
+        const badgeTexto = isCulto ? '⛪ Culto' : '🎉 Evento';
+
+        return `
+            <label class="flex items-start gap-3 p-2.5 rounded-xl border border-slate-800 bg-slate-900 hover:border-slate-700 transition cursor-pointer select-none">
+                <input type="checkbox" value="${item.id}" ${isChecked ? 'checked' : ''} onchange="atualizarContadorSelecaoExportacao()"
+                    class="check-item-export mt-1 w-4 h-4 rounded text-indigo-600 bg-slate-950 border-slate-700 focus:ring-indigo-500">
+                <div class="min-w-0 flex-1 space-y-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-[9px] px-1.5 py-0.5 rounded font-bold border ${badgeCor}">${badgeTexto}</span>
+                        <span class="text-xs font-bold text-white truncate">${item.title}</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-[11px] text-slate-400">
+                        <span>📅 <strong>${diaSemana}, ${dataFmt}</strong></span>
+                        ${item.timeStr ? `<span>⏰ às <strong>${item.timeStr}</strong></span>` : ''}
+                        ${item.location ? `<span class="truncate">📍 ${item.location}</span>` : ''}
+                    </div>
+                </div>
+            </label>
+        `;
+    }).join('');
+
+    const checkMaster = document.getElementById('check-exportar-todos');
+    if (checkMaster) checkMaster.checked = true;
+
+    atualizarContadorSelecaoExportacao();
+}
+
+/**
+ * Marca ou desmarca todos os checkboxes da lista
+ */
+function alternarSelecaoTodosExportacao(marcado) {
+    const checkboxes = document.querySelectorAll('.check-item-export');
+    checkboxes.forEach(cb => cb.checked = marcado);
+    atualizarContadorSelecaoExportacao();
+}
+
+/**
+ * Retorna os itens atualmente selecionados
+ */
+function obterItensSelecionadosExport() {
+    const checkboxes = document.querySelectorAll('.check-item-export:checked');
+    const idsSelecionados = new Set(Array.from(checkboxes).map(cb => cb.value));
+    return itensExportacaoCarregados.filter(it => idsSelecionados.has(it.id));
+}
+
+/**
+ * Atualiza o contador de selecionados e visibilidade dos botões
+ */
+function atualizarContadorSelecaoExportacao() {
+    const selecionados = obterItensSelecionadosExport();
+    const totalVisiveis = itensExportacaoCarregados.length;
+
+    const contadorEl = document.getElementById('contador-exportar-selecionados');
+    if (contadorEl) {
+        contadorEl.textContent = `${selecionados.length} de ${totalVisiveis} selecionados`;
+    }
+
+    const checkMaster = document.getElementById('check-exportar-todos');
+    if (checkMaster) {
+        checkMaster.checked = (totalVisiveis > 0 && selecionados.length === totalVisiveis);
+        checkMaster.indeterminate = (selecionados.length > 0 && selecionados.length < totalVisiveis);
+    }
+
+    const btnExport = document.getElementById('btn-executar-exportacao-ics');
+    if (btnExport) {
+        btnExport.disabled = (selecionados.length === 0);
+        if (selecionados.length === 0) {
+            btnExport.classList.add('opacity-50', 'cursor-not-allowed');
+        } else {
+            btnExport.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    }
+
+    // Botão de Google Agenda Web (apenas quando 1 item estiver selecionado)
+    const btnGoogleWeb = document.getElementById('btn-exportar-google-web');
+    if (btnGoogleWeb) {
+        if (selecionados.length === 1) {
+            btnGoogleWeb.style.display = 'inline-flex';
+        } else {
+            btnGoogleWeb.style.display = 'none';
+        }
+    }
+}
+
+/**
+ * Escapa strings para formato iCalendar RFC 5545
+ */
+function escaparTextoICS(texto) {
+    if (!texto) return '';
+    return String(texto)
+        .replace(/\\/g, '\\\\')
+        .replace(/;/g, '\\;')
+        .replace(/,/g, '\\,')
+        .replace(/\r\n|\n|\r/g, '\\n');
+}
+
+/**
+ * Gera a string completa no formato iCalendar (.ics)
+ */
+function gerarConteudoICS(itens, configLembretes) {
+    const agora = new Date();
+    const dtstamp = agora.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const churchName = window.dadosGlobais?.church?.name || 'Igreja';
+    const safeCalName = escaparTextoICS(`Agenda - ${churchName}`);
+
+    const linhas = [];
+    linhas.push('BEGIN:VCALENDAR');
+    linhas.push('VERSION:2.0');
+    linhas.push('PRODID:-//LouvorIDB//Liturge Agenda//PT-BR');
+    linhas.push('CALSCALE:GREGORIAN');
+    linhas.push('METHOD:PUBLISH');
+    linhas.push(`X-WR-CALNAME:${safeCalName}`);
+    linhas.push(`NAME:${safeCalName}`);
+    linhas.push('X-WR-TIMEZONE:America/Sao_Paulo');
+
+    for (const item of itens) {
+        linhas.push('BEGIN:VEVENT');
+        linhas.push(`UID:${item.id || Date.now()}-${Math.random().toString(36).substring(2, 7)}@liturge.app`);
+        linhas.push(`DTSTAMP:${dtstamp}`);
+
+        const [ano, mes, dia] = item.dateIso.split('-');
+
+        if (item.timeStr && item.timeStr.includes(':')) {
+            const [hora, min] = item.timeStr.split(':');
+            const hNum = parseInt(hora, 10);
+            const mNum = parseInt(min, 10);
+
+            const dtStartStr = `${ano}${mes}${dia}T${String(hNum).padStart(2, '0')}${String(mNum).padStart(2, '0')}00`;
+
+            // Duração padrão estimada de 2 horas
+            const endHour = (hNum + 2) % 24;
+            let endDay = dia;
+            let endMonth = mes;
+            let endYear = ano;
+            if (hNum + 2 >= 24) {
+                const dSeguinte = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia) + 1);
+                endYear = dSeguinte.getFullYear();
+                endMonth = String(dSeguinte.getMonth() + 1).padStart(2, '0');
+                endDay = String(dSeguinte.getDate()).padStart(2, '0');
+            }
+            const dtEndStr = `${endYear}${endMonth}${endDay}T${String(endHour).padStart(2, '0')}${String(mNum).padStart(2, '0')}00`;
+
+            linhas.push(`DTSTART:${dtStartStr}`);
+            linhas.push(`DTEND:${dtEndStr}`);
+        } else {
+            // Evento de dia inteiro
+            linhas.push(`DTSTART;VALUE=DATE:${ano}${mes}${dia}`);
+            const dSeguinte = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia) + 1);
+            const nextStr = `${dSeguinte.getFullYear()}${String(dSeguinte.getMonth() + 1).padStart(2, '0')}${String(dSeguinte.getDate()).padStart(2, '0')}`;
+            linhas.push(`DTEND;VALUE=DATE:${nextStr}`);
+        }
+
+        const prefixo = item.tipo === 'culto' ? '⛪ ' : '🎉 ';
+        linhas.push(`SUMMARY:${escaparTextoICS(prefixo + item.title)}`);
+
+        let descFinal = item.description || '';
+        if (item.tipo === 'culto') {
+            descFinal = descFinal ? `${descFinal}\n\nCulto da igreja.` : 'Programação de culto da igreja.';
+        }
+        linhas.push(`DESCRIPTION:${escaparTextoICS(descFinal)}`);
+
+        if (item.location) {
+            linhas.push(`LOCATION:${escaparTextoICS(item.location)}`);
+        }
+
+        linhas.push('STATUS:CONFIRMED');
+
+        // Adicionar Alarmes / Lembretes se habilitado
+        if (configLembretes && configLembretes.ativo) {
+            if (configLembretes.tempoPrincipal) {
+                linhas.push('BEGIN:VALARM');
+                linhas.push(`TRIGGER:${configLembretes.tempoPrincipal}`);
+                linhas.push('ACTION:DISPLAY');
+                linhas.push(`DESCRIPTION:${escaparTextoICS(`Lembrete: ${item.title}`)}`);
+                linhas.push('END:VALARM');
+            }
+            if (configLembretes.tempoSegundo && configLembretes.tempoSegundo !== 'none') {
+                linhas.push('BEGIN:VALARM');
+                linhas.push(`TRIGGER:${configLembretes.tempoSegundo}`);
+                linhas.push('ACTION:DISPLAY');
+                linhas.push(`DESCRIPTION:${escaparTextoICS(`Lembrete Antecipado: ${item.title}`)}`);
+                linhas.push('END:VALARM');
+            }
+        }
+
+        linhas.push('END:VEVENT');
+    }
+
+    linhas.push('END:VCALENDAR');
+
+    return linhas.join('\r\n');
+}
+
+/**
+ * Executa a exportação do arquivo .ics para o celular ou download
+ */
+async function executarExportacaoCalendario() {
+    const selecionados = obterItensSelecionadosExport();
+
+    if (selecionados.length === 0) {
+        if (typeof mostrarToast === 'function') mostrarToast('Selecione ao menos um culto ou evento para exportar.', 'aviso');
+        return;
+    }
+
+    const btn = document.getElementById('btn-executar-exportacao-ics');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳</span> Gerando Calendário...`;
+    }
+
+    try {
+        const lembreteAtivo = document.getElementById('export-lembrete-ativo')?.checked || false;
+        const tempoPrincipal = document.getElementById('export-lembrete-tempo')?.value || '-PT30M';
+        const tempoSegundo = document.getElementById('export-lembrete-segundo')?.value || 'none';
+
+        const configLembretes = {
+            ativo: lembreteAtivo,
+            tempoPrincipal,
+            tempoSegundo
+        };
+
+        const icsContent = gerarConteudoICS(selecionados, configLembretes);
+
+        const churchName = (window.dadosGlobais?.church?.name || 'igreja')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]/g, '-');
+        const nomeArquivo = `agenda-${churchName}-${selecionados.length}-eventos.ics`;
+
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+
+        // 1. PRIORIDADE NATIVA (App Android / Galaxy S24): Abre direto no app de Calendário (Samsung/Google Agenda)
+        if (window.AndroidCalendar && typeof window.AndroidCalendar.abrirNoCalendarioNativo === 'function') {
+            const abriuNativo = window.AndroidCalendar.abrirNoCalendarioNativo(icsContent, nomeArquivo);
+            if (abriuNativo) {
+                if (typeof mostrarToast === 'function') {
+                    mostrarToast(`📅 Abrindo ${selecionados.length} evento(s) no seu Calendário...`, 'sucesso');
+                }
+                fecharModalExportarCalendario();
+                return;
+            }
+        }
+
+        // 2. Se suportar compartilhamento nativo com arquivo (smartphones modernos / iOS)
+        if (navigator.canShare && typeof File !== 'undefined') {
+            try {
+                const file = new File([blob], nomeArquivo, { type: 'text/calendar;charset=utf-8' });
+                if (navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: 'Agenda da Igreja',
+                        text: `${selecionados.length} cultos/eventos adicionados.`
+                    });
+                    if (typeof mostrarToast === 'function') {
+                        mostrarToast('📲 Compartilhado com o calendário com sucesso!', 'sucesso');
+                    }
+                    fecharModalExportarCalendario();
+                    return;
+                }
+            } catch (shareErr) {
+                if (shareErr.name === 'AbortError') {
+                    // Usuário cancelou a tela de compartilhamento
+                    return;
+                }
+                console.warn('Web Share falhou, usando download padrão:', shareErr);
+            }
+        }
+
+        // Fallback direto: download do arquivo .ics
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = nomeArquivo;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+
+        if (typeof mostrarToast === 'function') {
+            mostrarToast(`⬇️ ${selecionados.length} eventos exportados! Toque no arquivo para adicionar ao seu calendário.`, 'sucesso');
+        }
+
+        fecharModalExportarCalendario();
+
+    } catch (err) {
+        console.error('Erro na exportação de calendário:', err);
+        if (typeof mostrarToast === 'function') mostrarToast('Erro ao exportar calendário: ' + err.message, 'erro');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<span>📲</span> Exportar para o Celular (.ics)`;
+        }
+    }
+}
+
+/**
+ * Atalho para abrir evento individual diretamente no Google Agenda Web
+ */
+function abrirNoGoogleAgendaWeb() {
+    const selecionados = obterItensSelecionadosExport();
+    if (selecionados.length !== 1) {
+        if (typeof mostrarToast === 'function') mostrarToast('Selecione exatamente 1 item para abrir no Google Agenda Web.', 'aviso');
+        return;
+    }
+
+    const item = selecionados[0];
+    const [ano, mes, dia] = item.dateIso.split('-');
+    let dtStart = `${ano}${mes}${dia}`;
+    let dtEnd = `${ano}${mes}${dia}`;
+
+    if (item.timeStr && item.timeStr.includes(':')) {
+        const [hora, min] = item.timeStr.split(':');
+        const hNum = parseInt(hora, 10);
+        const mNum = parseInt(min, 10);
+        dtStart += `T${String(hNum).padStart(2, '0')}${String(mNum).padStart(2, '0')}00`;
+        const endHour = (hNum + 2) % 24;
+        dtEnd += `T${String(endHour).padStart(2, '0')}${String(mNum).padStart(2, '0')}00`;
+    }
+
+    const prefixo = item.tipo === 'culto' ? '⛪ ' : '🎉 ';
+    const title = encodeURIComponent(prefixo + item.title);
+    const details = encodeURIComponent(item.description || (item.tipo === 'culto' ? 'Culto da igreja.' : 'Evento da igreja.'));
+    const location = encodeURIComponent(item.location || 'Templo Principal');
+
+    const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dtStart}/${dtEnd}&details=${details}&location=${location}`;
+    window.open(gcalUrl, '_blank');
+}
+
+// Exportações Globais do Módulo de Exportação
+window.abrirModalExportarCalendario = abrirModalExportarCalendario;
+window.fecharModalExportarCalendario = fecharModalExportarCalendario;
+window.mudarPeriodoExportacao = mudarPeriodoExportacao;
+window.alternarVisualizacaoLembretesExport = alternarVisualizacaoLembretesExport;
+window.renderizarItensModalExportacao = renderizarItensModalExportacao;
+window.alternarSelecaoTodosExportacao = alternarSelecaoTodosExportacao;
+window.atualizarContadorSelecaoExportacao = atualizarContadorSelecaoExportacao;
+window.executarExportacaoCalendario = executarExportacaoCalendario;
+window.abrirNoGoogleAgendaWeb = abrirNoGoogleAgendaWeb;

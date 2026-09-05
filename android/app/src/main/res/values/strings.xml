@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Liturge</string>
+    <string name="title_activity_main">Liturge</string>
+    <string name="package_name">com.liturge.app</string>
+    <string name="custom_url_scheme">com.liturge.app</string>
+</resources>

@@ -49,10 +49,10 @@ CREATE POLICY "Gerenciamento de ministry_leaders por admins" ON public.ministry_
     );
 
 
--- 3. INSERIR SEU USUÁRIO INICIAL COMO SUPER ADMIN (Substitua se necessário pelo seu e-mail)
-INSERT INTO public.super_admins (user_id)
-SELECT id FROM auth.users WHERE email = 'joao.marcos.xavier.484@gmail.com'
-ON CONFLICT (user_id) DO NOTHING;
+-- 3. INSERIR SEU USUÁRIO INICIAL COMO SUPER ADMIN (Substitua 'seu_email@dominio.com' pelo seu e-mail cadastrado)
+-- INSERT INTO public.super_admins (user_id)
+-- SELECT id FROM auth.users WHERE email = 'seu_email@dominio.com'
+-- ON CONFLICT (user_id) DO NOTHING;
 
 -- Notificação de conclusão
 SELECT 'Configuração de Super Admin e Líderes por Ministério concluída com sucesso!' as status;

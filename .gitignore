@@ -5,9 +5,17 @@ Thumbs.db
 # Dependências
 node_modules/
 
+# Arquivos de Build
+dist/
+
 # Arquivos temporários
 *.tmp
 *.log
+
+# Backups locais e dados de migração sensíveis
+backup_export/
+Import_Supabase/
+*.hpls
 
 # Configurações locais
 .env
@@ -15,3 +23,4 @@ node_modules/
 
 # Credenciais / configurações locais do clasp
 # .clasp.json
+.adb_wifi_config.json

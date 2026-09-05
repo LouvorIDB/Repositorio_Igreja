@@ -5,6 +5,9 @@ let midiasCultoAtual = [];
 
 // ===================== GESTÃO DE ACCORDIONS (PAINÉIS EXPANSÍVEIS) =====================
 
+const ACCORDIONS_CULTO = ['sec-culto-geral', 'accordion-sec-escala', 'sec-culto-cantores', 'sec-culto-musicas', 'sec-culto-midias'];
+let todosAccordionsAbertos = false;
+
 function toggleAccordionCulto(secId) {
     const sec = document.getElementById(secId);
     if (!sec) return;
@@ -25,37 +28,121 @@ function toggleAccordionCulto(secId) {
     }
 }
 
-let todosAccordionsAbertos = true;
-function toggleTodosAccordionsCulto() {
-    todosAccordionsAbertos = !todosAccordionsAbertos;
-    const accordions = ['accordion-sec-escala', 'sec-culto-cantores', 'sec-culto-musicas', 'sec-culto-midias'];
-    
-    accordions.forEach(id => {
+function toggleAccordionMinisterio(minId) {
+    const content = document.getElementById(`content-min-accordion-${minId}`);
+    const arrow = document.getElementById(`arrow-min-${minId}`);
+    const card = document.getElementById(`min-accordion-${minId}`);
+    if (!content) return;
+
+    const isHidden = content.classList.contains('hidden');
+    if (isHidden) {
+        content.classList.remove('hidden');
+        if (arrow) arrow.textContent = '▲';
+        if (card) card.classList.add('border-slate-700');
+    } else {
+        content.classList.add('hidden');
+        if (arrow) arrow.textContent = '▼';
+        if (card) card.classList.remove('border-slate-700');
+    }
+}
+
+function atualizarBadgeMinisterio(minId) {
+    const content = document.getElementById(`content-min-accordion-${minId}`);
+    const badge = document.getElementById(`badge-min-count-${minId}`);
+    if (!content || !badge) return;
+
+    const inputs = content.querySelectorAll('.escala-dinamica-input');
+    let preenchidos = 0;
+    inputs.forEach(inp => {
+        if (inp.value && inp.value.trim() !== '') preenchidos++;
+    });
+
+    badge.textContent = `${preenchidos} ${preenchidos === 1 ? 'escalado' : 'escalados'}`;
+    if (preenchidos > 0) {
+        badge.className = 'text-[10px] bg-brand-950 text-brand-400 border border-brand-800/80 px-2 py-0.5 rounded-full font-bold';
+    } else {
+        badge.className = 'text-[10px] bg-slate-800 text-slate-400 border border-slate-700/60 px-2 py-0.5 rounded-full font-medium';
+    }
+}
+
+function recolherTodosAccordionsCulto() {
+    todosAccordionsAbertos = false;
+    ACCORDIONS_CULTO.forEach(id => {
         const sec = document.getElementById(id);
         const content = document.getElementById(`content-${id}`);
         if (sec && content) {
-            if (todosAccordionsAbertos) {
-                content.classList.remove('hidden');
-                sec.classList.add('accordion-open');
-                const arrow = sec.querySelector('.accordion-arrow');
-                if (arrow) arrow.textContent = '▲';
-            } else {
-                content.classList.add('hidden');
-                sec.classList.remove('accordion-open');
-                const arrow = sec.querySelector('.accordion-arrow');
-                if (arrow) arrow.textContent = '▼';
-            }
+            content.classList.add('hidden');
+            sec.classList.remove('accordion-open');
+            const arrow = sec.querySelector('.accordion-arrow');
+            if (arrow) arrow.textContent = '▼';
         }
+    });
+
+    // Sub-accordions de cada ministério
+    document.querySelectorAll('[id^="content-min-accordion-"]').forEach(el => {
+        el.classList.add('hidden');
+    });
+    document.querySelectorAll('[id^="arrow-min-"]').forEach(el => {
+        el.textContent = '▼';
     });
 
     const label = document.getElementById('btn-toggle-accordions-label');
     if (label) {
-        label.textContent = todosAccordionsAbertos ? '⌃ Recolher Todos' : '⌄ Expandir Todos';
+        label.textContent = '⌄ Expandir Todos';
+    }
+}
+
+function expandirTodosAccordionsCulto() {
+    todosAccordionsAbertos = true;
+    ACCORDIONS_CULTO.forEach(id => {
+        const sec = document.getElementById(id);
+        const content = document.getElementById(`content-${id}`);
+        if (sec && content) {
+            content.classList.remove('hidden');
+            sec.classList.add('accordion-open');
+            const arrow = sec.querySelector('.accordion-arrow');
+            if (arrow) arrow.textContent = '▲';
+        }
+    });
+
+    // Sub-accordions de cada ministério
+    document.querySelectorAll('[id^="content-min-accordion-"]').forEach(el => {
+        el.classList.remove('hidden');
+    });
+    document.querySelectorAll('[id^="arrow-min-"]').forEach(el => {
+        el.textContent = '▲';
+    });
+
+    const label = document.getElementById('btn-toggle-accordions-label');
+    if (label) {
+        label.textContent = '⌃ Recolher Todos';
+    }
+}
+
+function toggleTodosAccordionsCulto() {
+    if (todosAccordionsAbertos) {
+        recolherTodosAccordionsCulto();
+    } else {
+        expandirTodosAccordionsCulto();
     }
 }
 
 function atualizarContadoresAccordions() {
-    // 1. Escalas
+    // 0. Geral (Data & Horário)
+    const badgeGeral = document.getElementById('badge-geral-count');
+    if (badgeGeral) {
+        const dataVal = document.getElementById('culto-data')?.value;
+        const horaVal = document.getElementById('culto-hora-input')?.value;
+        if (dataVal) {
+            badgeGeral.textContent = horaVal ? `${dataVal} • ${horaVal}` : dataVal;
+            badgeGeral.className = 'text-[10px] bg-slate-800 text-brand-400 border border-slate-700/80 px-2 py-0.5 rounded-full font-bold';
+        } else {
+            badgeGeral.textContent = 'Data & Horário';
+            badgeGeral.className = 'text-[10px] bg-slate-800 text-slate-400 border border-slate-700/80 px-2 py-0.5 rounded-full font-bold';
+        }
+    }
+
+    // 1. Escalas Geral
     const inputsDinamicos = document.querySelectorAll('.escala-dinamica-input');
     let escalaPreenchida = 0;
     inputsDinamicos.forEach(inp => {
@@ -64,6 +151,18 @@ function atualizarContadoresAccordions() {
     const badgeEscala = document.getElementById('badge-escala-count');
     if (badgeEscala) {
         badgeEscala.textContent = `${escalaPreenchida} ${escalaPreenchida === 1 ? 'escalado' : 'escalados'}`;
+        if (escalaPreenchida > 0) {
+            badgeEscala.className = 'text-[10px] bg-brand-950 text-brand-400 border border-brand-800/80 px-2 py-0.5 rounded-full font-bold';
+        } else {
+            badgeEscala.className = 'text-[10px] bg-slate-800 text-slate-400 border border-slate-700/60 px-2 py-0.5 rounded-full font-medium';
+        }
+    }
+
+    // 1.1 Badges individuais de cada ministério
+    if (window.dadosGlobais?.ministries) {
+        window.dadosGlobais.ministries.forEach(min => {
+            atualizarBadgeMinisterio(min.id);
+        });
     }
 
     // 2. Cantores
@@ -118,6 +217,11 @@ function inicializarCalendarioCulto(dataInicialStr) {
         dateFormat: 'd/m/Y',
         defaultDate: dataInicialStr || null,
         disableMobile: "true",
+        onChange: function() {
+            if (typeof atualizarContadoresAccordions === 'function') {
+                atualizarContadoresAccordions();
+            }
+        },
         onDayCreate: function(dObj, dStr, fp, dayElem) {
             if (!dayElem.dateObj) return;
             const year = dayElem.dateObj.getFullYear();
@@ -160,6 +264,8 @@ function mostrarFormCulto(startIndex) {
         document.getElementById('modal-culto-titulo').textContent = 'Novo Evento / Culto';
         document.getElementById('culto-em-montagem').checked = false;
         document.getElementById('culto-oculto').checked = false;
+        const checkDestaque = document.getElementById('culto-destaque-evento');
+        if (checkDestaque) checkDestaque.checked = false;
         
         // Check if there is a pending date from calendar click
         if (window.pendingDataClick) {
@@ -172,21 +278,64 @@ function mostrarFormCulto(startIndex) {
         const rows = dadosGlobais.cultos;
         const tituloCulto = rows[startIndex][0].toString();
         document.getElementById('modal-culto-titulo').textContent = 'Editar Evento / Culto';
-        document.getElementById('culto-em-montagem').checked = tituloCulto.toUpperCase().includes('EM MONTAGEM');
-        document.getElementById('culto-oculto').checked = tituloCulto.toUpperCase().includes('OCULTO');
-
+        
         const sTarget = (dadosGlobais.services || []).find(s => s.id === cultoEditandoId);
+
+        let isEmMontagem = tituloCulto.toUpperCase().includes('EM MONTAGEM');
+        let isOculto = tituloCulto.toUpperCase().includes('OCULTO');
+
         if (sTarget) {
-            if (sTarget.title) if (inputTitulo) inputTitulo.value = sTarget.title;
+            if (sTarget.status === 'aberto' || sTarget.is_draft === true) isEmMontagem = true;
+            if (sTarget.status === 'arquivado' || sTarget.is_hidden === true) isOculto = true;
+            if (sTarget.title) {
+                if (sTarget.title.toUpperCase().includes('EM MONTAGEM')) isEmMontagem = true;
+                if (sTarget.title.toUpperCase().includes('OCULTO')) isOculto = true;
+            }
+            if (sTarget.notes) {
+                try {
+                    const pn = JSON.parse(sTarget.notes);
+                    if (pn && typeof pn === 'object') {
+                        if (pn.em_montagem !== undefined) isEmMontagem = !!pn.em_montagem;
+                        else if (pn.is_draft !== undefined) isEmMontagem = !!pn.is_draft;
+                        if (pn.oculto !== undefined) isOculto = !!pn.oculto;
+                        else if (pn.is_hidden !== undefined) isOculto = !!pn.is_hidden;
+                    }
+                } catch(e){}
+            }
+        }
+
+        document.getElementById('culto-em-montagem').checked = isEmMontagem;
+        document.getElementById('culto-oculto').checked = isOculto;
+        const checkDestaque = document.getElementById('culto-destaque-evento');
+        if (checkDestaque) checkDestaque.checked = false;
+
+        if (sTarget) {
+            if (sTarget.title && inputTitulo) {
+                inputTitulo.value = sTarget.title.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim();
+            }
             
             if (sTarget.date) {
-                const parts = sTarget.date.split('T');
-                const dateOnly = parts[0];
-                if (parts[1] && inputHora) {
-                    inputHora.value = parts[1].substring(0, 5);
+                // Trata fuso horário: se veio em UTC com 'Z' ou '+', o Date() nativo converte de volta ao horário local correto!
+                if (sTarget.date.includes('Z') || sTarget.date.includes('+')) {
+                    const d = new Date(sTarget.date);
+                    if (!isNaN(d.getTime())) {
+                        const diaD = String(d.getDate()).padStart(2, '0');
+                        const mesD = String(d.getMonth() + 1).padStart(2, '0');
+                        const anoD = d.getFullYear();
+                        dataFormatar = `${diaD}/${mesD}/${anoD}`;
+                        if (inputHora) {
+                            inputHora.value = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                        }
+                    }
+                } else {
+                    const parts = sTarget.date.split('T');
+                    const dateOnly = parts[0];
+                    if (parts[1] && inputHora) {
+                        inputHora.value = parts[1].substring(0, 5);
+                    }
+                    const p = dateOnly.split('-');
+                    if (p.length === 3) dataFormatar = `${p[2]}/${p[1]}/${p[0]}`;
                 }
-                const p = dateOnly.split('-');
-                if (p.length === 3) dataFormatar = `${p[2]}/${p[1]}/${p[0]}`;
             }
             if (sTarget.location && inputLocal) inputLocal.value = sTarget.location;
             if (sTarget.description && inputDesc) inputDesc.value = sTarget.description;
@@ -196,6 +345,7 @@ function mostrarFormCulto(startIndex) {
                     if (parsedNotes && typeof parsedNotes === 'object') {
                         if (parsedNotes.location && inputLocal && !inputLocal.value) inputLocal.value = parsedNotes.location;
                         if (parsedNotes.description && inputDesc && !inputDesc.value) inputDesc.value = parsedNotes.description;
+                        if (parsedNotes.destaque_evento && checkDestaque) checkDestaque.checked = true;
                     }
                 } catch(e) {
                     if (inputDesc && !inputDesc.value && typeof sTarget.notes === 'string') inputDesc.value = sTarget.notes;
@@ -215,7 +365,7 @@ function mostrarFormCulto(startIndex) {
         if (!dataFormatar) {
             const partes = tituloCulto.split(' - ');
             dataFormatar = partes[0] || '';
-            if (inputTitulo) inputTitulo.value = tituloCulto;
+            if (inputTitulo) inputTitulo.value = tituloCulto.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim();
         }
 
         // Fallback de mídias a partir da linha bruta se estiver vazia
@@ -231,8 +381,76 @@ function mostrarFormCulto(startIndex) {
             escalaInstrumentos = JSON.parse(colF);
         } catch(e) { escalaInstrumentos = { violao: '', bateria: '', teclado: '' }; }
 
-        const colG = rows[startIndex][6] ? rows[startIndex][6].toString() : '';
-        cantoresCultoAtual = colG ? colG.split(',').map(s => s.trim()).filter(Boolean) : [];
+        // Carrega cantores com máxima redundância para garantir que nunca sumam
+        let cantoresCarregados = [];
+
+        // 1. Do array em memória formatado (colG)
+        if (rows[startIndex] && rows[startIndex][6]) {
+            cantoresCarregados = rows[startIndex][6].toString().split(',').map(s => s.trim()).filter(Boolean);
+        }
+
+        // 2. Do sTarget (registro do banco relacional)
+        if (sTarget) {
+            if (cantoresCarregados.length === 0 && (sTarget.singers_list || sTarget.singers)) {
+                cantoresCarregados = (sTarget.singers_list || sTarget.singers).split(',').map(s => s.trim()).filter(Boolean);
+            }
+            if (cantoresCarregados.length === 0 && sTarget.notes) {
+                try {
+                    const pn = JSON.parse(sTarget.notes);
+                    if (pn.cantores && Array.isArray(pn.cantores)) cantoresCarregados = [...pn.cantores];
+                } catch(e){}
+            }
+            if (cantoresCarregados.length === 0 && sTarget.service_scales && sTarget.service_scales.length > 0) {
+                sTarget.service_scales.forEach(sc => {
+                    const rName = (sc.ministry_roles?.name || sc.role_name || '').toLowerCase();
+                    const rScope = sc.ministry_roles?.scale_scope;
+                    const pName = sc.profiles?.name || sc.profile_name || '';
+                    const isSongScope = rScope === 'song' || (!rScope && (rName.includes('cantor') || rName.includes('vocal') || !rName));
+                    if (pName && isSongScope) {
+                        if (!cantoresCarregados.includes(pName)) cantoresCarregados.push(pName);
+                    }
+                });
+            }
+        }
+
+        // 3. Migra chaves de vocalista/cantor ou funções por música legadas da escala para cantores unificados
+        const ministriesListForMigration = (typeof Store !== 'undefined' && Store.getMinistries) ? Store.getMinistries() : (dadosGlobais.ministries || []);
+        Object.keys(escalaInstrumentos).forEach(k => {
+            const kLow = k.toLowerCase();
+            let isSong = kLow.includes('vocal') || kLow.includes('cantor');
+            if (!isSong) {
+                for (const m of ministriesListForMigration) {
+                    const rFound = (m.ministry_roles || []).find(r => (r.name || '').toLowerCase() === kLow);
+                    if (rFound && rFound.scale_scope === 'song') {
+                        isSong = true;
+                        break;
+                    }
+                }
+            }
+            if (isSong) {
+                const val = escalaInstrumentos[k];
+                if (val) {
+                    val.split(',').map(s => s.trim()).filter(Boolean).forEach(n => {
+                        if (!cantoresCarregados.includes(n)) cantoresCarregados.push(n);
+                    });
+                }
+                delete escalaInstrumentos[k];
+            }
+        });
+
+        // 4. Fallback inteligente: unifica com os cantores escalados nas músicas desse culto
+        for (let i = startIndex + 1; i < rows.length; i++) {
+            const texto = rows[i][0] ? rows[i][0].toString() : '';
+            if (texto.includes("CULTO DE")) break;
+            if (rows[i][6]) {
+                const cM = rows[i][6].toString().split(',').map(s => s.trim()).filter(Boolean);
+                cM.forEach(c => {
+                    if (!cantoresCarregados.includes(c)) cantoresCarregados.push(c);
+                });
+            }
+        }
+
+        cantoresCultoAtual = cantoresCarregados;
 
         for (let i = startIndex + 1; i < rows.length; i++) {
             const texto = rows[i][0] ? rows[i][0].toString() : '';
@@ -256,6 +474,7 @@ function mostrarFormCulto(startIndex) {
     renderizarMusicasCulto();
     renderizarMidiasCulto();
     atualizarContadoresAccordions();
+    recolherTodosAccordionsCulto();
     document.getElementById('seletor-musica').classList.add('hidden');
 
     const userToEvaluate = modoSimulacaoPerfil || usuarioLogado;
@@ -286,6 +505,15 @@ function mostrarFormCulto(startIndex) {
         }
     }
 
+    const btnExcluir = document.getElementById('btn-excluir-culto-modal');
+    if (btnExcluir) {
+        if (startIndex !== null && (roleUsuario === 'admin' || roleUsuario === 'lider')) {
+            btnExcluir.classList.remove('hidden');
+        } else {
+            btnExcluir.classList.add('hidden');
+        }
+    }
+
     document.getElementById('modal-culto').classList.remove('hidden');
 }
 
@@ -294,6 +522,72 @@ function editarCulto(startIndex) { mostrarFormCulto(startIndex); }
 function fecharModalCulto() {
     document.getElementById('modal-culto').classList.add('hidden');
 }
+
+async function excluirCulto(serviceIdOuIndex) {
+    let serviceId = null;
+    let tituloCulto = 'este culto';
+
+    // 1. Identifica o serviceId (por UUID ou por índice do array legado)
+    if (typeof serviceIdOuIndex === 'string' && serviceIdOuIndex.length > 10) {
+        serviceId = serviceIdOuIndex;
+        const sTarget = (dadosGlobais.services || []).find(s => s.id === serviceId);
+        if (sTarget) tituloCulto = sTarget.title || 'este culto';
+    } else if (typeof serviceIdOuIndex === 'number' || (serviceIdOuIndex !== null && !isNaN(serviceIdOuIndex) && serviceIdOuIndex !== '')) {
+        const idx = Number(serviceIdOuIndex);
+        if (dadosGlobais.cultos && dadosGlobais.cultos[idx]) {
+            serviceId = dadosGlobais.cultos[idx][8];
+            tituloCulto = dadosGlobais.cultos[idx][0] ? dadosGlobais.cultos[idx][0].toString() : 'este culto';
+        }
+    } else if (typeof cultoEditandoId !== 'undefined' && cultoEditandoId) {
+        serviceId = cultoEditandoId;
+        const sTarget = (dadosGlobais.services || []).find(s => s.id === serviceId);
+        if (sTarget) tituloCulto = sTarget.title || 'este culto';
+    }
+
+    if (!serviceId) {
+        if (typeof mostrarToast === 'function') mostrarToast('Erro: Identificador do culto não encontrado.', 'erro');
+        return;
+    }
+
+    tituloCulto = tituloCulto.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim();
+
+    if (!confirm(`Tem certeza que deseja excluir o culto "${tituloCulto}"?\n\nEsta ação apagará permanentemente o culto, sua escala, mídias e repertório associado.`)) {
+        return;
+    }
+
+    try {
+        if (!supabaseClient) throw new Error("Cliente Supabase não inicializado.");
+
+        // 1. Apagar registros dependentes para evitar erro de Foreign Key
+        await supabaseClient.from('service_songs').delete().eq('service_id', serviceId);
+        await supabaseClient.from('service_scales').delete().eq('service_id', serviceId);
+        await supabaseClient.from('service_media').delete().eq('service_id', serviceId);
+        try {
+            await supabaseClient.from('availability_comments').delete().eq('service_id', serviceId);
+        } catch (eComments) {}
+
+        // 2. Apagar o registro principal na tabela services
+        const { error } = await supabaseClient.from('services').delete().eq('id', serviceId);
+        if (error) throw error;
+
+        // 3. Fechar modais abertos
+        if (typeof fecharModalCulto === 'function') fecharModalCulto();
+        if (typeof fecharModalDetalhesDia === 'function') fecharModalDetalhesDia();
+
+        // 4. Recarregar dados e atualizar telas
+        if (typeof carregarDados === 'function') await carregarDados();
+        if (typeof carregarAgenda === 'function') carregarAgenda();
+        if (typeof renderizarAdminCultosEventos === 'function') renderizarAdminCultosEventos();
+        if (typeof renderizarAdminListaCultos === 'function') renderizarAdminListaCultos();
+
+        if (typeof mostrarToast === 'function') mostrarToast(`Culto "${tituloCulto}" excluído com sucesso!`, 'sucesso');
+    } catch (err) {
+        console.error('Erro ao excluir culto:', err);
+        if (typeof mostrarToast === 'function') mostrarToast(`Erro ao excluir culto: ${err.message}`, 'erro');
+    }
+}
+window.excluirCulto = excluirCulto;
+window.excluirCultoAtual = () => excluirCulto(cultoEditandoId);
 
 
 // ===================== ADMIN: INSTRUMENTISTAS =====================
@@ -320,15 +614,33 @@ function popularSelectsInstrumentos() {
         if (roleUsuario === 'lider' && userMinistryIds.length > 0 && !userMinistryIds.includes(min.id)) return;
 
         const roles = min.ministry_roles || [];
-        // Filtra "Cantor" da seção de selects (pois eles têm a seção multiselect própria)
-        const rolesFiltrados = roles.filter(r => !r.name.toLowerCase().includes('cantor') && !r.name.toLowerCase().includes('vocal'));
+        // Filtra funções com escopo por música (pois são escaladas na seção de músicas)
+        const isPerSong = (r) => {
+            if (!r) return false;
+            if (r.scale_scope === 'song') return true;
+            if (r.scale_scope === 'service') return false;
+            const n = (r.name || '').toLowerCase();
+            return n.includes('cantor') || n.includes('vocal');
+        };
+        const rolesFiltrados = roles.filter(r => !isPerSong(r));
 
         if (rolesFiltrados.length === 0) return;
 
         html += `
-            <div class="mb-4 bg-slate-900/60 p-3 rounded-lg border border-slate-800">
-                <h4 class="text-xs font-bold text-brand-500 mb-3 uppercase tracking-wider">${min.icon || ''} ${min.name}</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div id="min-accordion-${min.id}" class="border border-slate-800/80 rounded-xl overflow-hidden bg-slate-950/40 mb-3 transition-colors hover:border-slate-700">
+                <div onclick="toggleAccordionMinisterio('${min.id}')" 
+                    class="flex items-center justify-between p-3.5 cursor-pointer hover:bg-slate-800/50 transition select-none">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-sm">${min.icon || '🏷️'}</span>
+                        <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider">${min.name}</h4>
+                        <span id="badge-min-count-${min.id}" class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700/60 px-2 py-0.5 rounded-full font-medium">0 escalados</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="arrow-min-${min.id}" class="text-slate-400 text-xs font-bold transition-transform">▼</span>
+                    </div>
+                </div>
+                <div id="content-min-accordion-${min.id}" class="hidden p-3.5 border-t border-slate-800/70 bg-slate-900/30">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         `;
 
         rolesFiltrados.forEach(role => {
@@ -342,17 +654,48 @@ function popularSelectsInstrumentos() {
             if (listaVoluntarios.length === 0) {
                 listaVoluntarios = cantoresPorInstrumento(roleName);
             }
+
+            // Identifica a data do culto para checar disponibilidade
+            const dataInputVal = document.getElementById('culto-data')?.value || '';
+            let dataIsoCulto = '';
+            if (dataInputVal) {
+                const partsD = dataInputVal.split('/');
+                if (partsD.length === 3) dataIsoCulto = `${partsD[2]}-${partsD[1]}-${partsD[0]}`;
+                else dataIsoCulto = dataInputVal;
+            }
+
+            const todosVoluntarios = (typeof Store !== 'undefined' && Store.getVoluntarios) ? Store.getVoluntarios() : (window.dadosGlobais?.voluntarios || []);
+            const churchIdAtual = window.dadosGlobais?.church?.id || null;
             
             let optionsHtml = `<option value="">— Nenhum —</option>`;
             listaVoluntarios.forEach(vol => {
                 const selected = vol === valorSalvo ? 'selected' : '';
-                optionsHtml += `<option value="${vol}" ${selected}>${vol}</option>`;
+                let labelVol = vol;
+
+                if (dataIsoCulto) {
+                    const prof = todosVoluntarios.find(p => p.name === vol || p.id === vol);
+                    if (prof) {
+                        const cId = churchIdAtual || prof.church_id;
+                        const storageKey = `liturge_avail_${cId}_${prof.id}`;
+                        try {
+                            const localAvail = JSON.parse(localStorage.getItem(storageKey) || '{}');
+                            if (localAvail[dataIsoCulto]?.status === 'indisponivel') {
+                                const mot = localAvail[dataIsoCulto].notes ? ` (${localAvail[dataIsoCulto].notes})` : '';
+                                labelVol += ` (🔴 Indisponível${mot})`;
+                            } else if (localAvail[dataIsoCulto]?.status === 'disponivel') {
+                                labelVol += ' (🟢 Disponível)';
+                            }
+                        } catch(e){}
+                    }
+                }
+
+                optionsHtml += `<option value="${vol}" ${selected}>${labelVol}</option>`;
             });
 
             html += `
                 <div>
-                    <label class="text-xs text-slate-400 mb-1 block">${roleName}</label>
-                    <select id="${selectId}" data-role-name="${roleName}" data-role-id="${role.id}" onchange="verificarAlertasEscalacao('${selectId}', this.value); if (typeof atualizarContadoresAccordions === 'function') atualizarContadoresAccordions();" class="escala-dinamica-input w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                    <label class="text-xs text-slate-400 mb-1 block font-medium">${roleName}</label>
+                    <select id="${selectId}" data-role-name="${roleName}" data-role-id="${role.id}" onchange="verificarAlertasEscalacao('${selectId}', this.value); if (typeof atualizarContadoresAccordions === 'function') atualizarContadoresAccordions(); if (typeof atualizarBadgeMinisterio === 'function') atualizarBadgeMinisterio('${min.id}');" class="escala-dinamica-input w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
                         ${optionsHtml}
                     </select>
                     <div id="aviso-${selectId}" class="mt-1 space-y-0.5"></div>
@@ -361,6 +704,7 @@ function popularSelectsInstrumentos() {
         });
 
         html += `
+                    </div>
                 </div>
             </div>
         `;
@@ -371,16 +715,30 @@ function popularSelectsInstrumentos() {
     }
 
     container.innerHTML = html;
+
+    if (window.dadosGlobais?.ministries) {
+        window.dadosGlobais.ministries.forEach(min => {
+            if (typeof atualizarBadgeMinisterio === 'function') {
+                atualizarBadgeMinisterio(min.id);
+            }
+        });
+    }
 }
 
 // ===================== ADMIN: CANTORES DO CULTO =====================
 
 function renderizarCantoresCulto() {
     const container = document.getElementById('culto-cantores-lista');
-    const lista = cantoresPorInstrumento('Cantor');
+    let lista = typeof obterVoluntariosEscopoMusica === 'function' ? obterVoluntariosEscopoMusica() : [];
+    if (lista.length === 0) {
+        lista = cantoresPorInstrumento('Cantor');
+    }
+    if (lista.length === 0) {
+        lista = cantoresPorInstrumento('Vocal');
+    }
 
     if (lista.length === 0) {
-        container.innerHTML = '<p class="text-slate-500 text-xs">Nenhum cantor cadastrado na aba Cantores com instrumento "Cantor".</p>';
+        container.innerHTML = '<p class="text-slate-500 text-xs">Nenhum voluntário cadastrado com função de escala por música (ex: Vocal/Cantor).</p>';
         return;
     }
 
@@ -699,38 +1057,58 @@ async function salvarCulto() {
     if (!data) { mostrarToast('Escolha a data do culto no calendário.', 'aviso'); return; }
 
     const [hH, mM] = customTime.split(':');
-    let dataFinalObj = new Date();
+    const horaNum = parseInt(hH || 19, 10);
+    const minNum = parseInt(mM || 0, 10);
+    let dia = new Date().getDate();
+    let mes = new Date().getMonth();
+    let ano = new Date().getFullYear();
+
     const partesData = data.split('/');
     if (partesData.length === 3) {
-        const dia = parseInt(partesData[0], 10);
-        const mes = parseInt(partesData[1], 10) - 1;
-        const ano = parseInt(partesData[2], 10);
-        dataFinalObj = new Date(ano, mes, dia, parseInt(hH || 19), parseInt(mM || 30), 0);
+        dia = parseInt(partesData[0], 10);
+        mes = parseInt(partesData[1], 10) - 1;
+        ano = parseInt(partesData[2], 10);
     } else if (partesData.length === 2) {
-        const dia = parseInt(partesData[0], 10);
-        const mes = parseInt(partesData[1], 10) - 1;
-        dataFinalObj = new Date(new Date().getFullYear(), mes, dia, parseInt(hH || 19), parseInt(mM || 30), 0);
+        dia = parseInt(partesData[0], 10);
+        mes = parseInt(partesData[1], 10) - 1;
+        ano = new Date().getFullYear();
     } else {
-        const dateParsed = Date.parse(data);
-        if (!isNaN(dateParsed)) {
-            dataFinalObj = new Date(dateParsed);
-            dataFinalObj.setHours(parseInt(hH || 19));
-            dataFinalObj.setMinutes(parseInt(mM || 30));
+        const dp = data.split('-');
+        if (dp.length === 3) {
+            ano = parseInt(dp[0], 10);
+            mes = parseInt(dp[1], 10) - 1;
+            dia = parseInt(dp[2], 10);
         }
     }
+    const dataFinalObj = new Date(ano, mes, dia, horaNum, minNum, 0);
+
+    const diaPad = String(dia).padStart(2, '0');
+    const mesPad = String(mes + 1).padStart(2, '0');
+    const horaPad = String(horaNum).padStart(2, '0');
+    const minPad = String(minNum).padStart(2, '0');
+    const dataLocalIso = `${ano}-${mesPad}-${diaPad}T${horaPad}:${minPad}:00`;
 
     const diasSemana = ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
     const diaIndex = dataFinalObj.getDay();
     let tipo = diasSemana[diaIndex];
     if (diaIndex === 6) tipo = "SABADO";
 
-    const diaStr = String(dataFinalObj.getDate()).padStart(2, '0');
-    const mesStr = String(dataFinalObj.getMonth() + 1).padStart(2, '0');
-    const dataFormatadaTitle = `${diaStr}/${mesStr}`;
+    const dataFormatadaTitle = `${diaPad}/${mesPad}`;
 
-    let titulo = customTitle;
-    if (!titulo) {
-        titulo = `${dataFormatadaTitle} - CULTO DE ${tipo}${emMontagem ? ' - EM MONTAGEM' : ''}${oculto ? ' - OCULTO' : ''}`;
+    let tituloBase = customTitle;
+    if (!tituloBase) {
+        tituloBase = `${dataFormatadaTitle} - CULTO DE ${tipo}`;
+    } else {
+        // Limpa quaisquer sufixos de status anteriores para evitar repetição/duplicação
+        tituloBase = tituloBase.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim();
+    }
+
+    let titulo = tituloBase;
+    if (emMontagem) {
+        titulo += ' - EM MONTAGEM';
+    }
+    if (oculto) {
+        titulo += ' - OCULTO';
     }
 
     escalaInstrumentos = {};
@@ -756,25 +1134,45 @@ async function salvarCulto() {
             throw new Error("Cliente Supabase não inicializado.");
         }
 
-        // 1. Obter a igreja tenant atual a partir do estado global
-        const churchId = (typeof dadosGlobais !== 'undefined' && dadosGlobais.church?.id) ? dadosGlobais.church.id : null;
+        // 1. Obter a igreja tenant atual a partir do estado global com máxima resiliência
+        const userToEvaluate = (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null) || (window.usuarioLogado || null);
+        let churchId = window.dadosGlobais?.church?.id 
+            || userToEvaluate?.church_id 
+            || (typeof obterChurchIdAtual === 'function' ? obterChurchIdAtual() : null);
 
-        let notesData = null;
-        if (customLocation || customDesc) {
-            notesData = JSON.stringify({
-                location: customLocation || '',
-                description: customDesc || ''
-            });
+        if (!churchId && window.dadosGlobais?.churches && window.dadosGlobais.churches.length > 0) {
+            churchId = window.dadosGlobais.churches[0].id;
         }
+
+        if (!churchId) {
+            throw new Error("Igreja não identificada. Por favor, recarregue a página para autenticar a congregação.");
+        }
+
+        const cantoresStr = Array.isArray(cantoresCultoAtual) ? cantoresCultoAtual.join(', ') : '';
+
+        const destaqueEvento = document.getElementById('culto-destaque-evento')?.checked || false;
+
+        const notesData = JSON.stringify({
+            location: customLocation || '',
+            description: customDesc || '',
+            cantores: cantoresCultoAtual || [],
+            escala: escalaInstrumentos || {},
+            destaque_evento: destaqueEvento,
+            em_montagem: emMontagem,
+            is_draft: emMontagem,
+            oculto: oculto,
+            is_hidden: oculto
+        });
 
         const serviceData = {
             title: titulo,
             status: oculto ? 'arquivado' : (emMontagem ? 'aberto' : 'confirmado'),
-            date: dataFinalObj.toISOString(),
+            date: dataLocalIso,
             media_urls: midiasCultoAtual,
-            notes: notesData
+            notes: notesData,
+            description: customDesc || '',
+            church_id: churchId
         };
-        if (churchId) serviceData.church_id = churchId;
 
         let serviceId = cultoEditandoId;
 
@@ -810,7 +1208,7 @@ async function salvarCulto() {
 
                 let cantorRoleId = null;
                 for (const m of ministriesList) {
-                    const found = (m.ministry_roles || []).find(r => (r.name || '').toLowerCase().includes('cantor') || (r.name || '').toLowerCase().includes('vocal'));
+                    const found = (m.ministry_roles || []).find(r => r.scale_scope === 'song' || (r.name || '').toLowerCase().includes('cantor') || (r.name || '').toLowerCase().includes('vocal'));
                     if (found) { cantorRoleId = found.id; break; }
                 }
 
@@ -824,7 +1222,8 @@ async function salvarCulto() {
                         if (prof && prof.id) {
                             const item = {
                                 service_id: serviceId,
-                                user_id: prof.id
+                                user_id: prof.id,
+                                role_name: roleName
                             };
                             if (roleId) item.role_id = roleId;
                             if (churchId) item.church_id = churchId;
@@ -838,15 +1237,14 @@ async function salvarCulto() {
                     cantoresCultoAtual.forEach(nomeCantor => {
                         if (nomeCantor) {
                             const prof = voluntariosList.find(p => p.name === nomeCantor || p.id === nomeCantor);
-                            if (prof && prof.id) {
-                                const item = {
-                                    service_id: serviceId,
-                                    user_id: prof.id
-                                };
-                                if (cantorRoleId) item.role_id = cantorRoleId;
-                                if (churchId) item.church_id = churchId;
-                                scalesToInsert.push(item);
-                            }
+                            const item = {
+                                service_id: serviceId,
+                                role_name: 'cantor'
+                            };
+                            if (prof && prof.id) item.user_id = prof.id;
+                            if (cantorRoleId) item.role_id = cantorRoleId;
+                            if (churchId) item.church_id = churchId;
+                            scalesToInsert.push(item);
                         }
                     });
                 }
@@ -972,11 +1370,37 @@ function verificarAlertasEscalacao(selectId, nomeOuId) {
         }
     }
 
+    // 3. Checar Disponibilidade Informada pelo Membro na Data do Culto
+    if (dataCultoStr) {
+        let dataIso = dataCultoStr;
+        const pData = dataCultoStr.split('/');
+        if (pData.length === 3) dataIso = `${pData[2]}-${pData[1]}-${pData[0]}`;
+
+        const churchId = window.dadosGlobais?.church?.id || prof.church_id;
+        const storageKey = `liturge_avail_${churchId}_${prof.id}`;
+        try {
+            const localAvail = JSON.parse(localStorage.getItem(storageKey) || '{}');
+            const itemDisp = localAvail[dataIso];
+            if (itemDisp) {
+                if (itemDisp.status === 'indisponivel') {
+                    const motivoStr = itemDisp.notes ? `: "${itemDisp.notes}"` : '';
+                    htmlAviso += `<p class="text-[11px] text-red-400 font-bold flex items-center gap-1">⛔ Indisponível: ${prof.name} informou que NÃO PODE servir nesta data${motivoStr}!</p>`;
+                } else if (itemDisp.status === 'disponivel') {
+                    htmlAviso += `<p class="text-[11px] text-emerald-400 font-medium flex items-center gap-1">🟢 Disponível: ${prof.name} confirmou disponibilidade para servir nesta data.</p>`;
+                }
+            }
+        } catch(e){}
+    }
+
     containerAviso.innerHTML = htmlAviso;
 }
 
 window.verificarAlertasEscalacao = verificarAlertasEscalacao;
 window.toggleAccordionCulto = toggleAccordionCulto;
+window.toggleAccordionMinisterio = toggleAccordionMinisterio;
+window.atualizarBadgeMinisterio = atualizarBadgeMinisterio;
+window.recolherTodosAccordionsCulto = recolherTodosAccordionsCulto;
+window.expandirTodosAccordionsCulto = expandirTodosAccordionsCulto;
 window.toggleTodosAccordionsCulto = toggleTodosAccordionsCulto;
 window.atualizarContadoresAccordions = atualizarContadoresAccordions;
 window.renderizarMidiasCulto = renderizarMidiasCulto;

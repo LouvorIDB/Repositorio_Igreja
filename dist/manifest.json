@@ -1,17 +1,12 @@
 {
-  "name": "Repertório - Louvor IDB",
-  "short_name": "Repertório Louvor",
-  "description": "Organizador de Repertório e Playlists do Ministério de Louvor IDB",
+  "name": "Liturge — Gestão de Louvor & Cultos",
+  "short_name": "Liturge",
+  "description": "Plataforma de Gestão Eclesiástica, Repertório, Cifras e Escalas",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "icons": [
-    {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    },
     {
       "src": "icon-192.png",
       "sizes": "192x192",
