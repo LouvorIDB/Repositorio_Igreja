@@ -401,7 +401,8 @@ function mudarAbaAdmin(aba) {
         novas: document.getElementById('admin-aba-novas'),
         solicitacoes: document.getElementById('admin-aba-solicitacoes'),
         igrejas: document.getElementById('admin-aba-igrejas'),
-        configuracoes: document.getElementById('admin-aba-configuracoes')
+        configuracoes: document.getElementById('admin-aba-configuracoes'),
+        'mensagens-membros': document.getElementById('admin-aba-mensagens-membros')
     };
 
     const botoes = {
@@ -412,7 +413,8 @@ function mudarAbaAdmin(aba) {
         novas: document.getElementById('btn-admin-aba-novas'),
         solicitacoes: document.getElementById('btn-admin-aba-solicitacoes'),
         igrejas: document.getElementById('btn-admin-aba-igrejas'),
-        configuracoes: document.getElementById('btn-admin-aba-configuracoes')
+        configuracoes: document.getElementById('btn-admin-aba-configuracoes'),
+        'mensagens-membros': document.getElementById('btn-admin-aba-whatsapp')
     };
 
     const ativo = "w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition bg-brand-600/20 text-brand-400 border border-brand-500/30 flex items-center gap-3";
@@ -427,6 +429,7 @@ function mudarAbaAdmin(aba) {
             let shouldHide = false;
             if (key === 'configuracoes' && role !== 'admin') shouldHide = true;
             if (key === 'ministerios' && role !== 'admin' && role !== 'lider') shouldHide = true;
+            if (key === 'mensagens-membros' && role !== 'admin' && role !== 'lider') shouldHide = true;
             if (key === 'igrejas' && !window.isSuperAdmin) shouldHide = true;
 
             if (shouldHide) {
@@ -447,6 +450,7 @@ function mudarAbaAdmin(aba) {
     else if (aba === 'solicitacoes') renderizarAdminListaSolicitacoes();
     else if (aba === 'igrejas') renderizarAdminListaIgrejas();
     else if (aba === 'configuracoes') carregarConfiguracoesGlobaisAdmin();
+    else if (aba === 'mensagens-membros') { if (typeof renderizarAdminMensagensMembros === 'function') renderizarAdminMensagensMembros(); }
 }
 
 function carregarConfiguracoesGlobaisAdmin() {
@@ -932,6 +936,12 @@ let solicitacoesMesAtual = 'todos'; // 'todos' ou 'YYYY-MM'
 let todasSolicitacoesCache = [];
 
 const METADATA_CATEGORIAS_SOLICITACOES = {
+    whatsapp: {
+        chave: 'whatsapp',
+        label: 'WhatsApp',
+        icone: '📱',
+        badgeClasse: 'bg-emerald-900/60 text-emerald-300 border-emerald-700/50'
+    },
     ajuste_tom: {
         chave: 'ajuste_tom',
         label: 'Ajuste de Tom',
@@ -962,6 +972,11 @@ function normalizarCategoriaSolicitacao(item) {
     if (!item) return 'ajuste_tom';
     const cat = (item.category || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
     const txt = (item.comment_text || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+    // 0. WhatsApp (mensagens, recados ou justificativas pelo bot do WhatsApp)
+    if (cat.includes('whatsapp') || cat.includes('zap') || txt.includes('[whatsapp]')) {
+        return 'whatsapp';
+    }
 
     // 1. Indisponibilidade (aceita 'indisponibilidade', 'escala/compromissos', 'mes seguinte', etc.)
     if (cat.includes('indisponib') || cat.includes('escala') || cat.includes('compromisso') || cat.includes('mes seguinte') || txt.includes('indisponib') || txt.includes('nao estarei disponivel')) {
@@ -994,7 +1009,7 @@ function normalizarCategoriaSolicitacao(item) {
 function selecionarCategoriaSolicitacoes(cat) {
     solicitacoesCategoriaAtual = cat;
 
-    const categorias = ['todas', 'ajuste_tom', 'musica_nova', 'culto_especifico', 'indisponibilidade'];
+    const categorias = ['todas', 'whatsapp', 'ajuste_tom', 'musica_nova', 'culto_especifico', 'indisponibilidade'];
     categorias.forEach(c => {
         const btn = document.getElementById(`btn-solic-cat-${c}`);
         if (!btn) return;
@@ -1116,7 +1131,8 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
 
                 let query = supabaseClient
                     .from('availability_comments')
-                    .select('*, profiles:user_id(id, name, ministry_id)')
+                    .select('*, profiles:user_id(id, name, phone, ministry_id)')
+                    .neq('status', 'aguardando_texto')
                     .order('created_at', { ascending: false });
 
                 if (currentChurchId) {
@@ -1126,8 +1142,11 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
                 const { data, error } = await query;
 
                 if (!error && data) {
+                    // Filtra rascunhos em andamento do WhatsApp
+                    const limpo = data.filter(item => item.status !== 'aguardando_texto' && item.category !== 'whatsapp_draft');
+
                     // Mescla o status do banco de dados com a persistência local espelho
-                    data.forEach(item => {
+                    limpo.forEach(item => {
                         const localStatus = obterStatusSolicitacaoLocal(item.id);
                         if (localStatus) {
                             item.status = localStatus;
@@ -1137,7 +1156,7 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
                             salvarStatusSolicitacaoLocal(item.id, item.status);
                         }
                     });
-                    todasSolicitacoesCache = data;
+                    todasSolicitacoesCache = limpo;
                 }
 
                 // Busca perfis e cargos ministeriais para escopo de líder
@@ -1219,12 +1238,14 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
     // 1. Atualizar badges de contagem de pendências por categoria no topo
     const pendentesGerais = solicitacoesPermitidas.filter(item => !item.status || item.status === 'pendente');
     const badgeCatTodas = document.getElementById('badge-solic-cat-todas');
+    const badgeCatWhatsApp = document.getElementById('badge-solic-cat-whatsapp');
     const badgeCatTom = document.getElementById('badge-solic-cat-ajuste_tom');
     const badgeCatNova = document.getElementById('badge-solic-cat-musica_nova');
     const badgeCatCulto = document.getElementById('badge-solic-cat-culto_especifico');
     const badgeCatIndisp = document.getElementById('badge-solic-cat-indisponibilidade');
 
     if (badgeCatTodas) badgeCatTodas.textContent = pendentesGerais.length;
+    if (badgeCatWhatsApp) badgeCatWhatsApp.textContent = pendentesGerais.filter(i => i._catNormalizada === 'whatsapp').length;
     if (badgeCatTom) badgeCatTom.textContent = pendentesGerais.filter(i => i._catNormalizada === 'ajuste_tom').length;
     if (badgeCatNova) badgeCatNova.textContent = pendentesGerais.filter(i => i._catNormalizada === 'musica_nova').length;
     if (badgeCatCulto) badgeCatCulto.textContent = pendentesGerais.filter(i => i._catNormalizada === 'culto_especifico').length;
@@ -1309,6 +1330,8 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
 
         // Nome do autor do perfil ou extraído do texto
         const autorNome = item.profiles?.name || '';
+        const autorTelRaw = (item.profiles?.phone || '').replace(/\D/g, '');
+        const zapLink = autorTelRaw ? `https://wa.me/${autorTelRaw.startsWith('55') ? autorTelRaw : '55' + autorTelRaw}` : null;
 
         return `
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl border border-slate-700/80 bg-slate-800/80 hover:bg-slate-800 transition gap-3 shadow-sm">
@@ -1325,6 +1348,11 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
                     <p class="text-sm text-white font-medium mt-1 leading-relaxed break-words">${texto}</p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0 flex-wrap mt-2 sm:mt-0">
+                    ${zapLink ? `
+                        <a href="${zapLink}" target="_blank" rel="noopener noreferrer" class="bg-emerald-700/80 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs transition font-medium flex items-center gap-1 shadow" title="Abrir conversa no WhatsApp">
+                            💬 WhatsApp
+                        </a>
+                    ` : ''}
                     ${status === 'pendente' ? `
                         ${isTom ? `
                             <button onclick="abrirModalAprovarTomAdmin('${idEscapado}', '${textoEscapado}')" class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg text-xs transition font-medium flex items-center gap-1 shadow">

@@ -173,14 +173,18 @@ window.obterIdsMinisteriosDoUsuario = obterIdsMinisteriosDoUsuario;
 
 function obterIdsMinisteriosQueLidera(user) {
     if (!user) return [];
-    if (Array.isArray(user.lider_de)) {
+    if (Array.isArray(user.lider_de) && user.lider_de.length > 0) {
         return user.lider_de;
     }
-    if (Array.isArray(user.ministry_leaders)) {
-        return user.ministry_leaders.map(ml => ml.ministry_id || ml).filter(Boolean);
+    if (Array.isArray(user.ministry_leaders) && user.ministry_leaders.length > 0) {
+        const ids = user.ministry_leaders.map(ml => ml.ministry_id || ml).filter(Boolean);
+        if (ids.length > 0) return ids;
     }
     const roleStr = (user.system_role || user.role || '').toLowerCase();
     if (roleStr === 'lider' && user.ministry_id) {
+        return [user.ministry_id];
+    }
+    if (user.ministry_id) {
         return [user.ministry_id];
     }
     return [];

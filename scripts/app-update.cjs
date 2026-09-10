@@ -86,6 +86,11 @@ try {
         console.log(`📲 Instalando atualização no celular ${modoTexto}...`);
         execSync(`adb -s ${targetDevice} install -r "${apkPath}"`, { stdio: 'inherit' });
 
+        // Limpa resíduos de cache do WebView para que nenhuma view HTML antiga fique retida
+        try {
+            execSync(`adb -s ${targetDevice} shell "run-as com.liturge.app rm -rf 'app_webview/Default/Service Worker' 'app_webview/Default/CacheStorage'"`);
+        } catch (e) {}
+
         console.log('⚡ Abrindo o Liturge na tela do aparelho...');
         execSync(`adb -s ${targetDevice} shell am start -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n com.liturge.app/.MainActivity`, { stdio: 'inherit' });
 

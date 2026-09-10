@@ -11,19 +11,33 @@
             </p>
         </div>
 
-        <div class="flex flex-wrap gap-2">
-            <button onclick="baixarArquivoSincronizadorBat()" 
-                class="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-amber-900/20 active:scale-95">
-                <span>⬇️</span> Baixar Sincronizador (.bat)
+        <div class="flex flex-wrap items-center gap-2">
+            <button onclick="baixarArquivoModuloHolyrics()" 
+                class="px-4 py-2 bg-gradient-to-r from-cyan-600 via-brand-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-cyan-900/30 active:scale-95">
+                <span>🧩</span> Baixar Módulo Holyrics (.js)
             </button>
-            <button onclick="copiarScriptHolyricsUnico()" 
-                class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-cyan-900/20 active:scale-95">
-                <span>📋</span> Copiar Script Master
+            <button onclick="copiarCodigoModuloHolyrics()" 
+                class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 active:scale-95">
+                <span>📋</span> Copiar Módulo
+            </button>
+            <button onclick="abrirTutorialHolyrics()" 
+                class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 active:scale-95">
+                <span>📖</span> Como Usar
             </button>
             <button onclick="salvarConfiguracaoHolyrics()" 
                 class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg active:scale-95">
                 <span>💾</span> Salvar Estrutura
             </button>
+            <div class="flex items-center gap-1 border-l border-slate-800 pl-2">
+                <button onclick="baixarArquivoSincronizadorBat()" 
+                    class="p-2 text-slate-400 hover:text-amber-400 hover:bg-slate-800 rounded-lg text-xs transition" title="Baixar Sincronizador .bat Legado">
+                    <span>⬇️ .bat</span>
+                </button>
+                <button onclick="copiarScriptHolyricsUnico()" 
+                    class="p-2 text-slate-400 hover:text-cyan-400 hover:bg-slate-800 rounded-lg text-xs transition" title="Copiar Script Simples Legado">
+                    <span>⚡ Script</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -61,16 +75,24 @@
                 </div>
             </div>
 
-            <!-- Card de Instruções Rápidas -->
-            <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-4 text-xs text-slate-400 space-y-2">
-                <p class="font-semibold text-slate-300 flex items-center gap-1.5">
-                    <span>📖</span> Como usar o Script no Holyrics:
-                </p>
-                <ol class="list-decimal list-inside space-y-1 text-slate-400">
-                    <li>Configure as seções acima e clique em <b>Salvar Estrutura</b>.</li>
-                    <li>Clique no botão <b>Copiar Script Master</b> no topo.</li>
-                    <li>No Holyrics, vá em <b>Ferramentas &gt; Script &gt; Importar/Editar</b> e cole o código.</li>
-                    <li>Ao clicar em Executar no dia do culto, o Holyrics baixará automaticamente as mídias e músicas na ordem exata configurada!</li>
+            <!-- Card de Instruções do Módulo -->
+            <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-4 text-xs text-slate-400 space-y-3">
+                <div class="flex items-center justify-between">
+                    <p class="font-semibold text-slate-300 flex items-center gap-1.5">
+                        <span class="text-cyan-400">🧩</span> Como Instalar o Módulo no Holyrics (Recomendado):
+                    </p>
+                    <button onclick="abrirTutorialHolyrics()" class="text-brand-400 hover:underline text-[11px]">Ver Tutorial Completo →</button>
+                </div>
+                <ol class="list-decimal list-inside space-y-1.5 text-slate-400">
+                    <li>Configure suas seções acima e clique em <b class="text-emerald-400">Salvar Estrutura</b>.</li>
+                    <li>Clique em <b class="text-cyan-400">🧩 Baixar Módulo Holyrics (.js)</b> no topo da tela.</li>
+                    <li>No Holyrics, acesse <b class="text-white">Ferramentas &gt; Módulos</b>, clique em <b>Adicionar Módulo</b> e selecione o arquivo baixado.</li>
+                    <li>Marque a caixinha <b class="text-emerald-400">Ativar</b>. Dois botões aparecerão na barra superior do Holyrics:
+                        <ul class="list-disc list-inside pl-4 pt-1 text-slate-400 space-y-0.5">
+                            <li><span class="text-cyan-300 font-medium">⚡ Sincronizar Culto LouvorIDB:</span> Baixa imagens, vídeos e áudios e adiciona louvores automaticamente à playlist.</li>
+                            <li><span class="text-amber-300 font-medium">📤 Exportar Letras:</span> Salva todas as músicas do Holyrics na Área de Trabalho com 1 clique.</li>
+                        </ul>
+                    </li>
                 </ol>
             </div>
         </div>

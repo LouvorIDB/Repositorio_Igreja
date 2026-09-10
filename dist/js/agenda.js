@@ -910,23 +910,12 @@ function renderizarEventosLateral(eventos) {
         let dStr = evt.date ? evt.date.split('T')[0] : '';
         let horaFormatada = evt.time || '';
         
-        // Se a data veio em formato ISO ou UTC (ex: 2026-09-16T23:00:00+00:00)
+        // Extração 100% literal da data e do horário
         if (evt.date && evt.date.includes('T')) {
-            if (evt.date.includes('Z') || evt.date.includes('+')) {
-                const d = new Date(evt.date);
-                if (!isNaN(d.getTime())) {
-                    const diaD = String(d.getDate()).padStart(2, '0');
-                    const mesD = String(d.getMonth() + 1).padStart(2, '0');
-                    const anoD = d.getFullYear();
-                    dStr = `${diaD}/${mesD}/${anoD}`;
-                    horaFormatada = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-                }
-            } else {
-                const parts = evt.date.split('T');
-                const p = parts[0].split('-');
-                if (p.length === 3) dStr = `${p[2]}/${p[1]}/${p[0]}`;
-                if (parts[1]) horaFormatada = parts[1].substring(0, 5);
-            }
+            const parts = evt.date.split('T');
+            const p = parts[0].split('-');
+            if (p.length === 3) dStr = `${p[2]}/${p[1]}/${p[0]}`;
+            if (parts[1]) horaFormatada = parts[1].substring(0, 5);
         } else if (dStr && dStr.includes('-')) {
             const p = dStr.split('-');
             if (p.length === 3) dStr = `${p[2]}/${p[1]}/${p[0]}`;
@@ -1189,52 +1178,6 @@ async function excluirServicosDuplicados(nomeCulto) {
         if (typeof mostrarToast === 'function') mostrarToast('Erro ao limpar duplicatas: ' + err.message, 'erro');
     }
 }
-
-/**
- * AUTO-CORREÇÃO DE CULTOS ANTIGOS COM DESVIO UTC (+3H)
- */
-async function corrigirHorariosCultosUtc() {
-    try {
-        const churchId = obterChurchIdAtual();
-        if (!supabaseClient || !churchId) return;
-
-        const { data, error } = await supabaseClient
-            .from('services')
-            .select('id, date, title')
-            .eq('church_id', churchId);
-
-        if (error || !data) return;
-
-        let atualizados = 0;
-        for (const s of data) {
-            if (s.date && (s.date.includes('Z') || s.date.includes('+'))) {
-                const d = new Date(s.date);
-                if (!isNaN(d.getTime())) {
-                    const dia = String(d.getDate()).padStart(2, '0');
-                    const mes = String(d.getMonth() + 1).padStart(2, '0');
-                    const ano = d.getFullYear();
-                    const h = String(d.getHours()).padStart(2, '0');
-                    const m = String(d.getMinutes()).padStart(2, '0');
-                    const novoIso = `${ano}-${mes}-${dia}T${h}:${m}:00`;
-                    
-                    await supabaseClient.from('services').update({ date: novoIso }).eq('id', s.id);
-                    atualizados++;
-                }
-            }
-        }
-
-        if (atualizados > 0) {
-            if (typeof mostrarToast === 'function') mostrarToast(`⏰ ${atualizados} cultos corrigidos para o horário local!`, 'sucesso');
-            if (typeof carregarDados === 'function') await carregarDados();
-            renderizarAdminCultosEventos();
-        } else {
-            if (typeof mostrarToast === 'function') mostrarToast('Todos os cultos já estão com os horários corretos.', 'info');
-        }
-    } catch(e) {
-        console.error('Erro ao auto-corrigir cultos:', e);
-    }
-}
-window.corrigirHorariosCultosUtc = corrigirHorariosCultosUtc;
 
 // Exportações Globais Atualizadas
 window.carregarAgenda = carregarAgenda;

@@ -61,9 +61,9 @@
                                 class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
                                 📜 Histórico
                             </button>
-                            <button id="btn-admin-aba-whatsapp" onclick="abrirModalWhatsAppSemanal(); fecharSidebarMenu('admin-sidebar-menu');"
+                            <button id="btn-admin-aba-whatsapp" onclick="mudarAbaAdmin('mensagens-membros'); fecharSidebarMenu('admin-sidebar-menu');"
                                 class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-emerald-400 hover:bg-emerald-950/40 hover:text-emerald-300 flex items-center gap-3">
-                                📲 WhatsApp da Semana
+                                📲 Enviar Mensagens aos Membros
                             </button>
                         </div>
                     </div>
@@ -145,7 +145,7 @@
                         <div class="flex items-center justify-between mb-2">
                             <h2 class="text-base font-semibold text-slate-300">Eventos do Mês</h2>
                             <div class="flex items-center gap-1.5">
-                                <button onclick="abrirModalWhatsAppSemanal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 shadow-md shadow-emerald-950/40">📲 WhatsApp</button>
+                                <button onclick="mudarAbaAdmin('mensagens-membros')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 shadow-md shadow-emerald-950/40">📲 Enviar Mensagens</button>
                                 <button onclick="abrirModalEventoAdmin()" class="bg-brand-600 hover:bg-brand-500 text-white px-2 py-1 rounded text-xs font-medium">+ Evento</button>
                             </div>
                         </div>
@@ -157,8 +157,7 @@
                             <button onclick="abrirModalCultoRecorrenteAdmin()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1 rounded text-xs">+ Regra</button>
                         </div>
                         <div id="lista-recorrentes-lateral" class="space-y-2 text-xs"></div>
-                        <div class="mt-3 flex items-center justify-between">
-                            <button onclick="corrigirHorariosCultosUtc()" class="text-[10px] text-amber-400 hover:text-amber-300 underline font-medium" title="Corrige os cultos existentes que foram gravados com fuso horário adiantado em 3 horas">⚡ Corrigir Horários (+3h)</button>
+                        <div class="mt-3 flex items-center justify-end">
                             <button onclick="abrirLimpezaEmMassa()" class="text-[10px] text-red-400 hover:text-red-300 underline font-medium">Limpar Cultos Duplicados</button>
                         </div>
                     </div>
@@ -261,6 +260,11 @@
                         class="px-3 py-2 rounded-xl font-semibold transition bg-brand-600 text-white shrink-0 flex items-center gap-1.5 shadow">
                         <span>📋 Todas</span>
                         <span id="badge-solic-cat-todas" class="px-2 py-0.5 text-[10px] bg-slate-900/60 text-white rounded-full">0</span>
+                    </button>
+                    <button id="btn-solic-cat-whatsapp" onclick="selecionarCategoriaSolicitacoes('whatsapp')"
+                        class="px-3 py-2 rounded-xl font-medium transition bg-slate-700/80 text-slate-300 hover:text-white shrink-0 flex items-center gap-1.5">
+                        <span>📱 WhatsApp</span>
+                        <span id="badge-solic-cat-whatsapp" class="px-2 py-0.5 text-[10px] bg-slate-900/60 text-slate-300 rounded-full">0</span>
                     </button>
                     <button id="btn-solic-cat-ajuste_tom" onclick="selecionarCategoriaSolicitacoes('ajuste_tom')"
                         class="px-3 py-2 rounded-xl font-medium transition bg-slate-700/80 text-slate-300 hover:text-white shrink-0 flex items-center gap-1.5">
@@ -468,9 +472,375 @@
                 </div>
             </div>
 
-            <!-- Lista de Igrejas em Cards Modernos -->
-            <div id="admin-lista-igrejas-body" class="space-y-3">
-                <!-- Injetado dinamicamente via JS -->
+        </div>
+
+        <!-- ABA MENSAGENS AOS MEMBROS (WHATSAPP) -->
+        <div id="admin-aba-mensagens-membros" class="hidden space-y-6">
+            <!-- CABEÇALHO DA ABA -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <span>📲</span> Enviar Mensagens aos Membros
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">
+                        Programe os envios automáticos semanais e envie comunicados rápidos aos integrantes dos ministérios.
+                    </p>
+                </div>
+                <!-- Seletor de Ministério -->
+                <div class="flex items-center gap-2.5 bg-slate-800/90 border border-slate-700/80 px-3 py-2 rounded-xl shadow-sm">
+                    <label for="msg-membros-select-ministerio" class="text-xs font-semibold text-slate-300 flex items-center gap-1.5 whitespace-nowrap">
+                        <span>🏢</span> Ministério:
+                    </label>
+                    <select id="msg-membros-select-ministerio" onchange="trocarMinisterioMensagens(this.value)"
+                        class="bg-slate-900 border border-slate-700 text-xs text-brand-400 font-semibold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-brand-500 cursor-pointer min-w-[180px]">
+                        <option value="">Carregando ministérios...</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- SEÇÃO RETRÁTIL 1: MENSAGEM AUTOMÁTICA SEMANAL -->
+            <!-- ========================================== -->
+            <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl overflow-hidden shadow-lg transition-all">
+                <!-- CABEÇALHO RETRÁTIL -->
+                <button type="button" onclick="alternarSecaoRetratilMensagens('auto')"
+                    class="w-full flex items-center justify-between p-4 sm:p-5 cursor-pointer select-none hover:bg-slate-700/30 transition text-left">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-lg flex-shrink-0">
+                            ⏰
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2.5 flex-wrap">
+                                <h3 class="text-sm sm:text-base font-bold text-white">
+                                    Programação da Mensagem Automática Semanal
+                                </h3>
+                                <span id="badge-status-auto-wpp" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full border bg-slate-900 border-slate-700 text-slate-400">
+                                    ● Desativada
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-0.5">
+                                Disparo semanal automático com as escalas, cultos e repertório de cada voluntário.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+                        <span id="chevron-auto-wpp" class="text-slate-400 text-xs transform rotate-180 transition-transform duration-200">
+                            ▼
+                        </span>
+                    </div>
+                </button>
+
+                <!-- CORPO RETRÁTIL 1 -->
+                <div id="corpo-secao-auto-wpp" class="p-4 sm:p-6 border-t border-slate-700/60 space-y-5 bg-slate-900/40">
+                    <!-- SWITCH ATIVAR / DESATIVAR -->
+                    <div class="flex items-center justify-between p-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl gap-4 flex-wrap">
+                        <div>
+                            <span class="text-xs sm:text-sm font-semibold text-white flex items-center gap-2">
+                                <span>🤖</span> Envio Automático para este Ministério
+                            </span>
+                            <p class="text-[11px] text-slate-400 mt-0.5">
+                                Quando ativo, os voluntários escalados na semana receberão a mensagem no dia e horário definidos abaixo.
+                            </p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                            <input type="checkbox" id="wpp-auto-ativo" onchange="atualizarStatusToggleAutoWpp(); atualizarPreviewMensagemAutomatica();" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                            <span id="label-switch-auto-wpp" class="ml-2 text-xs font-semibold text-slate-400 peer-checked:text-emerald-400">Desativado</span>
+                        </label>
+                    </div>
+
+                    <!-- GRADE DE AGENDAMENTO (DIA E HORÁRIO) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl space-y-1.5">
+                            <label for="wpp-auto-dia" class="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                                <span>📅</span> Dia da Semana do Envio:
+                            </label>
+                            <select id="wpp-auto-dia" onchange="atualizarPreviewMensagemAutomatica()"
+                                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500 cursor-pointer">
+                                <option value="1">Segunda-feira (Recomendado)</option>
+                                <option value="2">Terça-feira</option>
+                                <option value="3">Quarta-feira</option>
+                                <option value="4">Quinta-feira</option>
+                                <option value="5">Sexta-feira</option>
+                                <option value="6">Sábado</option>
+                                <option value="0">Domingo</option>
+                            </select>
+                            <span class="text-[11px] text-slate-500 block">Dia em que o sistema consolida as escalas da semana.</span>
+                        </div>
+
+                        <div class="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl space-y-1.5">
+                            <label for="wpp-auto-hora" class="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                                <span>⏰</span> Horário de Disparo:
+                            </label>
+                            <input type="time" id="wpp-auto-hora" value="08:00" onchange="atualizarPreviewMensagemAutomatica()"
+                                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500 cursor-pointer">
+                            <span class="text-[11px] text-slate-500 block">Horário que as mensagens serão disparadas via WhatsApp.</span>
+                        </div>
+                    </div>
+
+                    <!-- INFORMAÇÕES A INCLUIR NA MENSAGEM -->
+                    <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl space-y-3">
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                            📋 Informações a Incluir na Mensagem:
+                        </label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                            <label class="flex items-center gap-2.5 text-xs text-slate-300 bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60 cursor-pointer hover:bg-slate-800 transition">
+                                <input type="checkbox" id="wpp-inc-escalas" checked onchange="atualizarPreviewMensagemAutomatica()" class="rounded bg-slate-900 border-slate-600 text-brand-500 focus:ring-0">
+                                <span>🗓️ Cultos e Funções Escaladas</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 text-xs text-slate-300 bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60 cursor-pointer hover:bg-slate-800 transition">
+                                <input type="checkbox" id="wpp-inc-repertorio" checked onchange="atualizarPreviewMensagemAutomatica()" class="rounded bg-slate-900 border-slate-600 text-brand-500 focus:ring-0">
+                                <span>🎵 Músicas do Repertório</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 text-xs text-slate-300 bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60 cursor-pointer hover:bg-slate-800 transition">
+                                <input type="checkbox" id="wpp-inc-youtube" checked onchange="atualizarPreviewMensagemAutomatica()" class="rounded bg-slate-900 border-slate-600 text-brand-500 focus:ring-0">
+                                <span>▶️ Links de Vídeo / YouTube</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 text-xs text-slate-300 bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60 cursor-pointer hover:bg-slate-800 transition">
+                                <input type="checkbox" id="wpp-inc-tom" checked onchange="atualizarPreviewMensagemAutomatica()" class="rounded bg-slate-900 border-slate-600 text-brand-500 focus:ring-0">
+                                <span>🎼 Tom Musical</span>
+                            </label>
+                            <label class="flex items-center gap-2.5 text-xs text-slate-300 bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60 cursor-pointer hover:bg-slate-800 transition">
+                                <input type="checkbox" id="wpp-inc-confirmacao" checked onchange="atualizarPreviewMensagemAutomatica()" class="rounded bg-slate-900 border-slate-600 text-brand-500 focus:ring-0">
+                                <span>✅ Pedido de Confirmação</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- ESTRUTURA DO TEMPLATE OFICIAL DA META -->
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <label class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                                <span>📋</span> Estrutura do Template Oficial (WhatsApp):
+                            </label>
+                            <span class="text-[11px] text-slate-500">Alinhado com o modelo aprovado na Meta Cloud API</span>
+                        </div>
+
+                        <!-- 1. Topo Fixo (Meta) -->
+                        <div class="bg-slate-900/90 border border-slate-700/60 rounded-xl p-3 text-xs text-slate-400 font-mono space-y-1">
+                            <div class="flex items-center gap-1.5 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                                <span>🔒</span> Topo Fixo do Modelo (Aprovado na Meta):
+                            </div>
+                            <p class="text-slate-300">
+                                Olá, <span class="text-brand-400 font-semibold">{nome}</span>! Graça e paz.<br>
+                                Aqui está a sua programação no ministério de <span class="text-brand-400 font-semibold">{ministerio}</span> para esta semana:
+                            </p>
+                        </div>
+
+                        <!-- 2. Área de Personalização (Variável {{3}} da Meta) -->
+                        <div class="space-y-2 bg-slate-900/60 border border-brand-500/30 rounded-xl p-3.5 shadow-sm">
+                            <div class="flex items-center justify-between flex-wrap gap-2">
+                                <label for="wpp-auto-template" class="text-xs font-bold text-brand-300 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span>✍️</span> Conteúdo Personalizável (Variável {{3}} da Meta):
+                                </label>
+                                <span class="text-[11px] text-slate-400">Insira tags ou adicione recados adicionais da liderança</span>
+                            </div>
+
+                            <!-- TAGS / VARIÁVEIS RÁPIDAS -->
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <button type="button" onclick="inserirTagTemplate('{escalas}')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-brand-400 border border-slate-700 px-2.5 py-1 rounded font-mono transition">
+                                    🗓️ {escalas}
+                                </button>
+                                <button type="button" onclick="inserirTagTemplate('{repertorio}')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-brand-400 border border-slate-700 px-2.5 py-1 rounded font-mono transition">
+                                    🎵 {repertorio}
+                                </button>
+                                <button type="button" onclick="inserirTagTemplate('{cultos}')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-brand-400 border border-slate-700 px-2.5 py-1 rounded font-mono transition">
+                                    📅 {cultos}
+                                </button>
+                            </div>
+
+                            <textarea id="wpp-auto-template" rows="4" oninput="atualizarPreviewMensagemAutomatica()"
+                                placeholder="{escalas}&#10;&#10;{repertorio}&#10;&#10;💬 Seu recado adicional aqui..."
+                                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs sm:text-sm text-white font-mono focus:outline-none focus:border-brand-500 leading-relaxed"></textarea>
+                            <p class="text-[11px] text-slate-500">
+                                💡 Você pode adicionar recados extras para a equipe (ex: <em>"Lembrete: ensaio geral sábado às 16h!"</em>).
+                            </p>
+                        </div>
+
+                        <!-- 3. Rodapé Fixo (Meta) -->
+                        <div class="bg-slate-900/90 border border-slate-700/60 rounded-xl p-3 text-xs text-slate-400 font-mono space-y-1">
+                            <div class="flex items-center gap-1.5 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                                <span>🔒</span> Rodapé Fixo do Modelo (Aprovado na Meta):
+                            </div>
+                            <p class="text-slate-300">
+                                Por favor, responda a esta mensagem com a palavra CONFIRMADO para confirmar sua presença, ou com 4 para enviar uma justificativa. Deus abençoe! 🙏 ✨
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- PRÉVIA EM TEMPO REAL (WHATSAPP BALÃO) -->
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                                <span>👁️</span> Pré-visualização do WhatsApp (Exemplo Real):
+                            </span>
+                            <span class="text-[11px] text-slate-500">Exibindo dados reais compilados desta semana</span>
+                        </div>
+                        <div class="bg-emerald-950/30 border border-emerald-800/40 rounded-2xl p-4 shadow-inner">
+                            <div class="flex items-center gap-2 mb-2 pb-2 border-b border-emerald-800/30 text-emerald-400 text-xs font-semibold">
+                                <span>💬 Balão de Mensagem</span>
+                                <span class="text-[11px] text-emerald-500/80">• Simulando envio para voluntário</span>
+                            </div>
+                            <div id="wpp-auto-preview" class="text-xs font-mono text-slate-200 whitespace-pre-wrap select-all leading-relaxed">
+                                Carregando prévia...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LISTA DE INTEGRANTES / EXCLUSÃO DO ENVIO AUTOMÁTICO -->
+                    <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl space-y-3">
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span>👥</span> Lista de Envio Automático & Exclusões:
+                                </label>
+                                <p class="text-[11px] text-slate-400 mt-0.5">
+                                    Remova voluntários que não devem receber a mensagem automática semanal (ex: férias, licença ou pedido pessoal).
+                                </p>
+                            </div>
+                            <span id="badge-excluidos-auto-wpp" class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400">
+                                0 excluídos
+                            </span>
+                        </div>
+                        
+                        <div id="lista-membros-auto-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto pr-1">
+                            <p class="text-xs text-slate-500 py-2">Carregando integrantes do ministério...</p>
+                        </div>
+                    </div>
+
+                    <!-- BOTÕES DE AÇÃO -->
+                    <div class="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                        <div id="wpp-auto-feedback-msg" class="text-xs text-slate-400"></div>
+                        <div class="flex items-center gap-2.5">
+                            <button type="button" id="btn-salvar-config-wpp" onclick="salvarConfiguracaoMinisterioMensagens()"
+                                class="bg-brand-600 hover:bg-brand-500 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20">
+                                <span>💾</span> Salvar Configuração
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- SEÇÃO RETRÁTIL 2: AVISOS & COMUNICADOS RÁPIDOS -->
+            <!-- ========================================== -->
+            <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl overflow-hidden shadow-lg transition-all">
+                <!-- CABEÇALHO RETRÁTIL -->
+                <button type="button" onclick="alternarSecaoRetratilMensagens('aviso')"
+                    class="w-full flex items-center justify-between p-4 sm:p-5 cursor-pointer select-none hover:bg-slate-700/30 transition text-left">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-lg flex-shrink-0">
+                            📢
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2.5 flex-wrap">
+                                <h3 class="text-sm sm:text-base font-bold text-white">
+                                    Avisos & Comunicados Rápidos (Disparo Imediato)
+                                </h3>
+                                <span id="badge-selecionados-aviso" class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-amber-400">
+                                    0 membros selecionados
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-0.5">
+                                Selecione integrantes do ministério e envie um comunicado agora mesmo via WhatsApp.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-shrink-0 ml-2">
+                        <span id="chevron-aviso-wpp" class="text-slate-400 text-xs transform rotate-180 transition-transform duration-200">
+                            ▼
+                        </span>
+                    </div>
+                </button>
+
+                <!-- CORPO RETRÁTIL 2 -->
+                <div id="corpo-secao-aviso-wpp" class="p-4 sm:p-6 border-t border-slate-700/60 space-y-5 bg-slate-900/40">
+                    <!-- BARRA DE FERRAMENTAS DE SELEÇÃO DE MEMBROS -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="selecionarTodosMembrosAviso(true)"
+                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg transition font-medium border border-slate-700">
+                                ✅ Marcar Todos
+                            </button>
+                            <button type="button" onclick="selecionarTodosMembrosAviso(false)"
+                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg transition font-medium border border-slate-700">
+                                ❌ Desmarcar Todos
+                            </button>
+                            <span id="contador-membros-aviso" class="text-xs text-slate-400 ml-1">
+                                0 selecionados
+                            </span>
+                        </div>
+
+                        <!-- Filtro de Busca de Membro -->
+                        <div class="relative min-w-[200px]">
+                            <input type="text" id="filtro-busca-membros-aviso" oninput="filtrarListaMembrosAviso(this.value)"
+                                placeholder="Buscar integrante..."
+                                class="w-full bg-slate-800 border border-slate-700 text-xs text-white rounded-lg px-3 py-1.5 pl-8 focus:outline-none focus:border-brand-500">
+                            <span class="absolute left-2.5 top-1.5 text-slate-500 text-xs">🔍</span>
+                        </div>
+                    </div>
+
+                    <!-- LISTA DE MEMBROS COM CHECKBOXES -->
+                    <div id="lista-membros-aviso-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-[340px] overflow-y-auto pr-1">
+                        <div class="col-span-full py-8 text-center text-xs text-slate-500">
+                            Carregando integrantes do ministério...
+                        </div>
+                    </div>
+
+                    <!-- EDITOR DO AVISO -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <label for="wpp-aviso-texto" class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                                <span>✍️</span> Mensagem do Comunicado:
+                            </label>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[11px] text-slate-500">Dica: use</span>
+                                <button type="button" onclick="inserirTagAviso('{nome}')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 px-1.5 py-0.5 rounded font-mono transition">
+                                    {nome}
+                                </button>
+                                <span class="text-[11px] text-slate-500">para o nome de cada membro</span>
+                            </div>
+                        </div>
+
+                        <textarea id="wpp-aviso-texto" rows="4" oninput="atualizarPreviewAvisoImediato()"
+                            placeholder="Ex: Olá, *{nome}*! Lembrando do nosso ensaio especial nesta quinta-feira às 19h30. Por favor, confirme se você comparecerá!"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500 leading-relaxed"></textarea>
+                    </div>
+
+                    <!-- PRÉVIA DO AVISO -->
+                    <div class="space-y-1.5">
+                        <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                            <span>👁️</span> Prévia do Aviso no WhatsApp:
+                        </span>
+                        <div class="bg-amber-950/20 border border-amber-800/30 rounded-2xl p-4 shadow-inner">
+                            <div id="wpp-aviso-preview" class="text-xs font-mono text-slate-200 whitespace-pre-wrap select-all leading-relaxed">
+                                Digite um comunicado acima para visualizar a prévia aqui...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BARRA DE PROGRESSO & DISPARO -->
+                    <div id="wpp-aviso-progresso-container" class="hidden bg-slate-900/90 border border-slate-700 p-4 rounded-xl space-y-3">
+                        <div class="flex items-center justify-between text-xs font-semibold text-white">
+                            <span id="wpp-aviso-progresso-status">Enviando comunicados...</span>
+                            <span id="wpp-aviso-progresso-contador">0 / 0</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                            <div id="wpp-aviso-progresso-barra" class="bg-emerald-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <div id="wpp-aviso-relatorio-envio" class="max-h-[160px] overflow-y-auto text-xs space-y-1 font-mono text-slate-300">
+                            <!-- Injetado dinamicamente -->
+                        </div>
+                    </div>
+
+                    <!-- BOTÃO DE DISPARO DO AVISO -->
+                    <div class="pt-2 flex items-center justify-end gap-3">
+                        <button type="button" id="btn-disparar-aviso-wpp" onclick="enviarAvisoImediatoMembros()"
+                            class="bg-amber-600 hover:bg-amber-500 text-white px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 shadow-lg shadow-amber-600/30 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span>🚀</span> Enviar Aviso aos Selecionados via WhatsApp
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
         </main>

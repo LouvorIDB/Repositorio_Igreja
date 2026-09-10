@@ -315,27 +315,14 @@ function mostrarFormCulto(startIndex) {
             }
             
             if (sTarget.date) {
-                // Trata fuso horário: se veio em UTC com 'Z' ou '+', o Date() nativo converte de volta ao horário local correto!
-                if (sTarget.date.includes('Z') || sTarget.date.includes('+')) {
-                    const d = new Date(sTarget.date);
-                    if (!isNaN(d.getTime())) {
-                        const diaD = String(d.getDate()).padStart(2, '0');
-                        const mesD = String(d.getMonth() + 1).padStart(2, '0');
-                        const anoD = d.getFullYear();
-                        dataFormatar = `${diaD}/${mesD}/${anoD}`;
-                        if (inputHora) {
-                            inputHora.value = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-                        }
-                    }
-                } else {
-                    const parts = sTarget.date.split('T');
-                    const dateOnly = parts[0];
-                    if (parts[1] && inputHora) {
-                        inputHora.value = parts[1].substring(0, 5);
-                    }
-                    const p = dateOnly.split('-');
-                    if (p.length === 3) dataFormatar = `${p[2]}/${p[1]}/${p[0]}`;
+                // Leitura 100% literal: o horário que você salvou é exatamente o horário carregado
+                const parts = sTarget.date.split('T');
+                const dateOnly = parts[0];
+                if (parts[1] && inputHora) {
+                    inputHora.value = parts[1].substring(0, 5);
                 }
+                const p = dateOnly.split('-');
+                if (p.length === 3) dataFormatar = `${p[2]}/${p[1]}/${p[0]}`;
             }
             if (sTarget.location && inputLocal) inputLocal.value = sTarget.location;
             if (sTarget.description && inputDesc) inputDesc.value = sTarget.description;

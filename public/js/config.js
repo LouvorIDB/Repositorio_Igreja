@@ -9,3 +9,4 @@ if (window.supabase) {
         console.error("Erro ao inicializar o Supabase:", err);
     }
 }
+window.supabaseClient = supabaseClient;

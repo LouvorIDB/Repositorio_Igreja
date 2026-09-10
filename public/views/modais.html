@@ -1179,53 +1179,59 @@
 
 <!-- ===================== MODAL TUTORIAL PASSO A PASSO HOLYRICS ===================== -->
 <div id="modal-tutorial-holyrics" class="hidden fixed inset-0 bg-black/80 z-[130] flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative space-y-4 my-8">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative space-y-4 my-8">
         <button onclick="fecharTutorialHolyrics()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">✕</button>
         
-        <div class="flex items-center gap-2">
-            <span class="text-2xl">⚡</span>
+        <div class="flex items-center gap-3 border-b border-slate-800 pb-3">
+            <span class="text-3xl">🧩</span>
             <div>
-                <h3 class="text-lg font-bold text-white">Como Usar o Script Único do Holyrics</h3>
-                <p class="text-xs text-slate-400">Guia de configuração para o operador de projeção/mídia da igreja.</p>
+                <h3 class="text-lg font-bold text-white">Como Integrar o Holyrics ao LouvorIDB</h3>
+                <p class="text-xs text-slate-400">Guia definitivo para download automático de mídias e sincronização de repertório.</p>
             </div>
         </div>
 
-        <div class="space-y-3 pt-2 text-xs">
-            <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700 space-y-1">
-                <p class="font-bold text-cyan-400 flex items-center gap-1.5">
-                    <span class="w-5 h-5 rounded-full bg-cyan-950 text-cyan-300 flex items-center justify-center text-[10px] border border-cyan-500/40">1</span>
-                    Gerar e Copiar o Script da Sua Igreja
+        <div class="space-y-4 pt-1 text-xs">
+            <!-- Método 1: Módulo Holyrics (Recomendado) -->
+            <div class="border border-cyan-500/30 bg-cyan-950/20 rounded-xl p-4 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <span class="font-bold text-cyan-300 text-sm flex items-center gap-1.5">
+                        <span>⭐</span> Método Recomendado: Módulo Oficial (.js)
+                    </span>
+                    <span class="text-[10px] bg-cyan-900/60 text-cyan-200 px-2 py-0.5 rounded-full font-mono">1 Clique</span>
+                </div>
+                <p class="text-slate-300 leading-relaxed">
+                    Diferente de scripts simples, o <b class="text-white">Módulo</b> possui permissões de sistema para salvar imagens, vídeos e instrumentais diretamente nas pastas de mídia do Holyrics, além de integrar botões nativos na janela principal.
                 </p>
-                <p class="text-slate-300 pl-6">Clique no botão <span class="text-cyan-300 font-semibold">⚡ Copiar Script Holyrics da Igreja</span> no topo da tela. O script já contém o ID exclusivo da sua igreja preenchido automaticamente!</p>
+                <div class="space-y-2 pt-1">
+                    <div class="flex items-start gap-2">
+                        <span class="w-5 h-5 rounded-full bg-cyan-900 text-cyan-200 flex items-center justify-center text-[10px] shrink-0 mt-0.5 font-bold">1</span>
+                        <p class="text-slate-300">Clique no botão <span class="text-cyan-300 font-semibold">🧩 Baixar Módulo Holyrics (.js)</span> para salvar o arquivo <code class="bg-slate-950 px-1 py-0.5 rounded text-cyan-200">louvoridb_sync_module.js</code> no seu PC.</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="w-5 h-5 rounded-full bg-cyan-900 text-cyan-200 flex items-center justify-center text-[10px] shrink-0 mt-0.5 font-bold">2</span>
+                        <p class="text-slate-300">No Holyrics, abra <span class="text-white font-medium">Ferramentas &gt; Módulos</span> (ou copie o arquivo para a pasta <code class="bg-slate-950 px-1 py-0.5 rounded text-slate-400">Documentos/Holyrics/modules/</code>) e ative a caixa do módulo.</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="w-5 h-5 rounded-full bg-cyan-900 text-cyan-200 flex items-center justify-center text-[10px] shrink-0 mt-0.5 font-bold">3</span>
+                        <p class="text-slate-300">No dia do culto, basta clicar no botão <span class="text-emerald-400 font-semibold">⚡ Sincronizar Culto</span> no Holyrics. Ele baixará mídias e montará a playlist na ordem perfeita!</p>
+                    </div>
+                </div>
             </div>
 
-            <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700 space-y-1">
-                <p class="font-bold text-brand-400 flex items-center gap-1.5">
-                    <span class="w-5 h-5 rounded-full bg-brand-950 text-brand-300 flex items-center justify-center text-[10px] border border-brand-500/40">2</span>
-                    Salvar no Holyrics (Apenas 1 Vez)
+            <!-- Método 2: Alternativas Legadas -->
+            <div class="border border-slate-800 bg-slate-800/40 rounded-xl p-3.5 space-y-2">
+                <span class="font-bold text-slate-300 text-xs flex items-center gap-1.5">
+                    <span>⚡</span> Alternativas (Script Rápido ou .bat)
+                </span>
+                <p class="text-slate-400 leading-relaxed">
+                    Se você preferir não instalar módulos, pode usar o botão <b class="text-slate-300">📋 Script Simples</b> colando em <i>Ferramentas &gt; Executar Código / JS</i>. Caso queira baixar mídias pelo PowerShell fora do Holyrics, utilize o botão <b class="text-slate-300">⬇️ .bat</b>.
                 </p>
-                <p class="text-slate-300 pl-6">No Holyrics, vá em <span class="font-semibold text-white">Ferramentas > Executar Código / JS</span>, crie um novo **Script** (ex: <i>"Importar Culto LouvorIDB"</i>), cole o código e salve.</p>
-            </div>
-
-            <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700 space-y-1">
-                <p class="font-bold text-amber-400 flex items-center gap-1.5">
-                    <span class="w-5 h-5 rounded-full bg-amber-950 text-amber-300 flex items-center justify-center text-[10px] border border-amber-500/40">3</span>
-                    Personalizar seus Itens Base / Mídias (Opcional)
-                </p>
-                <p class="text-slate-300 pl-6">No código colado, localize o trecho <code class="bg-slate-900 px-1 py-0.5 rounded text-amber-300">var items = [...]</code> no <b>PASSO 2</b>. Você pode colar a sua estrutura padrão de imagens, instrumentais e avisos ali!</p>
-            </div>
-
-            <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700 space-y-1">
-                <p class="font-bold text-emerald-400 flex items-center gap-1.5">
-                    <span class="w-5 h-5 rounded-full bg-emerald-950 text-emerald-300 flex items-center justify-center text-[10px] border border-emerald-500/40">4</span>
-                    Como Executar nos Cultos
-                </p>
-                <p class="text-slate-300 pl-6">No dia do culto, basta clicar no nome do culto na lista do Holyrics (ex: <i>"Sáb, 22 – 20:00"</i>) e pressionar <span class="font-semibold text-emerald-400">Executar</span> no script. O sistema trará os itens base + louvores automaticamente!</p>
             </div>
         </div>
 
-        <div class="pt-3 border-t border-slate-800 flex justify-end">
-            <button onclick="fecharTutorialHolyrics()" class="bg-brand-600 hover:bg-brand-500 text-white px-5 py-2 rounded-xl text-xs font-semibold">Entendi!</button>
+        <div class="pt-3 border-t border-slate-800 flex justify-between items-center">
+            <span class="text-[11px] text-slate-500">ID da Igreja já incluído no módulo</span>
+            <button onclick="fecharTutorialHolyrics()" class="bg-brand-600 hover:bg-brand-500 text-white px-5 py-2 rounded-xl text-xs font-semibold shadow-lg">Entendi!</button>
         </div>
     </div>
 </div>

@@ -26,27 +26,27 @@ window.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // 0.1 Limpeza preventiva de Service Workers antigos e cache persistente do navegador
-    if ('serviceWorker' in navigator) {
-        try {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            for (const reg of regs) {
-                await reg.unregister();
-                console.log('🧹 [SW] Service Worker antigo desregistrado.');
-            }
-        } catch (e) {
-            console.warn('Erro ao limpar SW:', e);
+    const isCapacitorApp = !!(window.Capacitor && (typeof window.Capacitor.isNativePlatform === 'function' ? window.Capacitor.isNativePlatform() : true)) || window.location.hostname === 'localhost';
+
+    // 0.1 No app móvel nativo (Capacitor), os arquivos já são locais no APK.
+    // Desregistramos qualquer Service Worker e limpamos o CacheStorage para garantir que
+    // o app sempre carregue as views e scripts mais recentes sem reter cache antigo.
+    if (isCapacitorApp) {
+        if ('serviceWorker' in navigator) {
+            try {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                for (const reg of regs) {
+                    await reg.unregister();
+                }
+            } catch (e) {}
         }
-    }
-    if ('caches' in window) {
-        try {
-            const cacheNames = await caches.keys();
-            for (const name of cacheNames) {
-                await caches.delete(name);
-                console.log(`🧹 [Cache] Cache "${name}" removido.`);
-            }
-        } catch (e) {
-            console.warn('Erro ao limpar caches:', e);
+        if ('caches' in window) {
+            try {
+                const cacheNames = await caches.keys();
+                for (const name of cacheNames) {
+                    await caches.delete(name);
+                }
+            } catch (e) {}
         }
     }
 
@@ -71,7 +71,8 @@ window.addEventListener('DOMContentLoaded', async () => {
         finalizarTelaCarregamento();
     }
 
-    if ('serviceWorker' in navigator) {
+    // Registra Service Worker exclusivamente no navegador Web (PWA), nunca no app nativo Capacitor
+    if (!isCapacitorApp && 'serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').catch(err => {
             console.warn('Falha ao registrar Service Worker:', err);
         });
