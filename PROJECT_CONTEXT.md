@@ -27,23 +27,16 @@ Before implementing a change:
 
 **Project name:**
 
-`LouvorIDB / Repositorio_Igreja`
+`Liturge` (Repositório: `LouvorIDB / Repositorio_Igreja`)
+
+**Official Domain:**
+`app.liturge.app.br` (Vercel)
 
 ## Purpose
 
-The system is designed to centralize the repertoire and scheduling of a church worship ministry.
+The system is designed to centralize the repertoire, schedules, media and worship organization for churches as a scalable multi-tenant SaaS.
 
-The goal is to provide a web-based interface connected to Supabase, allowing the ministry to:
-
-- organize worship services;
-- manage songs;
-- organize musicians;
-- organize singers;
-- assign singers to individual songs;
-- maintain service schedules;
-- archive past repertoires;
-- manage new songs;
-- hide/show services.
+The goal is to provide a web-based interface connected to Supabase and native integrations with projection software like Holyrics.
 
 ---
 
@@ -52,17 +45,17 @@ The goal is to provide a web-based interface connected to Supabase, allowing the
 The current architecture is:
 
 ```text
-Frontend (HTML/JS/CSS)
+Frontend (HTML/JS/CSS, Vite, PWA) - Hosted on Vercel (app.liturge.app.br)
    |
    | Supabase JS SDK (REST/Realtime via PostgreSQL)
    v
-Supabase (PostgreSQL Database + Auth)
+Supabase (PostgreSQL Database + Auth + Storage + Edge Functions)
 ```
 
 ## Frontend
 
 The frontend is hosted through:
-**GitHub Pages**
+**Vercel** (`app.liturge.app.br`)
 
 The project is a PWA developed using Vanilla JS and Vite.
 
