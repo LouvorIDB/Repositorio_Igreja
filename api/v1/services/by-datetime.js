@@ -1,4 +1,4 @@
-﻿import { supabase, authenticateChurch, formatServicePayload, setCors } from './_supabase.js';
+import { supabase, authenticateChurch, formatServicePayload, setCors } from './_supabase.js';
 
 export default async function handler(req, res) {
     setCors(res);
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
     const queryDatetime = req.query.datetime || req.query.date;
     if (!queryDatetime) {
-        res.status(400).json({ status: 'error', message: 'Parâmetro datetime obrigatório.' });
+        res.status(400).json({ status: 'error', message: 'Parâmetro "datetime" obrigatório.' });
         return;
     }
 
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
         // 1. Buscar todos os cultos do dia para a congregação
         const { data: services, error } = await supabase
             .from('services')
-            .select(
+            .select(`
                 *,
                 service_media (*),
                 service_songs (
@@ -39,17 +39,17 @@ export default async function handler(req, res) {
                         songs (*)
                     )
                 )
-            )
+            `)
             .eq('church_id', church.id)
-            .gte('date', ${datePart}T00:00:00)
-            .lte('date', ${datePart}T23:59:59);
+            .gte('date', `${datePart}T00:00:00`)
+            .lte('date', `${datePart}T23:59:59`);
 
         if (error) throw error;
 
         if (!services || services.length === 0) {
             res.status(404).json({
                 status: 'error',
-                message: Nenhum culto encontrado no Liturge para a data .
+                message: `Nenhum culto encontrado no Liturge para a data ${datePart}.`
             });
             return;
         }

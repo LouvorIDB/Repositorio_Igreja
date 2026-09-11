@@ -1,4 +1,4 @@
-﻿import { supabase, authenticateChurch, setCors } from './_supabase.js';
+import { supabase, authenticateChurch, setCors } from './_supabase.js';
 
 export default async function handler(req, res) {
     setCors(res);
@@ -33,7 +33,6 @@ export default async function handler(req, res) {
         if (error) throw error;
 
         const formattedServices = (services || []).map(s => {
-            let dataStr = s.date;
             let label = s.title;
             try {
                 const dt = new Date(s.date);
@@ -43,7 +42,7 @@ export default async function handler(req, res) {
                 const mes = String(dt.getMonth() + 1).padStart(2, '0');
                 const hora = String(dt.getHours()).padStart(2, '0');
                 const min = String(dt.getMinutes()).padStart(2, '0');
-                label = ${diaSemana}, / : - ;
+                label = `${diaSemana}, ${dia}/${mes} ${hora}:${min} - ${s.title}`;
             } catch (e) {}
 
             return {

@@ -1,4 +1,4 @@
-﻿import { supabase, authenticateChurch, formatServicePayload, setCors } from './_supabase.js';
+import { supabase, authenticateChurch, formatServicePayload, setCors } from './_supabase.js';
 
 export default async function handler(req, res) {
     setCors(res);
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     try {
         const { data: service, error } = await supabase
             .from('services')
-            .select(
+            .select(`
                 *,
                 service_media (*),
                 service_songs (
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
                         songs (*)
                     )
                 )
-            )
+            `)
             .eq('id', serviceId)
             .eq('church_id', church.id)
             .maybeSingle();
