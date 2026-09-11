@@ -139,7 +139,7 @@
             </div>
 
             <!-- Card de Guia Passo a Passo -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-3">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
                 <h4 class="text-xs font-bold text-slate-200 flex items-center gap-2">
                     <span class="text-cyan-400">📖</span> Como Instalar e Usar no Holyrics da sua Igreja
                 </h4>
@@ -175,6 +175,55 @@
                         </p>
                     </div>
 
+                </div>
+
+                <!-- Tutorial Específico: Download Automático de Mídias (curl.exe e Permissões) -->
+                <div class="bg-slate-950/80 border border-cyan-500/20 rounded-xl p-4 space-y-3 mt-2">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                        <div class="flex items-center gap-2">
+                            <span class="text-cyan-400 text-base">📥</span>
+                            <div>
+                                <h5 class="text-xs font-bold text-white flex items-center gap-1.5">
+                                    Download Automático de Mídias (Imagens, Vídeos e Áudios)
+                                    <span class="text-[10px] bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.2 rounded font-medium">Recomendado</span>
+                                </h5>
+                                <p class="text-[11px] text-slate-400">
+                                    O Holyrics requer autorização para baixar arquivos da nuvem para o computador de projeção.
+                                </p>
+                            </div>
+                        </div>
+                        <button onclick="copiarComandoCurlHolyrics()" 
+                            class="px-2.5 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 rounded-lg text-[11px] font-semibold transition flex items-center gap-1.5 active:scale-95 cursor-pointer whitespace-nowrap">
+                            <span>📋</span> Copiar Comando Automático
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                        <div class="bg-slate-900/60 border border-slate-800 rounded-lg p-3 space-y-1.5">
+                            <span class="font-bold text-slate-200 flex items-center gap-1.5 text-[11px]">
+                                <span class="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold flex items-center justify-center">A</span>
+                                1. Adicionar curl.exe aos Arquivos do Holyrics
+                            </span>
+                            <p class="text-[11px] text-slate-400 leading-relaxed">
+                                O Holyrics executa programas utilitários exclusivamente da pasta <code>Holyrics\files\media\file\</code>. Basta copiar o <code>curl.exe</code> do Windows para lá (ou clicar no botão <b class="text-cyan-300">Copiar Comando Automático</b> e colar no PowerShell).
+                            </p>
+                        </div>
+
+                        <div class="bg-slate-900/60 border border-slate-800 rounded-lg p-3 space-y-1.5">
+                            <span class="font-bold text-slate-200 flex items-center gap-1.5 text-[11px]">
+                                <span class="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold flex items-center justify-center">B</span>
+                                2. Autorizar em Permissões Avançadas
+                            </span>
+                            <p class="text-[11px] text-slate-400 leading-relaxed">
+                                No Holyrics, clique com o botão direito no botão <b class="text-slate-300">Sincronizar Liturge</b> &gt; <b class="text-cyan-300">Permissões Avançadas</b>. Na janela <i>Arquivos permitidos</i>, selecione <code>curl.exe</code> e salve.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 text-[11px] text-emerald-400/90 pt-1">
+                        <span>✅</span>
+                        <span>Pronto! Ao sincronizar, todas as fotos, banners e áudios anexados ao culto serão baixados e colocados diretamente na timeline.</span>
+                    </div>
                 </div>
             </div>
 

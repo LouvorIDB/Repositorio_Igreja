@@ -558,6 +558,20 @@ async function copiarCodigoModuloHolyrics() {
     }
 }
 
+/**
+ * Copia o comando PowerShell para posicionar curl.exe na pasta de arquivos do Holyrics
+ */
+function copiarComandoCurlHolyrics() {
+    const cmd = 'Copy-Item "$env:SystemRoot\\System32\\curl.exe" -Destination "C:\\Holyrics\\Holyrics\\files\\media\\file\\curl.exe" -Force';
+    navigator.clipboard.writeText(cmd).then(() => {
+        if (typeof mostrarToast === 'function') {
+            mostrarToast('Comando PowerShell copiado! Cole no PowerShell do computador do Holyrics.', 'sucesso');
+        }
+    }).catch(() => {
+        if (typeof mostrarToast === 'function') mostrarToast('Erro ao copiar comando.', 'erro');
+    });
+}
+
 // Expor funções globalmente para chamadas nos eventos onclick dos botões HTML
 window.carregarConfiguracaoHolyrics = carregarConfiguracaoHolyrics;
 window.salvarConfiguracaoHolyrics = salvarConfiguracaoHolyrics;
@@ -574,3 +588,4 @@ window.copiarTokenHolyrics = copiarTokenHolyrics;
 window.gerarNovoTokenHolyrics = gerarNovoTokenHolyrics;
 window.baixarArquivoModuloHolyrics = baixarArquivoModuloHolyrics;
 window.copiarCodigoModuloHolyrics = copiarCodigoModuloHolyrics;
+window.copiarComandoCurlHolyrics = copiarComandoCurlHolyrics;

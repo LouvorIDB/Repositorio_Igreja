@@ -28,6 +28,10 @@ function info() {
             'https://app.liturge.app.br',
             'https://pfhkzgccoirosztjcyrh.supabase.co/',
             'https://pfhkzgccoirosztjcyrh.supabase.co',
+            'https://*.r2.dev',
+            'https://*.r2.dev/',
+            'https://pub-42e9c94c85a34244ba11f16d778e3dcb.r2.dev',
+            'https://pub-42e9c94c85a34244ba11f16d778e3dcb.r2.dev/',
             'http://localhost:3333/',
             'http://localhost:3333',
             'http://127.0.0.1:3333/',
@@ -463,7 +467,7 @@ function performSyncProcess(module, serviceData, isReplace, worker) {
         for (var p = 0; p < mediaPendingList.length; p++) {
             summaryMsg += '&nbsp;&nbsp;• ' + mediaPendingList[p] + '<br>';
         }
-        summaryMsg += '<i>(Para download automático de novos arquivos, adicione curl.exe em Permissões Avançadas).</i>';
+        summaryMsg += '<i>(Para download automático: copie curl.exe para a aba Arquivos e autorize em Permissões Avançadas).</i>';
     }
 
     if (songsMissingList.length > 0) {
@@ -558,6 +562,18 @@ function downloadFileDirect(module, url, destFilePath, fileName) {
         return false;
     }
 
+    // Verifica se curl.exe existe na biblioteca de arquivos do Holyrics (pasta files/media/file)
+    var fileExistsInHolyrics = false;
+    try {
+        if (h.files && typeof h.files.exists === 'function') {
+            fileExistsInHolyrics = h.files.exists('file/' + exeToUse) || h.files.exists('file/curl.exe');
+        }
+    } catch (eCheck) {}
+
+    if (!fileExistsInHolyrics) {
+        moduleLog('curl.exe não foi localizado na aba "Arquivos" do Holyrics (pasta files/media/file). Adicione curl.exe na biblioteca de Arquivos do Holyrics para habilitar downloads automáticos.');
+    }
+
     moduleLog('Baixando anexo via {}: {} -> {}', [exeToUse, url, destFilePath]);
 
     var cliParams = [
@@ -569,12 +585,19 @@ function downloadFileDirect(module, url, destFilePath, fileName) {
     ];
 
     try {
-        var res = module.executeCmdAndWait(exeToUse, cliParams, 30000);
-        if (res && res.status === 'ok' && res.data && res.data.code === 0) {
+        var res = null;
+        if (module && typeof module.executeCmdAndWait === 'function') {
+            res = module.executeCmdAndWait(exeToUse, cliParams, 60000);
+        } else if (typeof h.executeCmdAndWait === 'function') {
+            res = h.executeCmdAndWait(exeToUse, cliParams, 60000);
+        }
+
+        if (res && res.status === 'ok' && res.data && (res.data.code === 0 || res.data.code === '0')) {
             moduleLog('Anexo {} baixado com sucesso.', [fileName]);
             return true;
         } else {
-            moduleLog('Aviso: falha no download de {}: {}', [fileName, (res ? res.error : 'retorno inválido')]);
+            var errMsg = (res && res.error) ? res.error : ((res && res.data && res.data.error) ? res.data.error : (res ? JSON.stringify(res) : 'retorno nulo'));
+            moduleLog('Aviso: falha no download de {}: {}', [fileName, errMsg]);
             return false;
         }
     } catch (eExec) {

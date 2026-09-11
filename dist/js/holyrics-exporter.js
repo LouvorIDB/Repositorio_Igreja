@@ -29,16 +29,13 @@ async function carregarConfiguracaoHolyrics() {
     // 1. Tentar ler da memória global primeiro
     const churchData = window.dadosGlobais?.church;
     if (churchData) {
-        if (churchData.holyrics_api_token) tokenCarregado = churchData.holyrics_api_token;
-        if (churchData.holyrics_template && Array.isArray(churchData.holyrics_template)) templateCarregado = churchData.holyrics_template;
-
         if (churchData.public_permissions) {
             let pub = churchData.public_permissions;
             if (typeof pub === 'string') {
                 try { pub = JSON.parse(pub); } catch(e) {}
             }
-            if (!tokenCarregado && pub?.holyrics_api_token) tokenCarregado = pub.holyrics_api_token;
-            if (!templateCarregado && pub?.holyrics_template && Array.isArray(pub.holyrics_template)) templateCarregado = pub.holyrics_template;
+            if (pub?.holyrics_api_token) tokenCarregado = pub.holyrics_api_token;
+            if (pub?.holyrics_template && Array.isArray(pub.holyrics_template)) templateCarregado = pub.holyrics_template;
         }
     }
 
@@ -47,41 +44,32 @@ async function carregarConfiguracaoHolyrics() {
         try {
             const { data: row } = await supabaseClient
                 .from('churches')
-                .select('id, name, holyrics_api_token, holyrics_template, public_permissions')
+                .select('id, name, public_permissions')
                 .eq('id', churchId)
                 .maybeSingle();
 
             if (row) {
-                if (row.holyrics_api_token) tokenCarregado = row.holyrics_api_token;
-                if (row.holyrics_template && Array.isArray(row.holyrics_template)) templateCarregado = row.holyrics_template;
-
                 let pub = row.public_permissions;
                 if (typeof pub === 'string') {
                     try { pub = JSON.parse(pub); } catch(e) {}
                 }
-                if (!tokenCarregado && pub?.holyrics_api_token) tokenCarregado = pub.holyrics_api_token;
-                if (!templateCarregado && pub?.holyrics_template && Array.isArray(pub.holyrics_template)) templateCarregado = pub.holyrics_template;
+                if (!pub) pub = {};
 
-                // Se a igreja ainda não possui um token, gerar um e salvar
+                if (pub.holyrics_api_token) tokenCarregado = pub.holyrics_api_token;
+                if (pub.holyrics_template && Array.isArray(pub.holyrics_template)) templateCarregado = pub.holyrics_template;
+
+                // Se a igreja ainda não possui um token, gerar um e salvar em public_permissions
                 if (!tokenCarregado) {
                     tokenCarregado = 'ltg_live_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
-                    if (!pub) pub = {};
                     pub.holyrics_api_token = tokenCarregado;
 
-                    try {
-                        await supabaseClient
-                            .from('churches')
-                            .update({
-                                holyrics_api_token: tokenCarregado,
-                                public_permissions: pub
-                            })
-                            .eq('id', churchId);
-                    } catch (eUp) {
-                        // Fallback: se a coluna holyrics_api_token ainda não existir, salva só em public_permissions
-                        await supabaseClient
-                            .from('churches')
-                            .update({ public_permissions: pub })
-                            .eq('id', churchId);
+                    await supabaseClient
+                        .from('churches')
+                        .update({ public_permissions: pub })
+                        .eq('id', churchId);
+
+                    if (window.dadosGlobais?.church) {
+                        window.dadosGlobais.church.public_permissions = pub;
                     }
                 }
             }
@@ -171,21 +159,14 @@ async function gerarNovoTokenHolyrics() {
             if (typeof pub === 'string') {
                 try { pub = JSON.parse(pub); } catch(e) { pub = {}; }
             }
+            if (!pub) pub = {};
             pub.holyrics_api_token = novoToken;
 
-            try {
-                await supabaseClient.from('churches').update({
-                    holyrics_api_token: novoToken,
-                    public_permissions: pub
-                }).eq('id', churchId);
-            } catch (eCol) {
-                await supabaseClient.from('churches').update({
-                    public_permissions: pub
-                }).eq('id', churchId);
-            }
+            await supabaseClient.from('churches').update({
+                public_permissions: pub
+            }).eq('id', churchId);
 
             if (window.dadosGlobais?.church) {
-                window.dadosGlobais.church.holyrics_api_token = novoToken;
                 window.dadosGlobais.church.public_permissions = pub;
             }
         } catch (e) {
@@ -223,31 +204,31 @@ function renderizarEditorHolyrics() {
 
         const botoesCores = coresPredefinidas.map(c => `
             <button type="button" onclick="alterarCorSecao(${idx}, '${c}')"
-                class="w-4 h-4 rounded-full border ${cor.toLowerCase() === c.toLowerCase() ? 'border-white scale-110 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'} transition"
+                class="w-4 h-4 rounded-full border ${cor.toLowerCase() === c.toLowerCase() ? 'border-white scale-110 shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'} transition cursor-pointer"
                 style="background-color: ${c};" title="${c}">
             </button>
         `).join('');
 
         return `
-            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 space-y-3 transition hover:border-slate-700">
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-3 transition hover:border-slate-700 shadow-sm">
                 <!-- Cabeçalho da Seção -->
                 <div class="flex items-center justify-between gap-2">
                     <div class="flex items-center gap-2 flex-1">
-                        <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${cor}"></span>
+                        <span class="w-3 h-3 rounded-full shrink-0 shadow-sm" style="background-color: ${cor}"></span>
                         <input type="text" value="${sec.name || ''}" 
                             oninput="atualizarNomeSecao(${idx}, this.value)"
                             placeholder="Ex: ABERTURA, LOUVOR, AVISOS..."
-                            class="flex-1 bg-slate-900 border border-slate-800 focus:border-cyan-500 rounded-lg px-3 py-1.5 text-xs text-white font-bold tracking-wide uppercase focus:outline-none transition">
+                            class="flex-1 bg-slate-900 border border-slate-700 focus:border-cyan-500 rounded-lg px-3 py-1.5 text-xs text-white font-bold tracking-wide uppercase focus:outline-none transition">
                     </div>
 
                     <div class="flex items-center gap-1">
-                        <button onclick="moverSecao(${idx}, -1)" ${isFirst ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-slate-500"' : 'class="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition"'} title="Mover para cima">
+                        <button onclick="moverSecao(${idx}, -1)" ${isFirst ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-slate-500"' : 'class="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition cursor-pointer"'} title="Mover para cima">
                             ⬆️
                         </button>
-                        <button onclick="moverSecao(${idx}, 1)" ${isLast ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-slate-500"' : 'class="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition"'} title="Mover para baixo">
+                        <button onclick="moverSecao(${idx}, 1)" ${isLast ? 'disabled class="opacity-20 cursor-not-allowed p-1 text-slate-500"' : 'class="p-1 text-slate-400 hover:text-white hover:bg-slate-800 rounded transition cursor-pointer"'} title="Mover para baixo">
                             ⬇️
                         </button>
-                        <button onclick="removerSecao(${idx})" class="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition ml-1" title="Excluir Seção">
+                        <button onclick="removerSecao(${idx})" class="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition ml-1 cursor-pointer" title="Excluir Seção">
                             🗑️
                         </button>
                     </div>
@@ -260,7 +241,7 @@ function renderizarEditorHolyrics() {
                     <div class="sm:col-span-6 flex items-center gap-2">
                         <span class="text-slate-400 whitespace-nowrap text-[11px]">Tipo:</span>
                         <select onchange="atualizarTipoConteudo(${idx}, this.value)"
-                            class="flex-1 bg-slate-900 border border-slate-800 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-cyan-500">
+                            class="flex-1 bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-cyan-500 cursor-pointer">
                             <option value="videos" ${sec.content_type === 'videos' ? 'selected' : ''}>🎬 Vídeos Anexados</option>
                             <option value="musicas" ${(sec.content_type === 'musicas' || sec.content_type === 'songs') ? 'selected' : ''}>🎵 Músicas do Culto (Letras)</option>
                             <option value="imagens" ${(sec.content_type === 'imagens' || sec.content_type === 'images') ? 'selected' : ''}>🖼️ Imagens Anexadas</option>
@@ -282,11 +263,11 @@ function renderizarEditorHolyrics() {
                 </div>
 
                 <!-- Toggle Ocultar se Vazia -->
-                <div class="pt-2 border-t border-slate-800/60 flex items-center justify-between">
+                <div class="pt-2 border-t border-slate-800 flex items-center justify-between">
                     <label class="flex items-center gap-2 cursor-pointer select-none text-[11px] text-slate-400 hover:text-slate-300">
                         <input type="checkbox" ${hideIfEmpty ? 'checked' : ''} 
                             onchange="atualizarOcultarVazia(${idx}, this.checked)"
-                            class="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-0 w-3.5 h-3.5">
+                            class="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-0 w-3.5 h-3.5 cursor-pointer">
                         <span>Ocultar esta seção se o culto não tiver arquivos desse tipo</span>
                     </label>
                     <span class="text-[10px] font-mono text-slate-500 uppercase">${cor}</span>
@@ -381,24 +362,15 @@ async function salvarConfiguracaoHolyrics() {
             if (typeof pub === 'string') {
                 try { pub = JSON.parse(pub); } catch(e) { pub = {}; }
             }
+            if (!pub) pub = {};
             pub.holyrics_template = secoesHolyricsConfig;
             if (holyricsChurchToken) pub.holyrics_api_token = holyricsChurchToken;
 
-            try {
-                await supabaseClient.from('churches').update({
-                    holyrics_template: secoesHolyricsConfig,
-                    holyrics_api_token: holyricsChurchToken,
-                    public_permissions: pub
-                }).eq('id', churchId);
-            } catch (eCol) {
-                // Fallback caso a coluna ainda não exista
-                await supabaseClient.from('churches').update({
-                    public_permissions: pub
-                }).eq('id', churchId);
-            }
+            await supabaseClient.from('churches').update({
+                public_permissions: pub
+            }).eq('id', churchId);
 
             if (window.dadosGlobais?.church) {
-                window.dadosGlobais.church.holyrics_template = secoesHolyricsConfig;
                 window.dadosGlobais.church.public_permissions = pub;
             }
 
@@ -586,6 +558,20 @@ async function copiarCodigoModuloHolyrics() {
     }
 }
 
+/**
+ * Copia o comando PowerShell para posicionar curl.exe na pasta de arquivos do Holyrics
+ */
+function copiarComandoCurlHolyrics() {
+    const cmd = 'Copy-Item "$env:SystemRoot\\System32\\curl.exe" -Destination "C:\\Holyrics\\Holyrics\\files\\media\\file\\curl.exe" -Force';
+    navigator.clipboard.writeText(cmd).then(() => {
+        if (typeof mostrarToast === 'function') {
+            mostrarToast('Comando PowerShell copiado! Cole no PowerShell do computador do Holyrics.', 'sucesso');
+        }
+    }).catch(() => {
+        if (typeof mostrarToast === 'function') mostrarToast('Erro ao copiar comando.', 'erro');
+    });
+}
+
 // Expor funções globalmente para chamadas nos eventos onclick dos botões HTML
 window.carregarConfiguracaoHolyrics = carregarConfiguracaoHolyrics;
 window.salvarConfiguracaoHolyrics = salvarConfiguracaoHolyrics;
@@ -602,3 +588,4 @@ window.copiarTokenHolyrics = copiarTokenHolyrics;
 window.gerarNovoTokenHolyrics = gerarNovoTokenHolyrics;
 window.baixarArquivoModuloHolyrics = baixarArquivoModuloHolyrics;
 window.copiarCodigoModuloHolyrics = copiarCodigoModuloHolyrics;
+window.copiarComandoCurlHolyrics = copiarComandoCurlHolyrics;
