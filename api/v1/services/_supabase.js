@@ -47,21 +47,12 @@ export async function authenticateChurch(req, res) {
     }
 
     try {
-        // 1. Tentar buscar por holyrics_api_token
-        const { data: churchByCol } = await supabase
+        // Consultar igrejas selecionando colunas existentes
+        const { data: allChurches, error: errFetch } = await supabase
             .from('churches')
-            .select('id, name, holyrics_api_token, holyrics_template, public_permissions')
-            .eq('holyrics_api_token', token)
-            .maybeSingle();
+            .select('id, name, public_permissions');
 
-        if (churchByCol) {
-            return churchByCol;
-        }
-
-        // 2. Fallback: buscar em public_permissions->>holyrics_api_token
-        const { data: allChurches } = await supabase
-            .from('churches')
-            .select('id, name, holyrics_api_token, holyrics_template, public_permissions');
+        if (errFetch) throw errFetch;
 
         if (allChurches && allChurches.length > 0) {
             const found = allChurches.find(c => {
@@ -160,6 +151,7 @@ export function formatServicePayload(service, church) {
         } else if (isAudio) {
             audiosList.push({ type: 'audio', name: name, url: url });
         } else {
+            // Default: se não identificado, categoriza por imagem
             imagesList.push({ type: 'image', name: name, url: url });
         }
     }
