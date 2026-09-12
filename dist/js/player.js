@@ -19,7 +19,10 @@ window.LiturgePlayer = (function () {
             el.id = 'liturgeGlobalAudio';
             el.className = 'hidden';
             el.preload = 'metadata';
+            el.crossOrigin = 'anonymous';
             document.body.appendChild(el);
+        } else {
+            el.crossOrigin = 'anonymous';
         }
         return el;
     }
@@ -84,14 +87,22 @@ window.LiturgePlayer = (function () {
 
         currentAudio.onerror = (e) => {
             console.warn('[LiturgePlayer] Erro no stream nativo de áudio:', e);
-            // Se falhar o stream direto do Drive, fallback automático para o embed do Drive
-            if (lastDriveId) {
-                renderDriveEmbedFallback(currentTrackInfo?.title || 'Áudio do Drive', lastDriveId);
-            } else {
-                const pc = document.getElementById('playerContainer');
-                if (pc) {
-                    pc.innerHTML = '<span class="text-xs text-rose-400">Não foi possível carregar o arquivo de áudio.</span>';
-                }
+            // Se falhou o drive.usercontent e ainda não tentamos o fallback docs.google.com
+            if (lastDriveId && !currentAudio.dataset.triedFallback) {
+                currentAudio.dataset.triedFallback = '1';
+                console.log('[LiturgePlayer] Tentando fallback de stream alternativo do Drive...');
+                currentAudio.src = `https://docs.google.com/uc?export=download&id=${lastDriveId}`;
+                currentAudio.load();
+                currentAudio.play().catch(console.warn);
+                return;
+            }
+
+            // Exibe indicação clara sem desmontar os controles do player
+            const curEl = document.getElementById('liturgePlayerCurTime');
+            if (curEl) curEl.textContent = 'Erro';
+            const durEl = document.getElementById('liturgePlayerDurTime');
+            if (durEl && lastDriveId) {
+                durEl.innerHTML = `<a href="https://drive.google.com/file/d/${lastDriveId}/view" target="_blank" class="text-amber-400 underline font-sans text-[10px]">Abrir Drive ↗</a>`;
             }
         };
     }
@@ -211,9 +222,9 @@ window.LiturgePlayer = (function () {
         const currentPos = currentTrackIndex >= 0 ? currentTrackIndex + 1 : 1;
 
         pc.innerHTML = `
-            <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 w-full">
+            <div class="flex items-center gap-2 sm:gap-3 w-full">
                 <!-- Botões de Controle -->
-                <div class="flex items-center gap-1.5 shrink-0 justify-center">
+                <div class="flex items-center gap-1 sm:gap-1.5 shrink-0 justify-center">
                     <button id="liturgePlayerPrevBtn" onclick="LiturgePlayer.tocarAnterior()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed text-xs cursor-pointer" title="Música Anterior / Reiniciar">
                         ⏮
                     </button>
@@ -226,10 +237,10 @@ window.LiturgePlayer = (function () {
                 </div>
 
                 <!-- Barra de Progresso e Tempos -->
-                <div class="flex-1 w-full flex flex-col justify-center px-1">
+                <div class="flex-1 min-w-0 flex flex-col justify-center px-1">
                     <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1 font-mono">
                         <span id="liturgePlayerCurTime">00:00</span>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1.5">
                             ${hasPlaylist ? `<span id="liturgePlayerQueueIndicator" class="text-[10px] text-liturge-400 font-sans font-semibold">${currentPos} de ${total}</span>` : ''}
                             <span class="text-[10px] text-emerald-400 flex items-center gap-1 font-sans" title="Áudio pronto para controle na tela de bloqueio e central de notificações">
                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -241,9 +252,9 @@ window.LiturgePlayer = (function () {
                     <input type="range" id="liturgePlayerScrubber" min="0" max="100" value="0" step="0.1" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-liturge-500">
                 </div>
 
-                <!-- Botão Fechar -->
-                <div class="flex items-center gap-1.5 shrink-0">
-                    <button onclick="fecharPlayer()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 hover:bg-red-600 text-slate-300 hover:text-white transition text-xs cursor-pointer" aria-label="Fechar Player" title="Fechar Player">
+                <!-- Botão Fechar Desktop -->
+                <div class="hidden md:flex items-center shrink-0">
+                    <button onclick="fecharPlayer()" class="w-8 h-8 flex items-center justify-center rounded-full bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white transition text-xs cursor-pointer" aria-label="Fechar Player" title="Fechar Player">
                         ✕
                     </button>
                 </div>
@@ -279,7 +290,6 @@ window.LiturgePlayer = (function () {
         const hasPlaylist = currentPlaylist.length > 1;
 
         if (prevBtn) {
-            // Se não houver faixa anterior e estiver no início, desativa se for faixa única
             prevBtn.disabled = !hasPlaylist && (!currentAudio || currentAudio.currentTime < 3);
         }
         if (nextBtn) {
@@ -291,24 +301,6 @@ window.LiturgePlayer = (function () {
             indicator.textContent = `${currentTrackIndex + 1} de ${currentPlaylist.length}`;
             indicator.classList.remove('hidden');
         }
-    }
-
-    function renderDriveEmbedFallback(title, driveId) {
-        lastDriveId = driveId;
-        const pc = document.getElementById('playerContainer');
-        if (!pc) return;
-
-        pc.innerHTML = `
-            <div class="flex items-center gap-2 w-full">
-                <div class="drive-player-wrapper flex-1">
-                    <iframe src="https://drive.google.com/file/d/${driveId}/preview" allow="autoplay"></iframe>
-                </div>
-                <div class="flex flex-col gap-1 shrink-0">
-                    <button onclick="LiturgePlayer.tentarStreamDireto()" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700 text-liturge-400 text-xs transition" title="Tentar Modo Notificação / 2º Plano">📱</button>
-                    <button onclick="fecharPlayer()" class="w-7 h-7 flex items-center justify-center rounded-full bg-slate-700 hover:bg-red-600 text-slate-300 hover:text-white transition text-xs" aria-label="Fechar Player">✕</button>
-                </div>
-            </div>
-        `;
     }
 
     function tocarFaixaPorIndice(index) {
@@ -394,43 +386,56 @@ window.LiturgePlayer = (function () {
 
         currentTrackInfo = { title, artist, album, url: strUrl };
 
-        // 1. URLs Diretas (Supabase Storage, CDN ou arquivo MP3/M4A/WAV direto)
-        if (strUrl.startsWith('http://') || strUrl.startsWith('https://')) {
-            if (strUrl.includes('supabase') || strUrl.includes('/storage/') || strUrl.match(/\.(mp3|wav|m4a|ogg|flac|aac)(\?.*)?$/i)) {
-                renderNativePlayerUI();
-                currentAudio.src = strUrl;
-                currentAudio.play().catch((err) => {
-                    console.warn('[LiturgePlayer] Autoplay bloqueado pelo navegador, aguardando clique:', err);
-                    atualizarIconePlayPause(false);
-                });
-                setupMediaSession(currentTrackInfo);
-                return;
-            }
+        let streamUrl = null;
 
-            // Extrai ID do Google Drive se for link completo
-            const match = strUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
-            if (match && match[1]) {
-                fileIdOrUrl = match[1];
+        // 1. URLs Diretas (Cloudflare Worker/R2, Supabase Storage, CDN ou arquivo de áudio)
+        if (strUrl.startsWith('http://') || strUrl.startsWith('https://')) {
+            if (
+                strUrl.includes('workers.dev') ||
+                strUrl.includes('r2.cloudflarestorage') ||
+                strUrl.includes('supabase') ||
+                strUrl.includes('/storage/') ||
+                strUrl.includes('/vs_tracks/') ||
+                strUrl.match(/\.(mp3|wav|m4a|ogg|flac|aac)(\?.*)?$/i)
+            ) {
+                streamUrl = strUrl;
             } else {
-                const matchId = strUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-                if (matchId && matchId[1]) {
-                    fileIdOrUrl = matchId[1];
+                // Extrai ID do Google Drive se for link completo
+                const match = strUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                if (match && match[1]) {
+                    fileIdOrUrl = match[1];
+                } else {
+                    const matchId = strUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                    if (matchId && matchId[1]) {
+                        fileIdOrUrl = matchId[1];
+                    }
                 }
             }
         }
 
-        // 2. Arquivo do Google Drive
-        const driveId = fileIdOrUrl.toString().trim();
-        lastDriveId = driveId;
+        // 2. Se for arquivo do Google Drive (ID isolado ou extraído do link)
+        if (!streamUrl) {
+            const driveId = fileIdOrUrl.toString().trim();
+            lastDriveId = driveId;
+            // drive.usercontent.google.com suporta 200/206 Range + CORS nativo para áudio HTML5!
+            streamUrl = `https://drive.usercontent.google.com/download?id=${driveId}&export=download&authuser=0`;
+        }
 
-        // Tenta stream nativo direto para ativar a Media Session API (notificação e tela de bloqueio)
-        const directDriveStreamUrl = `https://docs.google.com/uc?export=download&id=${driveId}`;
         renderNativePlayerUI();
-        currentAudio.src = directDriveStreamUrl;
-        currentAudio.play().catch((err) => {
-            console.warn('[LiturgePlayer] Autoplay direto do Drive bloqueado ou pendente:', err);
-            atualizarIconePlayPause(false);
-        });
+        delete currentAudio.dataset.triedFallback;
+        currentAudio.crossOrigin = 'anonymous';
+        currentAudio.src = streamUrl;
+        currentAudio.load();
+
+        const playPromise = currentAudio.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                atualizarIconePlayPause(true);
+            }).catch((err) => {
+                console.warn('[LiturgePlayer] Play aguardando interação do usuário:', err);
+                atualizarIconePlayPause(false);
+            });
+        }
         setupMediaSession(currentTrackInfo);
     }
 
