@@ -27,7 +27,11 @@ Before implementing a change:
 
 **Project name:**
 
-`Liturge` (Repositório: `LouvorIDB / Repositorio_Igreja`)
+`Liturge` (Repositório Oficial: `https://github.com/LouvorIDB/Liturge`)
+
+**Diretriz Estrita de Versionamento Git (Até segunda ordem):**
+- Todo commit e push deve ser feito exclusivamente na branch `main` do repositório `liturge` (`https://github.com/LouvorIDB/Liturge`).
+- O repositório legado `LouvorIDB / Repositorio_Igreja` (`origin`) permanece 100% congelado para manter a estabilidade da igreja local.
 
 **Official Domain:**
 `app.liturge.app.br` (Vercel)
