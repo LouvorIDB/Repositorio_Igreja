@@ -2,6 +2,10 @@
   "appId": "com.liturge.app",
   "appName": "Liturge",
   "webDir": "dist",
+  "server": {
+    "url": "https://liturge-dev.vercel.app/",
+    "cleartext": true
+  },
   "android": {
     "backgroundColor": "#070B14",
     "allowMixedContent": true
