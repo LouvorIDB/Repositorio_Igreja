@@ -889,6 +889,8 @@ function renderizarCultos(rows) {
             contadorBloco++;
             const idPlaylist = `playlist-culto-${contadorBloco}`;
             const idSeta = `seta-culto-${contadorBloco}`;
+            window.liturgeCultosPlaylists = window.liturgeCultosPlaylists || {};
+            window.liturgeCultosPlaylists[idPlaylist] = [];
             blocoAtual = textoPrimeiraColuna;
             blocoEmMontagem = blocoAtual.toUpperCase().includes('EM MONTAGEM');
             blocoOculto = blocoAtual.toUpperCase().includes('OCULTO');
@@ -1074,6 +1076,21 @@ function renderizarCultos(rows) {
             const canVerCantor = hasPermission('ver_cantor');
             const canPedirAjuste = hasPermission('enviar_solic_musica');
 
+            // Registra faixa na playlist do culto atual para controle contínuo em segundo plano e tela de bloqueio
+            let trackIndexCulto = -1;
+            if (canVerVs && vsCelular) {
+                window.liturgeCultosPlaylists = window.liturgeCultosPlaylists || {};
+                window.liturgeCultosPlaylists[idPlaylist] = window.liturgeCultosPlaylists[idPlaylist] || [];
+                window.liturgeCultosPlaylists[idPlaylist].push({
+                    title: musica.toString().trim(),
+                    fileIdOrUrl: fileId,
+                    artist: artistaMusica || cantoresMusica || 'Liturge • Louvor',
+                    album: blocoAtual.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim(),
+                    cultoId: idPlaylist
+                });
+                trackIndexCulto = window.liturgeCultosPlaylists[idPlaylist].length - 1;
+            }
+
             const btnLetraCulto = (lyricsTexto && canVerLetra)
                 ? `<button onclick="abrirModalLetraPublica('${musica.toString().replace(/'/g, "\\'")}', 'Tom: ${tom}', '${encodeURIComponent(lyricsTexto)}')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 hover:border-liturge-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
@@ -1099,7 +1116,7 @@ function renderizarCultos(rows) {
                             </div>
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                            ${(canVerVs && vsCelular) ? `<button onclick="playDriveAudio('${musica.toString().replace(/'/g, "\\'")}', '${fileId}')" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer"><span>▶</span> Ouvir VS</button>` : ''}
+                            ${(canVerVs && vsCelular) ? `<button onclick="LiturgePlayer.tocarDoCulto('${idPlaylist}', ${trackIndexCulto})" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer"><span>▶</span> Ouvir VS</button>` : ''}
                             ${btnLetraCulto}
                             ${btnCifraCulto}
                             ${(canVerYoutube && linkYoutubeFinal) ? `<button onclick="playYoutubeAudio('${musica.toString().replace(/'/g, "\\'")}', '${linkYoutubeFinal}')" class="bg-red-700/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1"><span>📺</span> YouTube</button>` : ''}
@@ -1175,7 +1192,7 @@ function gerarHtmlCardMusica(musicaObj, prefix) {
                             ${podeVerLouvor ? `<span class="bg-night-950 border border-slate-800 px-2.5 py-0.5 rounded-md text-[11px] font-mono text-slate-200"><span class="text-slate-400 font-normal">Tom:</span> <span class="font-bold text-white">${v.key}</span> <span class="text-slate-400 font-normal">(${v.variation || 'Original'})</span></span>` : ''}
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                            ${(podeVerLouvor && v.vs) ? `<button onclick="playDriveAudio('${musicaObj.title.replace(/'/g, "\\'")}', '${fileId}')" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer"><span>▶</span> Ouvir VS</button>` : ''}
+                            ${(podeVerLouvor && v.vs) ? `<button onclick="playDriveAudio('${musicaObj.title.replace(/'/g, "\\'")}', '${fileId}', { artist: '${(musicaObj.artist || '').replace(/'/g, "\\'")}', album: 'Repertório Liturge' })" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer"><span>▶</span> Ouvir VS</button>` : ''}
                             ${btnLetraCard}
                             ${(podeVerLouvor && btnCifraCard) ? btnCifraCard : ''}
                             ${ytButtonsHtml}
@@ -2734,6 +2751,10 @@ function renderizarHistoricoCultos() {
             }
 
             let musicasHtml = '';
+            const servicePlaylistId = 'service-playlist-' + (service.id || Math.random().toString(36).substring(7));
+            window.liturgeCultosPlaylists = window.liturgeCultosPlaylists || {};
+            window.liturgeCultosPlaylists[servicePlaylistId] = [];
+
             const songList = (service.service_songs || []).sort((a, b) => (a.order || 0) - (b.order || 0));
             songList.forEach(sSong => {
                 const version = sSong.song_versions || {};
@@ -2749,6 +2770,18 @@ function renderizarHistoricoCultos() {
 
                 const fileId = obterUrlAudioVs(vs);
                 const linkYoutubeFinal = obterLinkYoutube(yt, nomeMusica);
+
+                let trackIndexService = -1;
+                if (vs && canVerVs) {
+                    window.liturgeCultosPlaylists[servicePlaylistId].push({
+                        title: nomeMusica,
+                        fileIdOrUrl: fileId,
+                        artist: artist || cantoresMusica || 'Liturge • Louvor',
+                        album: service.title || 'Culto Liturge',
+                        cultoId: servicePlaylistId
+                    });
+                    trackIndexService = window.liturgeCultosPlaylists[servicePlaylistId].length - 1;
+                }
 
                 const btnLetra = (lyrics && canVerLetra)
                     ? `<button onclick="abrirModalLetraPublica('${nomeMusica.replace(/'/g, "\\'")}', 'Tom: ${tom}', '${encodeURIComponent(lyrics)}')" class="bg-night-950/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1 shadow-sm">
@@ -2769,7 +2802,7 @@ function renderizarHistoricoCultos() {
                     </button>`
                     : '';
                 const btnPlayVs = (vs && canVerVs)
-                    ? `<button onclick="playDriveAudio('${nomeMusica.replace(/'/g, "\\'")}', '${fileId}')" class="bg-night-950/80 hover:bg-slate-800 text-liturge-400 border border-liturge-500/30 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition flex items-center gap-1 shadow-sm">
+                    ? `<button onclick="LiturgePlayer.tocarDoCulto('${servicePlaylistId}', ${trackIndexService})" class="bg-night-950/80 hover:bg-slate-800 text-liturge-400 border border-liturge-500/30 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition flex items-center gap-1 shadow-sm">
                         <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                         VS
                     </button>`

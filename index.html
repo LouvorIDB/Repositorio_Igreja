@@ -680,15 +680,16 @@
     </div>
 
     <!-- Rodapé Fixo do Player Oficial Liturge (Oculto por padrão até dar play) -->
-    <div id="fixed-player-bar" style="display: none;" class="hidden bg-night-900/95 backdrop-blur-md border-t border-slate-800 px-6 py-4 fixed bottom-0 left-0 md:left-64 right-0 shadow-2xl z-20">
-        <div class="container mx-auto max-w-4xl flex flex-col md:flex-row items-center justify-between gap-4">
+    <div id="fixed-player-bar" style="display: none;" class="hidden bg-night-900/95 backdrop-blur-md border-t border-slate-800 px-4 sm:px-6 py-3.5 sm:py-4 fixed bottom-0 left-0 md:left-64 right-0 shadow-2xl z-20 pb-[calc(0.875rem+env(safe-area-inset-bottom))]">
+        <audio id="liturgeGlobalAudio" class="hidden" preload="metadata"></audio>
+        <div class="container mx-auto max-w-4xl flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
             <div class="text-center md:text-left w-full md:w-1/3 flex items-center gap-3 justify-center md:justify-start">
                 <div class="w-8 h-8 rounded-lg bg-liturge-500/10 border border-liturge-500/20 flex items-center justify-center text-liturge-400 shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                 </div>
                 <div class="truncate">
                     <span id="nowPlayingTitle" class="text-xs md:text-sm font-bold text-white block truncate">Nenhuma música selecionada</span>
-                    <span class="text-[10px] text-liturge-400 uppercase tracking-widest font-semibold block">Player Oficial Liturge</span>
+                    <span id="nowPlayingSubtitle" class="text-[10px] text-liturge-400 uppercase tracking-widest font-semibold block truncate">Player Oficial Liturge</span>
                 </div>
             </div>
             <div id="playerContainer" class="w-full md:w-2/3 flex justify-center items-center">
@@ -704,7 +705,7 @@
     <script src="js/db.js?v=1.0"></script>
     <script src="js/router.js?v=1.0"></script>
     <script src="js/utils.js?v=4.27"></script>
-    <script src="js/player.js?v=4.9"></script>
+    <script src="js/player.js?v=5.0"></script>
     <script src="js/admin.js?v=4.52"></script>
     <script src="js/culto-editor.js?v=5.2"></script>
     <script src="js/holyrics-exporter.js?v=1.5"></script>
