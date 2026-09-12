@@ -19,10 +19,7 @@ window.LiturgePlayer = (function () {
             el.id = 'liturgeGlobalAudio';
             el.className = 'hidden';
             el.preload = 'metadata';
-            el.crossOrigin = 'anonymous';
             document.body.appendChild(el);
-        } else {
-            el.crossOrigin = 'anonymous';
         }
         return el;
     }
@@ -87,11 +84,11 @@ window.LiturgePlayer = (function () {
 
         currentAudio.onerror = (e) => {
             console.warn('[LiturgePlayer] Erro no stream nativo de áudio:', e);
-            // Se falhou o drive.usercontent e ainda não tentamos o fallback docs.google.com
+            // Se falhou o proxy do drive e ainda não tentamos o stream direto do Google
             if (lastDriveId && !currentAudio.dataset.triedFallback) {
                 currentAudio.dataset.triedFallback = '1';
-                console.log('[LiturgePlayer] Tentando fallback de stream alternativo do Drive...');
-                currentAudio.src = `https://docs.google.com/uc?export=download&id=${lastDriveId}`;
+                console.log('[LiturgePlayer] Tentando fallback de stream direto do Drive...');
+                currentAudio.src = `https://drive.usercontent.google.com/download?id=${encodeURIComponent(lastDriveId)}&export=download&authuser=0`;
                 currentAudio.load();
                 currentAudio.play().catch(console.warn);
                 return;
@@ -417,13 +414,15 @@ window.LiturgePlayer = (function () {
         if (!streamUrl) {
             const driveId = fileIdOrUrl.toString().trim();
             lastDriveId = driveId;
-            // drive.usercontent.google.com suporta 200/206 Range + CORS nativo para áudio HTML5!
-            streamUrl = `https://drive.usercontent.google.com/download?id=${driveId}&export=download&authuser=0`;
+            const apiBase = (window.location.origin && !window.location.origin.startsWith('capacitor://') && !window.location.origin.startsWith('file://'))
+                ? window.location.origin
+                : 'https://liturge-dev.vercel.app';
+            streamUrl = `${apiBase}/api/drive-stream?id=${encodeURIComponent(driveId)}`;
         }
 
         renderNativePlayerUI();
         delete currentAudio.dataset.triedFallback;
-        currentAudio.crossOrigin = 'anonymous';
+        currentAudio.removeAttribute('crossorigin');
         currentAudio.src = streamUrl;
         currentAudio.load();
 

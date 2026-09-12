@@ -1,4 +1,4 @@
-const CACHE_NAME = 'liturge-v28';
+const CACHE_NAME = 'liturge-v29';
 
 const ASSETS_TO_CACHE = [
     './',
@@ -75,6 +75,7 @@ self.addEventListener('fetch', (event) => {
 
     const url = new URL(event.request.url);
     if (url.origin !== location.origin) return;
+    if (url.pathname.startsWith('/api/')) return;
 
     event.respondWith(
         caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
