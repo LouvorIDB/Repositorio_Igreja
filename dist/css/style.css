@@ -131,3 +131,53 @@ body {
     }
 }
 
+/* ===================== CLASSES UTILITÁRIAS OFICIAIS LITURGE ===================== */
+.badge-gold {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #FBBF24;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 9999px;
+    padding: 0.125rem 0.625rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.btn-liturge-primary {
+    background: linear-gradient(to right, #F59E0B, #D97706);
+    color: #070B14;
+    font-weight: 700;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 10px 15px -3px rgba(245, 158, 11, 0.2);
+}
+.btn-liturge-primary:hover {
+    background: linear-gradient(to right, #FBBF24, #F59E0B);
+}
+
+.btn-liturge-secondary {
+    background-color: #1E293B;
+    color: #E2E8F0;
+    border: 1px solid rgba(51, 65, 85, 0.8);
+    transition: all 0.2s ease-in-out;
+}
+.btn-liturge-secondary:hover {
+    background-color: #334155;
+    color: #FFFFFF;
+    border-color: rgba(245, 158, 11, 0.4);
+}
+
+.glow-amber {
+    filter: drop-shadow(0 0 25px rgba(245, 166, 35, 0.45));
+}
+
+.glow-node {
+    filter: drop-shadow(0 0 8px rgba(255, 213, 79, 0.8));
+}
+
+.matrix-bg-dark {
+    background-image: radial-gradient(rgba(245, 158, 11, 0.1) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+

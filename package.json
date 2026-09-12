@@ -11,7 +11,8 @@
     "cap:open": "cap open android",
     "cap:run": "cap run android",
     "app:update": "node scripts/app-update.cjs",
-    "app:wifi": "node scripts/app-wifi.cjs"
+    "app:wifi": "node scripts/app-wifi.cjs",
+    "assets:android": "node scripts/generate-android-assets.cjs"
   },
   "devDependencies": {
     "@capacitor/android": "^8.5.1",

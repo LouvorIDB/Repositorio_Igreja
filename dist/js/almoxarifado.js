@@ -116,7 +116,7 @@ function renderizarEquipamentos() {
         const minIcon = item.ministries?.icon || '📦';
 
         return `
-            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+            <div class="bg-night-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg hover:border-slate-700/80 transition">
                 <div>
                     <div class="flex items-start justify-between gap-2 mb-2">
                         <span class="text-xs font-semibold px-2 py-0.5 rounded-full border ${badge.bg}">
@@ -128,14 +128,14 @@ function renderizarEquipamentos() {
                     </div>
 
                     <h4 class="text-base font-bold text-white">${item.name}</h4>
-                    ${item.location ? `<p class="text-xs text-brand-400 font-medium mt-0.5">📍 ${item.location}</p>` : ''}
+                    ${item.location ? `<p class="text-xs text-liturge-400 font-medium mt-0.5">📍 ${item.location}</p>` : ''}
                     ${item.description ? `<p class="text-xs text-slate-400 mt-2 line-clamp-3">${item.description}</p>` : ''}
                 </div>
 
                 ${podeEditar ? `
                 <div class="flex justify-end gap-2 pt-2 border-t border-slate-800/80">
-                    <button onclick="editarEquipamento('${item.id}')" class="px-2.5 py-1 text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-md transition">Editar</button>
-                    <button onclick="deletarEquipamento('${item.id}')" class="px-2.5 py-1 text-xs text-red-400 hover:text-red-300 bg-red-950/40 hover:bg-red-900/60 rounded-md transition">Excluir</button>
+                    <button onclick="editarEquipamento('${item.id}')" class="px-2.5 py-1 text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-md transition cursor-pointer">Editar</button>
+                    <button onclick="deletarEquipamento('${item.id}')" class="px-2.5 py-1 text-xs text-red-400 hover:text-red-300 bg-red-950/40 hover:bg-red-900/60 rounded-md transition cursor-pointer">Excluir</button>
                 </div>
                 ` : ''}
             </div>
@@ -197,12 +197,12 @@ function renderizarDocsWiki() {
                     linkLabel = `📄 Arquivo ${urls.length > 1 ? idx+1 : ''}`;
                 }
                 
-                linksHtml += `<a href="${url}" target="_blank" class="text-xs text-brand-400 hover:underline flex items-center gap-1 font-medium">${linkLabel} ↗</a>`;
+                linksHtml += `<a href="${url}" target="_blank" class="text-xs text-liturge-400 hover:text-liturge-300 hover:underline flex items-center gap-1 font-medium">${linkLabel} ↗</a>`;
             });
         }
 
         return `
-            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
+            <div class="bg-night-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg hover:border-slate-700/80 transition">
                 <div>
                     <div class="flex items-start justify-between gap-2 mb-2">
                         <span class="text-xs text-slate-400 font-medium whitespace-nowrap">📁 ${minNome}</span>
@@ -219,8 +219,8 @@ function renderizarDocsWiki() {
 
                 ${podeEditar ? `
                 <div class="flex justify-end gap-2 pt-2 border-t border-slate-800/80 mt-2">
-                    <button onclick="editarDocWiki('${doc.id}')" class="px-2.5 py-1 text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-md transition">Editar</button>
-                    <button onclick="deletarDocWiki('${doc.id}')" class="px-2.5 py-1 text-xs text-red-400 hover:text-red-300 bg-red-950/40 hover:bg-red-900/60 rounded-md transition">Excluir</button>
+                    <button onclick="editarDocWiki('${doc.id}')" class="px-2.5 py-1 text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-md transition cursor-pointer">Editar</button>
+                    <button onclick="deletarDocWiki('${doc.id}')" class="px-2.5 py-1 text-xs text-red-400 hover:text-red-300 bg-red-950/40 hover:bg-red-900/60 rounded-md transition cursor-pointer">Excluir</button>
                 </div>
                 ` : ''}
             </div>
@@ -240,12 +240,12 @@ function mudarAbaAlmoxarifado(aba) {
 
     if (tabEquip && tabWiki) {
         tabEquip.className = isEquip 
-            ? "pb-3 text-sm font-semibold text-brand-400 border-b-2 border-brand-500 transition" 
-            : "pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition";
+            ? "pb-3 text-sm font-bold text-liturge-400 border-b-2 border-liturge-500 transition cursor-pointer" 
+            : "pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition cursor-pointer";
 
         tabWiki.className = !isEquip 
-            ? "pb-3 text-sm font-semibold text-brand-400 border-b-2 border-brand-500 transition" 
-            : "pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition";
+            ? "pb-3 text-sm font-bold text-liturge-400 border-b-2 border-liturge-500 transition cursor-pointer" 
+            : "pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition cursor-pointer";
     }
 }
 

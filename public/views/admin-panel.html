@@ -1,5 +1,5 @@
 <!-- ===================== PAINEL ADMIN ===================== -->
-<div id="painel-admin" class="hidden fixed inset-0 bg-slate-900 z-[90] overflow-y-auto overflow-x-hidden">
+<div id="painel-admin" class="hidden fixed inset-0 bg-night-950 text-slate-100 z-[90] overflow-y-auto overflow-x-hidden">
     <div class="container mx-auto px-4 pt-3 md:pt-8 pb-20 max-w-6xl overflow-x-hidden">
         <!-- ===================== TOP HEADER BAR ADMIN ===================== -->
         <header class="flex items-center justify-between w-full mb-4 sm:mb-6 min-h-[36px]">
@@ -167,6 +167,13 @@
                                 </svg>
                                 <span>Gerenciar Igrejas</span>
                             </button>
+                            <a href="brandbook.html" target="_blank"
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-liturge-400 hover:bg-liturge-500/10 hover:text-liturge-300 flex items-center gap-3 border border-liturge-500/20">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-liturge-400 glow-node">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                </svg>
+                                <span>Manual da Marca (Brandbook)</span>
+                            </a>
                         </div>
                     </div>
                 </nav>
@@ -414,98 +421,98 @@
         <div id="admin-aba-configuracoes" class="hidden space-y-6">
 
             <!-- MATRIZ DE PERMISSÕES PÚBLICAS -->
-            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg space-y-4">
-                <div class="border-b border-slate-700 pb-3">
-                    <h2 class="text-base font-bold text-brand-400">🌍 Visibilidade Pública / Sem Ministério</h2>
+            <div class="bg-night-900/90 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+                <div class="border-b border-slate-800 pb-3">
+                    <h2 class="text-base font-bold text-liturge-400">🌍 Visibilidade Pública / Sem Ministério</h2>
                     <p class="text-xs text-slate-400 mt-0.5">Defina o que os membros sem ministério vinculado ou visitantes gerais podem ver na plataforma.</p>
                 </div>
 
                 <div class="space-y-3">
-                    <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/60 space-y-3">
-                        <p class="text-xs font-semibold text-brand-300 mb-2">Marque o que está liberado para visualização pública:</p>
+                    <div class="bg-night-950/70 p-4 rounded-xl border border-slate-800 space-y-3">
+                        <p class="text-xs font-semibold text-liturge-300 mb-2">Marque o que está liberado para visualização pública:</p>
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                             <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
-                                <input type="checkbox" id="public-perm-ver_escala" class="rounded accent-brand-500">
+                                <input type="checkbox" id="public-perm-ver_escala" class="rounded accent-liturge-500">
                                 <span>📅 Ver Escala de Voluntários</span>
                             </label>
                             <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
-                                <input type="checkbox" id="public-perm-ver_letra" class="rounded accent-brand-500">
+                                <input type="checkbox" id="public-perm-ver_letra" class="rounded accent-liturge-500">
                                 <span>📜 Ver Botão e Texto da Letra</span>
                             </label>
                             <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
-                                <input type="checkbox" id="public-perm-ver_cifra" class="rounded accent-brand-500">
+                                <input type="checkbox" id="public-perm-ver_cifra" class="rounded accent-liturge-500">
                                 <span>🎸 Ver Botão e Texto da Cifra</span>
                             </label>
                             <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
-                                <input type="checkbox" id="public-perm-ver_vs" class="rounded accent-brand-500">
+                                <input type="checkbox" id="public-perm-ver_vs" class="rounded accent-liturge-500">
                                 <span>▶ Ver e Ouvir Áudio / VS</span>
                             </label>
                             <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
-                                <input type="checkbox" id="public-perm-ver_youtube" class="rounded accent-brand-500">
+                                <input type="checkbox" id="public-perm-ver_youtube" class="rounded accent-liturge-500">
                                 <span>📺 Ver Botão de Vídeo do YouTube</span>
                             </label>
                             <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
-                                <input type="checkbox" id="public-perm-ver_cantor" class="rounded accent-brand-500">
+                                <input type="checkbox" id="public-perm-ver_cantor" class="rounded accent-liturge-500">
                                 <span>🎤 Ver Vocalistas Escalados</span>
                             </label>
                             <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
-                                <input type="checkbox" id="public-perm-ver_midia" class="rounded accent-brand-500">
+                                <input type="checkbox" id="public-perm-ver_midia" class="rounded accent-liturge-500">
                                 <span>🖼️ Ver Mídias de Projeção</span>
                             </label>
                             <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
-                                <input type="checkbox" id="public-perm-enviar_solic_musica" class="rounded accent-brand-500">
+                                <input type="checkbox" id="public-perm-enviar_solic_musica" class="rounded accent-liturge-500">
                                 <span>💬 Enviar Pedido de Ajuste de Tom</span>
                             </label>
                             <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
-                                <input type="checkbox" id="public-perm-enviar_sugestao_culto" class="rounded accent-brand-500">
+                                <input type="checkbox" id="public-perm-enviar_sugestao_culto" class="rounded accent-liturge-500">
                                 <span>💡 Enviar Sugestão de Música no Culto</span>
                             </label>
                             <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
-                                <input type="checkbox" id="public-perm-ver_repertorio" class="rounded accent-brand-500">
+                                <input type="checkbox" id="public-perm-ver_repertorio" class="rounded accent-liturge-500">
                                 <span>🎼 Acessar Aba Repertório Geral</span>
                             </label>
                             <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
-                                <input type="checkbox" id="public-perm-ver_musicas_novas" class="rounded accent-brand-500">
+                                <input type="checkbox" id="public-perm-ver_musicas_novas" class="rounded accent-liturge-500">
                                 <span>🌟 Acessar Aba Músicas Novas</span>
                             </label>
                             <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
-                                <input type="checkbox" id="public-perm-ver_aba_midias_upadas" class="rounded accent-brand-500">
+                                <input type="checkbox" id="public-perm-ver_aba_midias_upadas" class="rounded accent-liturge-500">
                                 <span>📥 Acessar Aba Mídias Upadas / Downloads</span>
                             </label>
                             <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
-                                <input type="checkbox" id="public-perm-ver_agenda" class="rounded accent-brand-500">
+                                <input type="checkbox" id="public-perm-ver_agenda" class="rounded accent-liturge-500">
                                 <span>📅 Acessar Aba Agenda & Eventos</span>
                             </label>
                             <label class="flex items-center gap-2 p-2 rounded hover:bg-slate-800/50 cursor-pointer">
-                                <input type="checkbox" id="public-perm-gerar_script_holyrics" class="rounded accent-brand-500">
+                                <input type="checkbox" id="public-perm-gerar_script_holyrics" class="rounded accent-liturge-500">
                                 <span>📋 Exportar Script Holyrics</span>
                             </label>
                         </div>
                     </div>
 
                     <div class="pt-2">
-                        <button onclick="salvarPermissoesPublicas()" id="btn-salvar-perm-publica" class="bg-brand-600 hover:bg-brand-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition shadow flex items-center gap-1.5">
-                            💾 Salvar Permissões Públicas
+                        <button onclick="salvarPermissoesPublicas()" id="btn-salvar-perm-publica" class="btn-liturge-primary px-5 py-2.5 rounded-xl text-sm font-semibold transition shadow-lg shadow-liturge-500/15 flex items-center gap-2 cursor-pointer">
+                            <span>💾</span> Salvar Permissões Públicas
                         </button>
                     </div>
                 </div>
             </div>
 
             <!-- CONFIGURAÇÕES GLOBAIS DE APARÊNCIA -->
-            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg space-y-4 max-w-xl">
-                <div class="flex items-center justify-between border-b border-slate-700 pb-2">
-                    <h2 class="text-base font-bold text-brand-400 flex items-center gap-2">
+            <div class="bg-night-900/90 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4 max-w-xl">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <h2 class="text-base font-bold text-liturge-400 flex items-center gap-2">
                         <span>🎨</span> Paleta & Atmosfera Visual da Igreja
                     </h2>
-                    <span class="text-[11px] bg-brand-500/20 text-brand-300 px-2 py-0.5 rounded-full border border-brand-500/30">Preview ao Vivo</span>
+                    <span class="badge-gold">Preview ao Vivo</span>
                 </div>
                 <p class="text-xs text-slate-400 leading-relaxed">
                     Escolha a identidade visual oficial da sua congregação. A paleta transforma o fundo geral, os cartões, as bordas e os botões de todo o sistema.
                 </p>
                 <div>
                     <label class="block text-xs text-slate-300 mb-2 font-medium">Paleta Atmosférica</label>
-                    <select id="config-cor-global" onchange="aplicarTemaColor(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500 cursor-pointer">
+                    <select id="config-cor-global" onchange="aplicarTemaColor(this.value)" class="w-full bg-night-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-liturge-500 cursor-pointer">
                         <option value="emerald">🌲 Floresta Esmeralda (Verde & Fundo Musgo Escuro)</option>
                         <option value="indigo">🌌 Céu Noturno & Índigo (Azul-Noite & Cards Profundos)</option>
                         <option value="purple">👑 Ametista Real & Veludo (Roxo Nobre & Fundo Violeta)</option>
@@ -519,7 +526,7 @@
                     </select>
                 </div>
                 <div class="pt-2 flex items-center gap-3">
-                    <button onclick="salvarConfiguracoesGlobaisAdmin()" class="bg-brand-600 hover:bg-brand-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition flex items-center gap-2 shadow-lg shadow-brand-500/20">
+                    <button onclick="salvarConfiguracoesGlobaisAdmin()" class="btn-liturge-primary px-5 py-2.5 rounded-xl text-sm font-semibold transition flex items-center gap-2 shadow-lg shadow-liturge-500/15 cursor-pointer">
                         <span>💾</span> Salvar Paleta da Igreja
                     </button>
                     <span class="text-[11px] text-slate-400">Troque a opção para testar na hora!</span>
@@ -527,16 +534,16 @@
             </div>
 
             <!-- ASSISTENTE DE ONBOARDING REVISITÁVEL -->
-            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-lg space-y-3 max-w-xl">
-                <div class="flex items-center gap-2 border-b border-slate-700 pb-2">
+            <div class="bg-night-900/90 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-3 max-w-xl">
+                <div class="flex items-center gap-2 border-b border-slate-800 pb-2">
                     <span class="text-lg">🚀</span>
-                    <h2 class="text-base font-bold text-brand-400">Assistente de Configuração Inicial</h2>
+                    <h2 class="text-base font-bold text-liturge-400">Assistente de Configuração Inicial</h2>
                 </div>
                 <p class="text-xs text-slate-400 leading-relaxed">
                     Deseja refazer ou revisar o passo a passo de configuração dos ministérios, funções, permissões e equipe da sua igreja?
                 </p>
                 <div>
-                    <button onclick="abrirModalOnboardingWizard()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow">
+                    <button onclick="abrirModalOnboardingWizard()" class="btn-liturge-secondary px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow cursor-pointer">
                         <span>🧭</span> Reabrir Assistente Guiado
                     </button>
                 </div>
@@ -571,12 +578,12 @@
                     </p>
                 </div>
                 <!-- Seletor de Ministério -->
-                <div class="flex items-center gap-2.5 bg-slate-800/90 border border-slate-700/80 px-3 py-2 rounded-xl shadow-sm">
+                <div class="flex items-center gap-2.5 bg-night-900 border border-slate-800 px-3 py-2 rounded-xl shadow-sm">
                     <label for="msg-membros-select-ministerio" class="text-xs font-semibold text-slate-300 flex items-center gap-1.5 whitespace-nowrap">
                         <span>🏢</span> Ministério:
                     </label>
                     <select id="msg-membros-select-ministerio" onchange="trocarMinisterioMensagens(this.value)"
-                        class="bg-slate-900 border border-slate-700 text-xs text-brand-400 font-semibold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-brand-500 cursor-pointer min-w-[180px]">
+                        class="bg-night-950 border border-slate-800 text-xs text-liturge-400 font-semibold rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-liturge-500 cursor-pointer min-w-[180px]">
                         <option value="">Carregando ministérios...</option>
                     </select>
                 </div>
@@ -585,12 +592,12 @@
             <!-- ========================================== -->
             <!-- SEÇÃO RETRÁTIL 1: MENSAGEM AUTOMÁTICA SEMANAL -->
             <!-- ========================================== -->
-            <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl overflow-hidden shadow-lg transition-all">
+            <div class="bg-night-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-lg transition-all">
                 <!-- CABEÇALHO RETRÁTIL -->
                 <button type="button" onclick="alternarSecaoRetratilMensagens('auto')"
-                    class="w-full flex items-center justify-between p-4 sm:p-5 cursor-pointer select-none hover:bg-slate-700/30 transition text-left">
+                    class="w-full flex items-center justify-between p-4 sm:p-5 cursor-pointer select-none hover:bg-slate-800/40 transition text-left">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-lg flex-shrink-0">
+                        <div class="w-10 h-10 rounded-xl bg-liturge-500/15 text-liturge-400 border border-liturge-500/30 flex items-center justify-center text-lg flex-shrink-0 font-bold">
                             ⏰
                         </div>
                         <div>
@@ -598,7 +605,7 @@
                                 <h3 class="text-sm sm:text-base font-bold text-white">
                                     Programação da Mensagem Automática Semanal
                                 </h3>
-                                <span id="badge-status-auto-wpp" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full border bg-slate-900 border-slate-700 text-slate-400">
+                                <span id="badge-status-auto-wpp" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full border bg-night-950 border-slate-800 text-slate-400">
                                     ● Desativada
                                 </span>
                             </div>
@@ -615,9 +622,9 @@
                 </button>
 
                 <!-- CORPO RETRÁTIL 1 -->
-                <div id="corpo-secao-auto-wpp" class="p-4 sm:p-6 border-t border-slate-700/60 space-y-5 bg-slate-900/40">
+                <div id="corpo-secao-auto-wpp" class="p-4 sm:p-6 border-t border-slate-800 space-y-5 bg-night-950/40">
                     <!-- SWITCH ATIVAR / DESATIVAR -->
-                    <div class="flex items-center justify-between p-3.5 bg-slate-900/90 border border-slate-700/80 rounded-xl gap-4 flex-wrap">
+                    <div class="flex items-center justify-between p-3.5 bg-night-950 border border-slate-800 rounded-xl gap-4 flex-wrap">
                         <div>
                             <span class="text-xs sm:text-sm font-semibold text-white flex items-center gap-2">
                                 <span>🤖</span> Envio Automático para este Ministério
@@ -635,12 +642,12 @@
 
                     <!-- GRADE DE AGENDAMENTO (DIA E HORÁRIO) -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div class="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl space-y-1.5">
+                        <div class="bg-night-900 border border-slate-800 p-3.5 rounded-xl space-y-1.5">
                             <label for="wpp-auto-dia" class="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
                                 <span>📅</span> Dia da Semana do Envio:
                             </label>
                             <select id="wpp-auto-dia" onchange="atualizarPreviewMensagemAutomatica()"
-                                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500 cursor-pointer">
+                                class="w-full bg-night-950 border border-slate-800 rounded-lg px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-liturge-500 cursor-pointer">
                                 <option value="1">Segunda-feira (Recomendado)</option>
                                 <option value="2">Terça-feira</option>
                                 <option value="3">Quarta-feira</option>
@@ -652,40 +659,40 @@
                             <span class="text-[11px] text-slate-500 block">Dia em que o sistema consolida as escalas da semana.</span>
                         </div>
 
-                        <div class="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl space-y-1.5">
+                        <div class="bg-night-900 border border-slate-800 p-3.5 rounded-xl space-y-1.5">
                             <label for="wpp-auto-hora" class="block text-xs font-semibold text-slate-300 flex items-center gap-1.5">
                                 <span>⏰</span> Horário de Disparo:
                             </label>
                             <input type="time" id="wpp-auto-hora" value="08:00" onchange="atualizarPreviewMensagemAutomatica()"
-                                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500 cursor-pointer">
+                                class="w-full bg-night-950 border border-slate-800 rounded-lg px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-liturge-500 cursor-pointer">
                             <span class="text-[11px] text-slate-500 block">Horário que as mensagens serão disparadas via WhatsApp.</span>
                         </div>
                     </div>
 
                     <!-- INFORMAÇÕES A INCLUIR NA MENSAGEM -->
-                    <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl space-y-3">
+                    <div class="bg-night-900 border border-slate-800 p-4 rounded-xl space-y-3">
                         <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">
                             📋 Informações a Incluir na Mensagem:
                         </label>
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                            <label class="flex items-center gap-2.5 text-xs text-slate-300 bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60 cursor-pointer hover:bg-slate-800 transition">
-                                <input type="checkbox" id="wpp-inc-escalas" checked onchange="atualizarPreviewMensagemAutomatica()" class="rounded bg-slate-900 border-slate-600 text-brand-500 focus:ring-0">
+                            <label class="flex items-center gap-2.5 text-xs text-slate-300 bg-night-950 p-2.5 rounded-lg border border-slate-800 cursor-pointer hover:bg-slate-800 transition">
+                                <input type="checkbox" id="wpp-inc-escalas" checked onchange="atualizarPreviewMensagemAutomatica()" class="rounded bg-night-900 border-slate-600 text-liturge-500 focus:ring-0">
                                 <span>🗓️ Cultos e Funções Escaladas</span>
                             </label>
-                            <label class="flex items-center gap-2.5 text-xs text-slate-300 bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60 cursor-pointer hover:bg-slate-800 transition">
-                                <input type="checkbox" id="wpp-inc-repertorio" checked onchange="atualizarPreviewMensagemAutomatica()" class="rounded bg-slate-900 border-slate-600 text-brand-500 focus:ring-0">
+                            <label class="flex items-center gap-2.5 text-xs text-slate-300 bg-night-950 p-2.5 rounded-lg border border-slate-800 cursor-pointer hover:bg-slate-800 transition">
+                                <input type="checkbox" id="wpp-inc-repertorio" checked onchange="atualizarPreviewMensagemAutomatica()" class="rounded bg-night-900 border-slate-600 text-liturge-500 focus:ring-0">
                                 <span>🎵 Músicas do Repertório</span>
                             </label>
-                            <label class="flex items-center gap-2.5 text-xs text-slate-300 bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60 cursor-pointer hover:bg-slate-800 transition">
-                                <input type="checkbox" id="wpp-inc-youtube" checked onchange="atualizarPreviewMensagemAutomatica()" class="rounded bg-slate-900 border-slate-600 text-brand-500 focus:ring-0">
+                            <label class="flex items-center gap-2.5 text-xs text-slate-300 bg-night-950 p-2.5 rounded-lg border border-slate-800 cursor-pointer hover:bg-slate-800 transition">
+                                <input type="checkbox" id="wpp-inc-youtube" checked onchange="atualizarPreviewMensagemAutomatica()" class="rounded bg-night-900 border-slate-600 text-liturge-500 focus:ring-0">
                                 <span>▶️ Links de Vídeo / YouTube</span>
                             </label>
-                            <label class="flex items-center gap-2.5 text-xs text-slate-300 bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60 cursor-pointer hover:bg-slate-800 transition">
-                                <input type="checkbox" id="wpp-inc-tom" checked onchange="atualizarPreviewMensagemAutomatica()" class="rounded bg-slate-900 border-slate-600 text-brand-500 focus:ring-0">
+                            <label class="flex items-center gap-2.5 text-xs text-slate-300 bg-night-950 p-2.5 rounded-lg border border-slate-800 cursor-pointer hover:bg-slate-800 transition">
+                                <input type="checkbox" id="wpp-inc-tom" checked onchange="atualizarPreviewMensagemAutomatica()" class="rounded bg-night-900 border-slate-600 text-liturge-500 focus:ring-0">
                                 <span>🎼 Tom Musical</span>
                             </label>
-                            <label class="flex items-center gap-2.5 text-xs text-slate-300 bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/60 cursor-pointer hover:bg-slate-800 transition">
-                                <input type="checkbox" id="wpp-inc-confirmacao" checked onchange="atualizarPreviewMensagemAutomatica()" class="rounded bg-slate-900 border-slate-600 text-brand-500 focus:ring-0">
+                            <label class="flex items-center gap-2.5 text-xs text-slate-300 bg-night-950 p-2.5 rounded-lg border border-slate-800 cursor-pointer hover:bg-slate-800 transition">
+                                <input type="checkbox" id="wpp-inc-confirmacao" checked onchange="atualizarPreviewMensagemAutomatica()" class="rounded bg-night-900 border-slate-600 text-liturge-500 focus:ring-0">
                                 <span>✅ Pedido de Confirmação</span>
                             </label>
                         </div>
@@ -701,20 +708,20 @@
                         </div>
 
                         <!-- 1. Topo Fixo (Meta) -->
-                        <div class="bg-slate-900/90 border border-slate-700/60 rounded-xl p-3 text-xs text-slate-400 font-mono space-y-1">
+                        <div class="bg-night-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-400 font-mono space-y-1">
                             <div class="flex items-center gap-1.5 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
                                 <span>🔒</span> Topo Fixo do Modelo (Aprovado na Meta):
                             </div>
                             <p class="text-slate-300">
-                                Olá, <span class="text-brand-400 font-semibold">{nome}</span>! Graça e paz.<br>
-                                Aqui está a sua programação no ministério de <span class="text-brand-400 font-semibold">{ministerio}</span> para esta semana:
+                                Olá, <span class="text-liturge-400 font-semibold">{nome}</span>! Graça e paz.<br>
+                                Aqui está a sua programação no ministério de <span class="text-liturge-400 font-semibold">{ministerio}</span> para esta semana:
                             </p>
                         </div>
 
                         <!-- 2. Área de Personalização (Variável {{3}} da Meta) -->
-                        <div class="space-y-2 bg-slate-900/60 border border-brand-500/30 rounded-xl p-3.5 shadow-sm">
+                        <div class="space-y-2 bg-night-950/80 border border-liturge-500/30 rounded-xl p-3.5 shadow-sm">
                             <div class="flex items-center justify-between flex-wrap gap-2">
-                                <label for="wpp-auto-template" class="text-xs font-bold text-brand-300 uppercase tracking-wider flex items-center gap-1.5">
+                                <label for="wpp-auto-template" class="text-xs font-bold text-liturge-300 uppercase tracking-wider flex items-center gap-1.5">
                                     <span>✍️</span> Conteúdo Personalizável (Variável {{3}} da Meta):
                                 </label>
                                 <span class="text-[11px] text-slate-400">Insira tags ou adicione recados adicionais da liderança</span>
@@ -722,27 +729,27 @@
 
                             <!-- TAGS / VARIÁVEIS RÁPIDAS -->
                             <div class="flex items-center gap-1.5 flex-wrap">
-                                <button type="button" onclick="inserirTagTemplate('{escalas}')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-brand-400 border border-slate-700 px-2.5 py-1 rounded font-mono transition">
+                                <button type="button" onclick="inserirTagTemplate('{escalas}')" class="text-[11px] bg-night-900 hover:bg-slate-800 text-liturge-400 border border-slate-700 px-2.5 py-1 rounded font-mono transition">
                                     🗓️ {escalas}
                                 </button>
-                                <button type="button" onclick="inserirTagTemplate('{repertorio}')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-brand-400 border border-slate-700 px-2.5 py-1 rounded font-mono transition">
+                                <button type="button" onclick="inserirTagTemplate('{repertorio}')" class="text-[11px] bg-night-900 hover:bg-slate-800 text-liturge-400 border border-slate-700 px-2.5 py-1 rounded font-mono transition">
                                     🎵 {repertorio}
                                 </button>
-                                <button type="button" onclick="inserirTagTemplate('{cultos}')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-brand-400 border border-slate-700 px-2.5 py-1 rounded font-mono transition">
+                                <button type="button" onclick="inserirTagTemplate('{cultos}')" class="text-[11px] bg-night-900 hover:bg-slate-800 text-liturge-400 border border-slate-700 px-2.5 py-1 rounded font-mono transition">
                                     📅 {cultos}
                                 </button>
                             </div>
 
                             <textarea id="wpp-auto-template" rows="4" oninput="atualizarPreviewMensagemAutomatica()"
                                 placeholder="{escalas}&#10;&#10;{repertorio}&#10;&#10;💬 Seu recado adicional aqui..."
-                                class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs sm:text-sm text-white font-mono focus:outline-none focus:border-brand-500 leading-relaxed"></textarea>
+                                class="w-full bg-night-900 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white font-mono focus:outline-none focus:border-liturge-500 leading-relaxed"></textarea>
                             <p class="text-[11px] text-slate-500">
                                 💡 Você pode adicionar recados extras para a equipe (ex: <em>"Lembrete: ensaio geral sábado às 16h!"</em>).
                             </p>
                         </div>
 
                         <!-- 3. Rodapé Fixo (Meta) -->
-                        <div class="bg-slate-900/90 border border-slate-700/60 rounded-xl p-3 text-xs text-slate-400 font-mono space-y-1">
+                        <div class="bg-night-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-400 font-mono space-y-1">
                             <div class="flex items-center gap-1.5 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
                                 <span>🔒</span> Rodapé Fixo do Modelo (Aprovado na Meta):
                             </div>
@@ -772,7 +779,7 @@
                     </div>
 
                     <!-- LISTA DE INTEGRANTES / EXCLUSÃO DO ENVIO AUTOMÁTICO -->
-                    <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl space-y-3">
+                    <div class="bg-night-900 border border-slate-800 p-4 rounded-xl space-y-3">
                         <div class="flex items-center justify-between flex-wrap gap-2">
                             <div>
                                 <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -782,7 +789,7 @@
                                     Remova voluntários que não devem receber a mensagem automática semanal (ex: férias, licença ou pedido pessoal).
                                 </p>
                             </div>
-                            <span id="badge-excluidos-auto-wpp" class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400">
+                            <span id="badge-excluidos-auto-wpp" class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-night-950 border border-slate-800 text-slate-400">
                                 0 excluídos
                             </span>
                         </div>
@@ -797,7 +804,7 @@
                         <div id="wpp-auto-feedback-msg" class="text-xs text-slate-400"></div>
                         <div class="flex items-center gap-2.5">
                             <button type="button" id="btn-salvar-config-wpp" onclick="salvarConfiguracaoMinisterioMensagens()"
-                                class="bg-brand-600 hover:bg-brand-500 text-white px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20">
+                                class="btn-liturge-primary px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-liturge-500/15 cursor-pointer">
                                 <span>💾</span> Salvar Configuração
                             </button>
                         </div>
@@ -808,12 +815,12 @@
             <!-- ========================================== -->
             <!-- SEÇÃO RETRÁTIL 2: AVISOS & COMUNICADOS RÁPIDOS -->
             <!-- ========================================== -->
-            <div class="bg-slate-800/80 border border-slate-700/80 rounded-2xl overflow-hidden shadow-lg transition-all">
+            <div class="bg-night-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-lg transition-all">
                 <!-- CABEÇALHO RETRÁTIL -->
                 <button type="button" onclick="alternarSecaoRetratilMensagens('aviso')"
-                    class="w-full flex items-center justify-between p-4 sm:p-5 cursor-pointer select-none hover:bg-slate-700/30 transition text-left">
+                    class="w-full flex items-center justify-between p-4 sm:p-5 cursor-pointer select-none hover:bg-slate-800/40 transition text-left">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-lg flex-shrink-0">
+                        <div class="w-10 h-10 rounded-xl bg-liturge-500/15 text-liturge-400 border border-liturge-500/30 flex items-center justify-center text-lg flex-shrink-0 font-bold">
                             📢
                         </div>
                         <div>
@@ -821,7 +828,7 @@
                                 <h3 class="text-sm sm:text-base font-bold text-white">
                                     Avisos & Comunicados Rápidos (Disparo Imediato)
                                 </h3>
-                                <span id="badge-selecionados-aviso" class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-amber-400">
+                                <span id="badge-selecionados-aviso" class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-night-950 border border-slate-800 text-liturge-400">
                                     0 membros selecionados
                                 </span>
                             </div>
@@ -838,16 +845,16 @@
                 </button>
 
                 <!-- CORPO RETRÁTIL 2 -->
-                <div id="corpo-secao-aviso-wpp" class="p-4 sm:p-6 border-t border-slate-700/60 space-y-5 bg-slate-900/40">
+                <div id="corpo-secao-aviso-wpp" class="p-4 sm:p-6 border-t border-slate-800 space-y-5 bg-night-950/40">
                     <!-- BARRA DE FERRAMENTAS DE SELEÇÃO DE MEMBROS -->
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-night-900 p-3 rounded-xl border border-slate-800">
                         <div class="flex items-center gap-2">
                             <button type="button" onclick="selecionarTodosMembrosAviso(true)"
-                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg transition font-medium border border-slate-700">
+                                class="bg-night-950 hover:bg-slate-800 text-slate-200 text-xs px-3 py-1.5 rounded-lg transition font-medium border border-slate-800 cursor-pointer">
                                 ✅ Marcar Todos
                             </button>
                             <button type="button" onclick="selecionarTodosMembrosAviso(false)"
-                                class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg transition font-medium border border-slate-700">
+                                class="bg-night-950 hover:bg-slate-800 text-slate-200 text-xs px-3 py-1.5 rounded-lg transition font-medium border border-slate-800 cursor-pointer">
                                 ❌ Desmarcar Todos
                             </button>
                             <span id="contador-membros-aviso" class="text-xs text-slate-400 ml-1">
@@ -859,7 +866,7 @@
                         <div class="relative min-w-[200px]">
                             <input type="text" id="filtro-busca-membros-aviso" oninput="filtrarListaMembrosAviso(this.value)"
                                 placeholder="Buscar integrante..."
-                                class="w-full bg-slate-800 border border-slate-700 text-xs text-white rounded-lg px-3 py-1.5 pl-8 focus:outline-none focus:border-brand-500">
+                                class="w-full bg-night-950 border border-slate-800 text-xs text-white rounded-lg px-3 py-1.5 pl-8 focus:outline-none focus:border-liturge-500">
                             <span class="absolute left-2.5 top-1.5 text-slate-500 text-xs">🔍</span>
                         </div>
                     </div>
@@ -879,7 +886,7 @@
                             </label>
                             <div class="flex items-center gap-1.5">
                                 <span class="text-[11px] text-slate-500">Dica: use</span>
-                                <button type="button" onclick="inserirTagAviso('{nome}')" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 px-1.5 py-0.5 rounded font-mono transition">
+                                <button type="button" onclick="inserirTagAviso('{nome}')" class="text-[11px] bg-night-900 hover:bg-slate-800 text-liturge-400 border border-slate-700 px-1.5 py-0.5 rounded font-mono transition">
                                     {nome}
                                 </button>
                                 <span class="text-[11px] text-slate-500">para o nome de cada membro</span>
@@ -888,7 +895,7 @@
 
                         <textarea id="wpp-aviso-texto" rows="4" oninput="atualizarPreviewAvisoImediato()"
                             placeholder="Ex: Olá, *{nome}*! Lembrando do nosso ensaio especial nesta quinta-feira às 19h30. Por favor, confirme se você comparecerá!"
-                            class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs sm:text-sm text-white focus:outline-none focus:border-amber-500 leading-relaxed"></textarea>
+                            class="w-full bg-night-900 border border-slate-800 rounded-xl p-3 text-xs sm:text-sm text-white focus:outline-none focus:border-liturge-500 leading-relaxed"></textarea>
                     </div>
 
                     <!-- PRÉVIA DO AVISO -->
@@ -896,7 +903,7 @@
                         <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                             <span>👁️</span> Prévia do Aviso no WhatsApp:
                         </span>
-                        <div class="bg-amber-950/20 border border-amber-800/30 rounded-2xl p-4 shadow-inner">
+                        <div class="bg-liturge-500/10 border border-liturge-500/20 rounded-2xl p-4 shadow-inner">
                             <div id="wpp-aviso-preview" class="text-xs font-mono text-slate-200 whitespace-pre-wrap select-all leading-relaxed">
                                 Digite um comunicado acima para visualizar a prévia aqui...
                             </div>
@@ -904,13 +911,13 @@
                     </div>
 
                     <!-- BARRA DE PROGRESSO & DISPARO -->
-                    <div id="wpp-aviso-progresso-container" class="hidden bg-slate-900/90 border border-slate-700 p-4 rounded-xl space-y-3">
+                    <div id="wpp-aviso-progresso-container" class="hidden bg-night-950 border border-slate-800 p-4 rounded-xl space-y-3">
                         <div class="flex items-center justify-between text-xs font-semibold text-white">
                             <span id="wpp-aviso-progresso-status">Enviando comunicados...</span>
                             <span id="wpp-aviso-progresso-contador">0 / 0</span>
                         </div>
-                        <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                            <div id="wpp-aviso-progresso-barra" class="bg-emerald-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        <div class="w-full bg-night-900 rounded-full h-2 overflow-hidden">
+                            <div id="wpp-aviso-progresso-barra" class="bg-gradient-to-r from-liturge-500 to-liturge-400 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
                         </div>
                         <div id="wpp-aviso-relatorio-envio" class="max-h-[160px] overflow-y-auto text-xs space-y-1 font-mono text-slate-300">
                             <!-- Injetado dinamicamente -->
@@ -920,7 +927,7 @@
                     <!-- BOTÃO DE DISPARO DO AVISO -->
                     <div class="pt-2 flex items-center justify-end gap-3">
                         <button type="button" id="btn-disparar-aviso-wpp" onclick="enviarAvisoImediatoMembros()"
-                            class="bg-amber-600 hover:bg-amber-500 text-white px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 shadow-lg shadow-amber-600/30 disabled:opacity-50 disabled:cursor-not-allowed">
+                            class="btn-liturge-primary px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-2 shadow-lg shadow-liturge-500/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
                             <span>🚀</span> Enviar Aviso aos Selecionados via WhatsApp
                         </button>
                     </div>

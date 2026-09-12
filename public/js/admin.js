@@ -4627,31 +4627,31 @@ function renderizarGridMidiasFiltradas() {
         const sizeFormatted = sizeBytes > 0 ? (sizeBytes / (1024 * 1024)).toFixed(2) + ' MB' : '';
         const minObj = (dadosGlobais.ministries || []).find(m => m.id === item.ministry_id);
         const minBadge = minObj 
-            ? `<span class="inline-block text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-indigo-300 border border-slate-700 font-medium mb-1 truncate max-w-full">${minObj.icon || '🏢'} ${minObj.name}</span>`
-            : `<span class="inline-block text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-medium mb-1">Geral</span>`;
+            ? `<span class="inline-block text-[10px] px-2 py-0.5 rounded-md bg-liturge-500/10 text-liturge-400 border border-liturge-500/20 font-medium mb-1 truncate max-w-full">${minObj.icon || '🏢'} ${minObj.name}</span>`
+            : `<span class="inline-block text-[10px] px-2 py-0.5 rounded-md bg-night-950 text-slate-400 border border-slate-800 font-medium mb-1">Geral</span>`;
 
         let previewHtml = '';
         if (mime.startsWith('image/')) {
             previewHtml = `
-                <div class="h-32 bg-slate-950 overflow-hidden flex items-center justify-center relative">
+                <div class="h-32 bg-night-950 overflow-hidden flex items-center justify-center relative">
                     <img src="${url}" alt="${fileName}" class="w-full h-full object-cover transition duration-300 group-hover:scale-105" loading="lazy" />
-                    <span class="absolute top-2 right-2 text-[10px] bg-black/60 backdrop-blur-sm text-white px-1.5 py-0.5 rounded">IMG</span>
+                    <span class="absolute top-2 right-2 text-[10px] bg-black/60 backdrop-blur-sm text-white px-1.5 py-0.5 rounded font-mono">IMG</span>
                 </div>
             `;
         } else if (mime.startsWith('video/')) {
             previewHtml = `
-                <div class="h-32 bg-slate-950 flex flex-col items-center justify-center relative text-slate-400">
+                <div class="h-32 bg-night-950 flex flex-col items-center justify-center relative text-slate-400">
                     <span class="text-3xl mb-1">🎬</span>
-                    <span class="text-[10px] uppercase tracking-wider font-bold">Vídeo</span>
-                    <span class="absolute top-2 right-2 text-[10px] bg-indigo-900/80 text-indigo-200 px-1.5 py-0.5 rounded">VÍDEO</span>
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-slate-300">Vídeo</span>
+                    <span class="absolute top-2 right-2 text-[10px] bg-liturge-500/20 text-liturge-300 border border-liturge-500/30 px-1.5 py-0.5 rounded font-mono">VÍDEO</span>
                 </div>
             `;
         } else {
             previewHtml = `
-                <div class="h-32 bg-slate-950 flex flex-col items-center justify-center relative text-slate-400">
+                <div class="h-32 bg-night-950 flex flex-col items-center justify-center relative text-slate-400">
                     <span class="text-3xl mb-1">📄</span>
-                    <span class="text-[10px] uppercase tracking-wider font-bold">Arquivo</span>
-                    <span class="absolute top-2 right-2 text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">DOC</span>
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-slate-300">Arquivo</span>
+                    <span class="absolute top-2 right-2 text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded font-mono">DOC</span>
                 </div>
             `;
         }
@@ -4661,20 +4661,20 @@ function renderizarGridMidiasFiltradas() {
         const safeUrlEscaped = url.replace(/'/g, "\\'");
 
         html += `
-            <div class="bg-slate-900 border border-slate-700/80 rounded-xl shadow-sm flex flex-col hover:border-indigo-500/60 transition group overflow-hidden">
+            <div class="bg-night-900/90 border border-slate-800 rounded-2xl shadow-lg flex flex-col hover:border-liturge-500/50 transition duration-300 group overflow-hidden">
                 ${previewHtml}
-                <div class="p-3 flex-1 flex flex-col justify-between">
+                <div class="p-3.5 flex-1 flex flex-col justify-between">
                     <div>
                         <div class="mb-1">${minBadge}</div>
-                        <p class="text-xs text-slate-200 font-medium truncate mb-1" title="${fileName}">${fileName}</p>
-                        ${sizeFormatted ? `<span class="inline-block text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono mb-2">${sizeFormatted}</span>` : ''}
+                        <p class="text-xs text-white font-medium truncate mb-1" title="${fileName}">${fileName}</p>
+                        ${sizeFormatted ? `<span class="inline-block text-[10px] px-1.5 py-0.5 rounded bg-night-950 text-slate-400 font-mono mb-2 border border-slate-800/60">${sizeFormatted}</span>` : ''}
                     </div>
                     <div class="flex items-center justify-between mt-auto pt-2 border-t border-slate-800/80">
                         <div class="flex items-center gap-2.5">
-                            <a href="${url}" target="_blank" download="${fileName}" class="text-indigo-400 hover:text-indigo-300 text-xs font-medium">Baixar</a>
+                            <a href="${url}" target="_blank" download="${fileName}" class="text-liturge-400 hover:text-liturge-300 text-xs font-semibold">Baixar</a>
                             <button onclick="abrirModalVincularMidia('${safeNameEscaped}', '${safeUrlEscaped}')" class="text-emerald-400 hover:text-emerald-300 text-xs font-medium opacity-80 sm:opacity-0 group-hover:opacity-100 transition">Vincular</button>
                         </div>
-                        <button onclick="excluirMidiaAdmin('${safeMediaId}')" class="text-slate-500 hover:text-red-400 text-xs opacity-80 sm:opacity-0 group-hover:opacity-100 transition font-medium">Excluir</button>
+                        <button onclick="excluirMidiaAdmin('${safeMediaId}')" class="text-slate-500 hover:text-rose-400 text-xs opacity-80 sm:opacity-0 group-hover:opacity-100 transition font-medium">Excluir</button>
                     </div>
                 </div>
             </div>
@@ -5770,11 +5770,11 @@ async function renderizarOnboardingStep(step) {
 
         if (indicator) {
             if (i === step) {
-                indicator.className = 'p-2 rounded-xl border border-brand-500 bg-brand-500/20 text-brand-300 font-bold transition flex flex-col items-center gap-1';
+                indicator.className = 'p-2 rounded-xl border border-liturge-500 bg-liturge-500/20 text-liturge-300 font-bold transition flex flex-col items-center gap-1';
             } else if (i < step) {
                 indicator.className = 'p-2 rounded-xl border border-emerald-600/60 bg-emerald-950/30 text-emerald-400 transition flex flex-col items-center gap-1';
             } else {
-                indicator.className = 'p-2 rounded-xl border border-slate-800 bg-slate-900/60 text-slate-500 transition flex flex-col items-center gap-1';
+                indicator.className = 'p-2 rounded-xl border border-slate-800 bg-night-950/60 text-slate-500 transition flex flex-col items-center gap-1';
             }
         }
     }
@@ -5786,8 +5786,8 @@ async function renderizarOnboardingStep(step) {
     if (btnVoltar) {
         btnVoltar.disabled = step === 1;
         btnVoltar.className = step === 1 
-            ? 'bg-slate-800 text-slate-600 px-4 py-2 rounded-xl text-xs font-semibold cursor-not-allowed transition'
-            : 'bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer';
+            ? 'bg-night-950 text-slate-600 border border-slate-800 px-4 py-2 rounded-xl text-xs font-semibold cursor-not-allowed transition'
+            : 'bg-night-950 hover:bg-slate-800 text-slate-200 border border-slate-800 px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer';
     }
 
     if (btnAvancar) {
@@ -5796,7 +5796,7 @@ async function renderizarOnboardingStep(step) {
             btnAvancar.className = 'bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-emerald-900/30 transition flex items-center gap-1.5 cursor-pointer';
         } else {
             btnAvancar.innerHTML = '<span>Avançar</span> →';
-            btnAvancar.className = 'bg-brand-600 hover:bg-brand-500 text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-brand-900/30 transition flex items-center gap-1.5 cursor-pointer';
+            btnAvancar.className = 'btn-liturge-primary px-6 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-liturge-500/20 transition flex items-center gap-1.5 cursor-pointer';
         }
     }
 

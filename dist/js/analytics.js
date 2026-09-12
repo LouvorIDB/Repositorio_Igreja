@@ -210,8 +210,8 @@ function renderizarGraficoTopMusicas(topMusicas) {
             datasets: [{
                 label: 'Vezes Ministrada',
                 data: dataValues,
-                backgroundColor: 'rgba(6, 182, 212, 0.7)',
-                borderColor: '#06b6d4',
+                backgroundColor: 'rgba(245, 158, 11, 0.75)',
+                borderColor: '#f59e0b',
                 borderWidth: 1.5,
                 borderRadius: 8
             }]
@@ -226,7 +226,7 @@ function renderizarGraficoTopMusicas(topMusicas) {
             scales: {
                 x: {
                     ticks: { color: '#94a3b8', stepSize: 1 },
-                    grid: { color: 'rgba(51, 65, 85, 0.4)' }
+                    grid: { color: 'rgba(51, 65, 85, 0.3)' }
                 },
                 y: {
                     ticks: { color: '#f8fafc', font: { weight: 'bold' } },
@@ -247,7 +247,7 @@ function renderizarGraficoTopVoluntarios(topVoluntarios) {
 
     const labels = topVoluntarios.length > 0 ? topVoluntarios.map(v => v[0]) : ['Sem escalas no período'];
     const dataValues = topVoluntarios.length > 0 ? topVoluntarios.map(v => v[1]) : [1];
-    const colors = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899'];
+    const colors = ['#f59e0b', '#fbbf24', '#d97706', '#38bdf8', '#10b981'];
 
     const ctx = canvas.getContext('2d');
     chartTopVoluntariosInstance = new Chart(ctx, {
@@ -257,7 +257,7 @@ function renderizarGraficoTopVoluntarios(topVoluntarios) {
             datasets: [{
                 data: dataValues,
                 backgroundColor: colors.slice(0, labels.length),
-                borderColor: '#0f172a',
+                borderColor: '#070B14',
                 borderWidth: 3
             }]
         },
@@ -311,18 +311,18 @@ function renderizarListaMusicasAnalyticsModal(lista) {
         const count = item[1];
         const rank = idx + 1;
 
-        let badgeCor = 'bg-slate-800 text-slate-400 border-slate-700';
-        if (rank === 1) badgeCor = 'bg-amber-950/80 text-amber-400 border-amber-800/80';
-        else if (rank === 2) badgeCor = 'bg-slate-700/80 text-slate-200 border-slate-600';
-        else if (rank === 3) badgeCor = 'bg-amber-900/40 text-amber-500 border-amber-900/60';
+        let badgeCor = 'bg-night-950 text-slate-400 border-slate-800';
+        if (rank === 1) badgeCor = 'bg-liturge-500/15 text-liturge-400 border-liturge-500/40 font-bold';
+        else if (rank === 2) badgeCor = 'bg-slate-800 text-slate-200 border-slate-700';
+        else if (rank === 3) badgeCor = 'bg-amber-950/40 text-amber-500 border-amber-900/40';
 
         return `
-            <div class="flex items-center justify-between p-3 bg-slate-900/90 rounded-xl border border-slate-800 hover:border-slate-700 transition">
+            <div class="flex items-center justify-between p-3 bg-night-950/80 rounded-xl border border-slate-800/80 hover:border-liturge-500/40 transition">
                 <div class="flex items-center gap-3">
                     <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${badgeCor}">#${rank}</span>
                     <span class="text-xs font-semibold text-white">${title}</span>
                 </div>
-                <span class="text-xs font-medium text-cyan-400 bg-cyan-950/60 px-2.5 py-1 rounded-lg border border-cyan-800/60">
+                <span class="text-xs font-medium text-liturge-400 bg-liturge-500/10 px-2.5 py-1 rounded-lg border border-liturge-500/30">
                     ${count} ${count === 1 ? 'vez' : 'vezes'}
                 </span>
             </div>

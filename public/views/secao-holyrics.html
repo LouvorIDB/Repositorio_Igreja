@@ -2,18 +2,20 @@
 <section id="secao-holyrics" class="hidden space-y-6">
 
     <!-- Cabeçalho Principal com Ações Rápidas -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-night-900/90 border border-slate-800 p-5 rounded-2xl shadow-xl backdrop-blur-sm">
         <div>
             <div class="flex items-center gap-2.5">
-                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-lg">
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-liturge-500/10 text-liturge-400 border border-liturge-500/20 text-lg font-bold">
                     ⚡
                 </span>
                 <div>
-                    <h2 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
-                        Central de Integração Holyrics
-                        <span class="text-[11px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-2.5 py-0.5 rounded-full">Nativo</span>
-                    </h2>
-                    <p class="text-xs text-slate-400 mt-0.5">
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-xl font-bold text-white tracking-tight flex items-center gap-2">
+                            Central de Integração Holyrics
+                        </h2>
+                        <span class="badge-gold">Nativo</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1">
                         Sincronize cultos, letras e mídias anexadas diretamente para o computador de projeção da sua igreja.
                     </p>
                 </div>
@@ -22,11 +24,11 @@
 
         <div class="flex flex-wrap items-center gap-2.5">
             <button onclick="baixarArquivoModuloHolyrics()" 
-                class="px-4 py-2.5 bg-gradient-to-r from-cyan-600 via-sky-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-cyan-950/40 active:scale-95 cursor-pointer">
+                class="btn-liturge-primary px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-liturge-500/10 active:scale-95 cursor-pointer">
                 <span>🧩</span> Baixar Módulo (.js)
             </button>
             <button onclick="copiarCodigoModuloHolyrics()" 
-                class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 cursor-pointer">
+                class="btn-liturge-secondary px-3.5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 cursor-pointer">
                 <span>📋</span> Copiar Código
             </button>
             <button onclick="salvarConfiguracaoHolyrics()" 
@@ -34,31 +36,31 @@
                 <span>💾</span> Salvar Estrutura
             </button>
             <button onclick="restaurarPadraoHolyrics()" 
-                class="px-3 py-2.5 bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 rounded-xl text-xs font-medium transition active:scale-95 cursor-pointer" title="Restaurar Seções Padrão">
+                class="px-3 py-2.5 bg-night-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 rounded-xl text-xs font-medium transition active:scale-95 cursor-pointer" title="Restaurar Seções Padrão">
                 <span>🔄</span> Padrão
             </button>
         </div>
     </div>
 
     <!-- Card de Credenciais da Igreja & Endpoints de Produção -->
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+    <div class="bg-night-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
             
             <!-- Campo de Token Exclusivo -->
             <div class="md:col-span-7 space-y-2">
                 <div class="flex items-center justify-between">
                     <label class="text-xs font-bold text-slate-200 flex items-center gap-2">
-                        <span class="text-amber-400">🔑</span> Token da Igreja (Chave Secreta de API)
+                        <span class="text-liturge-400">🔑</span> Token da Igreja (Chave Secreta de API)
                     </label>
                     <button onclick="gerarNovoTokenHolyrics()" 
-                        class="text-[11px] text-amber-400 hover:text-amber-300 underline font-medium transition cursor-pointer">
+                        class="text-[11px] text-liturge-400 hover:text-liturge-300 underline font-medium transition cursor-pointer">
                         🔄 Gerar Novo Token
                     </button>
                 </div>
                 <div class="flex items-center gap-2">
                     <div class="relative flex-1">
                         <input type="password" id="holyrics-token-input" readonly
-                            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-cyan-300 font-mono focus:outline-none select-all"
+                            class="w-full bg-night-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-liturge-300 font-mono focus:outline-none select-all"
                             value="Carregando token...">
                         <button onclick="toggleVisibilidadeTokenHolyrics()" id="btn-toggle-token-eye"
                             class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1 text-sm transition cursor-pointer" title="Exibir/Ocultar Token">
@@ -66,7 +68,7 @@
                         </button>
                     </div>
                     <button onclick="copiarTokenHolyrics()" 
-                        class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap cursor-pointer">
+                        class="btn-liturge-secondary px-3.5 py-2.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 whitespace-nowrap cursor-pointer">
                         <span>📋</span> Copiar Token
                     </button>
                 </div>
@@ -85,10 +87,10 @@
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Ativo
                     </span>
                 </div>
-                <div class="bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-300 flex items-center justify-between select-all">
+                <div class="bg-night-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-300 flex items-center justify-between select-all">
                     <span id="holyrics-api-url-display">https://app.liturge.app.br/api/v1</span>
                     <button onclick="navigator.clipboard.writeText('https://app.liturge.app.br/api/v1'); if (typeof mostrarToast === 'function') mostrarToast('URL copiada!', 'sucesso');" 
-                        class="text-slate-400 hover:text-cyan-400 text-xs ml-2 p-0.5 transition cursor-pointer" title="Copiar URL">
+                        class="text-slate-400 hover:text-liturge-400 text-xs ml-2 p-0.5 transition cursor-pointer" title="Copiar URL">
                         📋
                     </button>
                 </div>
@@ -107,7 +109,7 @@
         <div class="lg:col-span-7 space-y-5">
             
             <!-- Construtor de Seções -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+            <div class="bg-night-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
                 <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                     <div>
                         <h3 class="text-sm font-bold text-white flex items-center gap-2">
@@ -118,7 +120,7 @@
                         </p>
                     </div>
                     <button onclick="adicionarSecaoHolyrics()" 
-                        class="px-3 py-1.5 bg-brand-600/30 hover:bg-brand-600/50 text-brand-300 border border-brand-500/30 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 cursor-pointer">
+                        class="btn-liturge-secondary px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 active:scale-95 cursor-pointer">
                         <span>+</span> Adicionar Seção
                     </button>
                 </div>
@@ -139,25 +141,25 @@
             </div>
 
             <!-- Card de Guia Passo a Passo -->
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
+            <div class="bg-night-900/90 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
                 <h4 class="text-xs font-bold text-slate-200 flex items-center gap-2">
-                    <span class="text-cyan-400">📖</span> Como Instalar e Usar no Holyrics da sua Igreja
+                    <span class="text-liturge-400">📖</span> Como Instalar e Usar no Holyrics da sua Igreja
                 </h4>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
                     
-                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
+                    <div class="bg-night-950 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
                         <div class="flex items-center gap-2">
-                            <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold flex items-center justify-center">1</span>
+                            <span class="w-5 h-5 rounded-full bg-liturge-500/20 text-liturge-400 text-xs font-bold flex items-center justify-center">1</span>
                             <span class="text-xs font-semibold text-white">Baixar Módulo</span>
                         </div>
                         <p class="text-[11px] text-slate-400">
-                            Clique em <b class="text-cyan-300">Baixar Módulo (.js)</b>. O arquivo já é gerado com seu token exclusivo preenchido.
+                            Clique em <b class="text-liturge-300">Baixar Módulo (.js)</b>. O arquivo já é gerado com seu token exclusivo preenchido.
                         </p>
                     </div>
 
-                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
+                    <div class="bg-night-950 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
                         <div class="flex items-center gap-2">
-                            <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold flex items-center justify-center">2</span>
+                            <span class="w-5 h-5 rounded-full bg-liturge-500/20 text-liturge-400 text-xs font-bold flex items-center justify-center">2</span>
                             <span class="text-xs font-semibold text-white">Instalar no Holyrics</span>
                         </div>
                         <p class="text-[11px] text-slate-400">
@@ -165,27 +167,27 @@
                         </p>
                     </div>
 
-                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
+                    <div class="bg-night-950 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
                         <div class="flex items-center gap-2">
-                            <span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold flex items-center justify-center">3</span>
+                            <span class="w-5 h-5 rounded-full bg-liturge-500/20 text-liturge-400 text-xs font-bold flex items-center justify-center">3</span>
                             <span class="text-xs font-semibold text-white">Sincronizar Culto</span>
                         </div>
                         <p class="text-[11px] text-slate-400">
-                            Ative o módulo. O botão <b class="text-cyan-300">Sincronizar Liturge</b> aparecerá na barra para carregar letras e mídias em 1 clique!
+                            Ative o módulo. O botão <b class="text-liturge-300">Sincronizar Liturge</b> aparecerá na barra para carregar letras e mídias em 1 clique!
                         </p>
                     </div>
 
                 </div>
 
                 <!-- Tutorial Específico: Download Automático de Mídias (curl.exe e Permissões) -->
-                <div class="bg-slate-950/80 border border-cyan-500/20 rounded-xl p-4 space-y-3 mt-2">
+                <div class="bg-night-950/80 border border-liturge-500/20 rounded-xl p-4 space-y-3 mt-2">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
                         <div class="flex items-center gap-2">
-                            <span class="text-cyan-400 text-base">📥</span>
+                            <span class="text-liturge-400 text-base">📥</span>
                             <div>
                                 <h5 class="text-xs font-bold text-white flex items-center gap-1.5">
                                     Download Automático de Mídias (Imagens, Vídeos e Áudios)
-                                    <span class="text-[10px] bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.2 rounded font-medium">Recomendado</span>
+                                    <span class="badge-gold">Recomendado</span>
                                 </h5>
                                 <p class="text-[11px] text-slate-400">
                                     O Holyrics requer autorização para baixar arquivos da nuvem para o computador de projeção.
@@ -193,29 +195,29 @@
                             </div>
                         </div>
                         <button onclick="copiarComandoCurlHolyrics()" 
-                            class="px-2.5 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 rounded-lg text-[11px] font-semibold transition flex items-center gap-1.5 active:scale-95 cursor-pointer whitespace-nowrap">
+                            class="btn-liturge-secondary px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center gap-1.5 active:scale-95 cursor-pointer whitespace-nowrap">
                             <span>📋</span> Copiar Comando Automático
                         </button>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                        <div class="bg-slate-900/60 border border-slate-800 rounded-lg p-3 space-y-1.5">
+                        <div class="bg-night-900/60 border border-slate-800 rounded-lg p-3 space-y-1.5">
                             <span class="font-bold text-slate-200 flex items-center gap-1.5 text-[11px]">
-                                <span class="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold flex items-center justify-center">A</span>
+                                <span class="w-4 h-4 rounded-full bg-liturge-500/20 text-liturge-300 text-[10px] font-bold flex items-center justify-center">A</span>
                                 1. Adicionar curl.exe aos Arquivos do Holyrics
                             </span>
                             <p class="text-[11px] text-slate-400 leading-relaxed">
-                                O Holyrics executa programas utilitários exclusivamente da pasta <code>Holyrics\files\media\file\</code>. Basta copiar o <code>curl.exe</code> do Windows para lá (ou clicar no botão <b class="text-cyan-300">Copiar Comando Automático</b> e colar no PowerShell).
+                                O Holyrics executa programas utilitários exclusivamente da pasta <code>Holyrics\files\media\file\</code>. Basta copiar o <code>curl.exe</code> do Windows para lá (ou clicar no botão <b class="text-liturge-300">Copiar Comando Automático</b> e colar no PowerShell).
                             </p>
                         </div>
 
-                        <div class="bg-slate-900/60 border border-slate-800 rounded-lg p-3 space-y-1.5">
+                        <div class="bg-night-900/60 border border-slate-800 rounded-lg p-3 space-y-1.5">
                             <span class="font-bold text-slate-200 flex items-center gap-1.5 text-[11px]">
-                                <span class="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] font-bold flex items-center justify-center">B</span>
+                                <span class="w-4 h-4 rounded-full bg-liturge-500/20 text-liturge-300 text-[10px] font-bold flex items-center justify-center">B</span>
                                 2. Autorizar em Permissões Avançadas
                             </span>
                             <p class="text-[11px] text-slate-400 leading-relaxed">
-                                No Holyrics, clique com o botão direito no botão <b class="text-slate-300">Sincronizar Liturge</b> &gt; <b class="text-cyan-300">Permissões Avançadas</b>. Na janela <i>Arquivos permitidos</i>, selecione <code>curl.exe</code> e salve.
+                                No Holyrics, clique com o botão direito no botão <b class="text-slate-300">Sincronizar Liturge</b> &gt; <b class="text-liturge-300">Permissões Avançadas</b>. Na janela <i>Arquivos permitidos</i>, selecione <code>curl.exe</code> e salve.
                             </p>
                         </div>
                     </div>

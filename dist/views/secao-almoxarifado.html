@@ -1,18 +1,18 @@
 <!-- SEÇÃO ALMOXARIFADO VIRTUAL E WIKI BASE -->
 <section id="secao-almoxarifado" class="hidden space-y-6">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-night-900/90 border border-slate-800 p-5 rounded-2xl shadow-xl">
         <div>
-            <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                <span>📦</span> Almoxarifado Virtual & Base de Conhecimento
+            <h2 class="text-xl font-extrabold text-white flex items-center gap-2.5">
+                <span class="text-liturge-400">📦</span> Almoxarifado Virtual & Base de Conhecimento
             </h2>
             <p class="text-xs text-slate-400 mt-1">Gestão de patrimônio, status de equipamentos e manuais técnicos por ministério.</p>
         </div>
 
-        <div class="flex flex-wrap gap-2">
-            <button id="btn-novo-equipamento" onclick="abrirModalEquipamento()" class="hidden px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-lg">
+        <div class="flex flex-wrap gap-2.5">
+            <button id="btn-novo-equipamento" onclick="abrirModalEquipamento()" class="hidden px-4 py-2.5 bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-lg shadow-liturge-500/20 cursor-pointer">
                 <span>+</span> Novo Item
             </button>
-            <button id="btn-novo-doc" onclick="abrirModalDocWiki()" class="hidden px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition flex items-center gap-1.5">
+            <button id="btn-novo-doc" onclick="abrirModalDocWiki()" class="hidden px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-liturge-500/40 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
                 <span>📄</span> Novo Tutorial / Wiki
             </button>
         </div>
@@ -20,10 +20,10 @@
 
     <!-- Navegação Secundária da Seção (Abas Internas) -->
     <div class="flex border-b border-slate-800 gap-4">
-        <button onclick="mudarAbaAlmoxarifado('equipamentos')" id="tab-almox-equipamentos" class="pb-3 text-sm font-semibold text-brand-400 border-b-2 border-brand-500 transition">
+        <button onclick="mudarAbaAlmoxarifado('equipamentos')" id="tab-almox-equipamentos" class="pb-3 text-sm font-bold text-liturge-400 border-b-2 border-liturge-500 transition cursor-pointer">
             🛠️ Equipamentos & Patrimônio
         </button>
-        <button onclick="mudarAbaAlmoxarifado('wiki')" id="tab-almox-wiki" class="pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition">
+        <button onclick="mudarAbaAlmoxarifado('wiki')" id="tab-almox-wiki" class="pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition cursor-pointer">
             📚 Manuais & Senhas (Wiki)
         </button>
     </div>
@@ -51,25 +51,25 @@
 
 <!-- MODAL CADASTRAR / EDITAR EQUIPAMENTO -->
 <div id="modal-equipamento" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4">
+    <div class="bg-night-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
         <h3 id="modal-equipamento-titulo" class="text-base font-bold text-white">Cadastrar Item no Almoxarifado</h3>
         
         <form id="form-equipamento" onsubmit="salvarEquipamento(event)" class="space-y-3">
             <input type="hidden" id="equipamento-id">
             
             <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">Nome do Item / Equipamento</label>
-                <input type="text" id="equipamento-nome" required placeholder="Ex: Mesa de Som X32, Microfone Sem Fio 1" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Nome do Item / Equipamento</label>
+                <input type="text" id="equipamento-nome" required placeholder="Ex: Mesa de Som X32, Microfone Sem Fio 1" class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-liturge-500 font-sans">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Ministério</label>
-                    <select id="equipamento-ministerio" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500"></select>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Ministério</label>
+                    <select id="equipamento-ministerio" class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white focus:outline-none focus:border-liturge-500 font-sans cursor-pointer"></select>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Status</label>
-                    <select id="equipamento-status" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Status</label>
+                    <select id="equipamento-status" class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white focus:outline-none focus:border-liturge-500 font-sans cursor-pointer">
                         <option value="disponivel">✅ Disponível / OK</option>
                         <option value="em_uso">🎤 Em Uso</option>
                         <option value="manutencao">🛠️ Na Manutenção</option>
@@ -79,18 +79,18 @@
             </div>
 
             <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">Localização / Armário</label>
-                <input type="text" id="equipamento-local" placeholder="Ex: Rack Principal, Armário B - Gaveta 2" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Localização / Armário</label>
+                <input type="text" id="equipamento-local" placeholder="Ex: Rack Principal, Armário B - Gaveta 2" class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-liturge-500 font-sans">
             </div>
 
             <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">Observações / Detalhes</label>
-                <textarea id="equipamento-desc" rows="2" placeholder="Detalhes de uso, cabo com mau contato, etc." class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500"></textarea>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Observações / Detalhes</label>
+                <textarea id="equipamento-desc" rows="2" placeholder="Detalhes de uso, cabo com mau contato, etc." class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-liturge-500 font-sans"></textarea>
             </div>
 
-            <div class="flex justify-end gap-2 pt-2">
-                <button type="button" onclick="fecharModalEquipamento()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs font-medium hover:bg-slate-700">Cancelar</button>
-                <button type="submit" id="btn-salvar-equipamento" class="px-4 py-2 bg-brand-600 text-white rounded-lg text-xs font-semibold hover:bg-brand-500">Salvar Item</button>
+            <div class="flex justify-end gap-2.5 pt-2">
+                <button type="button" onclick="fecharModalEquipamento()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">Cancelar</button>
+                <button type="submit" id="btn-salvar-equipamento" class="px-4 py-2 bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 rounded-xl text-xs font-bold transition shadow-md shadow-liturge-500/20 cursor-pointer">Salvar Item</button>
             </div>
         </form>
     </div>
@@ -98,25 +98,25 @@
 
 <!-- MODAL CADASTRAR / EDITAR WIKI -->
 <div id="modal-doc-wiki" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 space-y-4">
+    <div class="bg-night-900 border border-slate-800 rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
         <h3 id="modal-doc-titulo" class="text-base font-bold text-white">Cadastrar Tutorial ou Manual</h3>
         
         <form id="form-doc-wiki" onsubmit="salvarDocWiki(event)" class="space-y-3">
             <input type="hidden" id="doc-id">
             
             <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">Título do Documento / Manual</label>
-                <input type="text" id="doc-titulo-input" required placeholder="Ex: Senhas da Transmissão, Como ligar a mesa" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Título do Documento / Manual</label>
+                <input type="text" id="doc-titulo-input" required placeholder="Ex: Senhas da Transmissão, Como ligar a mesa" class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-liturge-500 font-sans">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Ministério</label>
-                    <select id="doc-ministerio" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500"></select>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Ministério</label>
+                    <select id="doc-ministerio" class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white focus:outline-none focus:border-liturge-500 font-sans cursor-pointer"></select>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-400 mb-1">Tipo de Conteúdo</label>
-                    <select id="doc-tipo" onchange="verificarTipoDocWiki()" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Tipo de Conteúdo</label>
+                    <select id="doc-tipo" onchange="verificarTipoDocWiki()" class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white focus:outline-none focus:border-liturge-500 font-sans cursor-pointer">
                         <option value="wiki_texto">📝 Texto / Guia Rápido</option>
                         <option value="manual_pdf">📄 Link PDF / Drive</option>
                         <option value="video_link">🎬 Vídeo Tutorial</option>
@@ -125,28 +125,29 @@
             </div>
 
             <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">Link do(s) Arquivo(s) / Vídeo(s)</label>
-                <input type="text" id="doc-url" placeholder="https://youtube.com/... (separe vários com vírgula)" class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Link do(s) Arquivo(s) / Vídeo(s)</label>
+                <input type="text" id="doc-url" placeholder="https://youtube.com/... (separe vários com vírgula)" class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-liturge-500 font-sans">
                 
                 <div id="div-doc-media-select" class="mt-2 hidden border-t border-slate-800 pt-2">
-                    <label class="block text-xs font-medium text-brand-400 mb-1 flex items-center gap-1">
+                    <label class="block text-xs font-semibold text-liturge-400 mb-1 flex items-center gap-1">
                         <span>📁</span> Ou escolha os arquivos da Nuvem (Segure CTRL para vários)
                     </label>
-                    <select id="doc-media-select" multiple onchange="selecionarMidiaWiki()" class="w-full h-24 bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-slate-300 focus:outline-none focus:border-brand-500 overflow-y-auto">
+                    <select id="doc-media-select" multiple onchange="selecionarMidiaWiki()" class="w-full h-24 bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-slate-300 focus:outline-none focus:border-liturge-500 font-sans overflow-y-auto cursor-pointer">
                         <option value="" disabled>Carregando arquivos...</option>
                     </select>
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-medium text-slate-400 mb-1">Conteúdo / Instruções em Texto</label>
-                <textarea id="doc-desc" rows="3" placeholder="Passo a passo, senhas do roteador, checklist de encerramento..." class="w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500"></textarea>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">Conteúdo / Instruções em Texto</label>
+                <textarea id="doc-desc" rows="3" placeholder="Passo a passo, senhas do roteador, checklist de encerramento..." class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-liturge-500 font-sans"></textarea>
             </div>
 
-            <div class="flex justify-end gap-2 pt-2">
-                <button type="button" onclick="fecharModalDocWiki()" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs font-medium hover:bg-slate-700">Cancelar</button>
-                <button type="submit" id="btn-salvar-doc" class="px-4 py-2 bg-brand-600 text-white rounded-lg text-xs font-semibold hover:bg-brand-500">Salvar Documento</button>
+            <div class="flex justify-end gap-2.5 pt-2">
+                <button type="button" onclick="fecharModalDocWiki()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">Cancelar</button>
+                <button type="submit" id="btn-salvar-doc" class="px-4 py-2 bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 rounded-xl text-xs font-bold transition shadow-md shadow-liturge-500/20 cursor-pointer">Salvar Documento</button>
             </div>
         </form>
     </div>
 </div>
+

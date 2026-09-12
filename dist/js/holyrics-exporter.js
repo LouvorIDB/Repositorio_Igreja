@@ -210,15 +210,15 @@ function renderizarEditorHolyrics() {
         `).join('');
 
         return `
-            <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-3 transition hover:border-slate-700 shadow-sm">
+            <div class="bg-night-950 border border-slate-800 rounded-xl p-3.5 space-y-3 transition hover:border-slate-750 shadow-sm">
                 <!-- Cabeçalho da Seção -->
                 <div class="flex items-center justify-between gap-2">
                     <div class="flex items-center gap-2 flex-1">
-                        <span class="w-3 h-3 rounded-full shrink-0 shadow-sm" style="background-color: ${cor}"></span>
+                        <span class="w-3.5 h-3.5 rounded-full shrink-0 shadow-sm ring-1 ring-white/20" style="background-color: ${cor}"></span>
                         <input type="text" value="${sec.name || ''}" 
                             oninput="atualizarNomeSecao(${idx}, this.value)"
                             placeholder="Ex: ABERTURA, LOUVOR, AVISOS..."
-                            class="flex-1 bg-slate-900 border border-slate-700 focus:border-cyan-500 rounded-lg px-3 py-1.5 text-xs text-white font-bold tracking-wide uppercase focus:outline-none transition">
+                            class="flex-1 bg-night-900 border border-slate-800 focus:border-liturge-500 rounded-lg px-3 py-1.5 text-xs text-white font-bold tracking-wide uppercase focus:outline-none transition">
                     </div>
 
                     <div class="flex items-center gap-1">
@@ -241,7 +241,7 @@ function renderizarEditorHolyrics() {
                     <div class="sm:col-span-6 flex items-center gap-2">
                         <span class="text-slate-400 whitespace-nowrap text-[11px]">Tipo:</span>
                         <select onchange="atualizarTipoConteudo(${idx}, this.value)"
-                            class="flex-1 bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-cyan-500 cursor-pointer">
+                            class="flex-1 bg-night-900 border border-slate-800 text-slate-200 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-liturge-500 cursor-pointer">
                             <option value="videos" ${sec.content_type === 'videos' ? 'selected' : ''}>🎬 Vídeos Anexados</option>
                             <option value="musicas" ${(sec.content_type === 'musicas' || sec.content_type === 'songs') ? 'selected' : ''}>🎵 Músicas do Culto (Letras)</option>
                             <option value="imagens" ${(sec.content_type === 'imagens' || sec.content_type === 'images') ? 'selected' : ''}>🖼️ Imagens Anexadas</option>
@@ -267,7 +267,7 @@ function renderizarEditorHolyrics() {
                     <label class="flex items-center gap-2 cursor-pointer select-none text-[11px] text-slate-400 hover:text-slate-300">
                         <input type="checkbox" ${hideIfEmpty ? 'checked' : ''} 
                             onchange="atualizarOcultarVazia(${idx}, this.checked)"
-                            class="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-0 w-3.5 h-3.5 cursor-pointer">
+                            class="rounded bg-night-900 border-slate-700 text-liturge-500 focus:ring-0 w-3.5 h-3.5 cursor-pointer">
                         <span>Ocultar esta seção se o culto não tiver arquivos desse tipo</span>
                     </label>
                     <span class="text-[10px] font-mono text-slate-500 uppercase">${cor}</span>

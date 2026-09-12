@@ -769,6 +769,46 @@ function getMinistryForUser(user) {
 }
 window.getMinistryForUser = getMinistryForUser;
 
+// ===================== ASSISTENTE ANTI-SOBREPOSIÇÃO DO TECLADO VIRTUAL =====================
+/**
+ * Garante que campos de texto (input, textarea) sejam rolados suavemente para o centro visível
+ * da tela assim que o teclado virtual abrir ou o viewport redimensionar.
+ */
+(function inicializarAntiSobreposicaoTeclado() {
+    let focusTimer = null;
+
+    function centralizarElementoAtivo() {
+        const el = document.activeElement;
+        if (!el) return;
+        const tag = (el.tagName || '').toUpperCase();
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable) {
+            try {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            } catch (e) {
+                el.scrollIntoView(false);
+            }
+        }
+    }
+
+    document.addEventListener('focusin', (e) => {
+        const target = e.target;
+        if (!target) return;
+        const tag = (target.tagName || '').toUpperCase();
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) {
+            clearTimeout(focusTimer);
+            focusTimer = setTimeout(centralizarElementoAtivo, 320);
+        }
+    });
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+            clearTimeout(focusTimer);
+            focusTimer = setTimeout(centralizarElementoAtivo, 150);
+        });
+    }
+})();
+
+
 
 
 

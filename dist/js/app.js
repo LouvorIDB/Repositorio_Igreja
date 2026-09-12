@@ -1037,17 +1037,17 @@ function renderizarCultos(rows) {
                 
                 if (canSugestaoCulto) {
                     htmlCultos += `
-                        <div class="p-5 text-center space-y-3">
-                            <p class="text-red-400 text-sm font-medium">🚧 Incompleto — playlist em montagem</p>
-                            <p class="text-slate-400 text-xs">Envie sugestões para esse culto:</p>
+                        <div class="p-5 text-center space-y-3 bg-night-950/40 rounded-xl m-3 border border-slate-800/60">
+                            <p class="text-amber-400 text-sm font-semibold flex items-center justify-center gap-2"><span>🚧</span> Playlist em montagem</p>
+                            <p class="text-slate-400 text-xs">Envie sugestões de louvores para este culto:</p>
                             <div class="flex flex-col sm:flex-row gap-2 max-w-md mx-auto">
-                                <input type="text" id="sugestao-autor-${contadorBloco}" placeholder="Seu nome" class="sm:w-1/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-red-500">
-                                <input type="text" id="sugestao-texto-${contadorBloco}" placeholder="Escreva sua sugestão" class="sm:w-2/3 bg-slate-900 border border-slate-700 px-3 py-2 rounded text-sm text-white focus:outline-none focus:border-red-500">
+                                <input type="text" id="sugestao-autor-${contadorBloco}" placeholder="Seu nome" class="sm:w-1/3 bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-liturge-500 font-sans">
+                                <input type="text" id="sugestao-texto-${contadorBloco}" placeholder="Escreva sua sugestão de música" class="sm:w-2/3 bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-liturge-500 font-sans">
                             </div>
                             <div class="flex justify-center gap-2 mt-2">
-                                <button onclick="enviarComentario('${blocoAtual.replace(/'/g, "\\'")}','sugestao-autor-${contadorBloco}','sugestao-texto-${contadorBloco}','sugestao-status-${contadorBloco}','Sugestão para Culto')" class="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-medium">Sugestão de Música</button>
+                                <button onclick="enviarComentario('${blocoAtual.replace(/'/g, "\\'")}','sugestao-autor-${contadorBloco}','sugestao-texto-${contadorBloco}','sugestao-status-${contadorBloco}','Sugestão para Culto')" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow-md shadow-liturge-500/20 cursor-pointer transition">Enviar Sugestão</button>
                             </div>
-                            <p id="sugestao-status-${contadorBloco}" class="text-xs text-brand-400 hidden">Sugestão enviada!</p>
+                            <p id="sugestao-status-${contadorBloco}" class="text-xs text-liturge-400 hidden font-medium">Sugestão enviada com sucesso!</p>
                         </div>
                     `;
                 }
@@ -1151,38 +1151,44 @@ function gerarHtmlCardMusica(musicaObj, prefix) {
             const versionLyrics = v.lyrics || musicaObj.lyrics || '';
             const versionChords = v.chords || musicaObj.chords || '';
             const btnLetraCard = versionLyrics.trim() 
-                ? `<button onclick="abrirModalLetraPublica('${musicaObj.title.replace(/'/g, "\\'")}', 'Tom: ${v.key}', '${encodeURIComponent(versionLyrics)}')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1.5 rounded-lg text-xs font-medium transition">📜 Letra</button>`
+                ? `<button onclick="abrirModalLetraPublica('${musicaObj.title.replace(/'/g, "\\'")}', 'Tom: ${v.key}', '${encodeURIComponent(versionLyrics)}')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 hover:border-liturge-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <span>Letra</span>
+                </button>`
                 : '';
             const btnCifraCard = versionChords.trim()
-                ? `<button onclick="abrirModalCifraPublica('${musicaObj.title.replace(/'/g, "\\'")}', '${v.key}', '${encodeURIComponent(versionChords)}')" class="bg-indigo-700 hover:bg-indigo-600 text-white px-2 py-1.5 rounded-lg text-xs font-medium transition">🎸 Cifra</button>`
+                ? `<button onclick="abrirModalCifraPublica('${musicaObj.title.replace(/'/g, "\\'")}', '${v.key}', '${encodeURIComponent(versionChords)}')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700/80 hover:border-liturge-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <span>Cifra</span>
+                </button>`
                 : '';
             const itemId = `${prefix}-${musicaObj.id}-v${index}`;
             
             const ytButtonsHtml = linksYt.map(item => 
-                `<button onclick="playYoutubeAudio('${musicaObj.title.replace(/'/g, "\\'")}', '${item.url}')" class="bg-red-600 hover:bg-red-500 text-white px-2 py-1.5 rounded-lg text-xs font-medium transition">${item.label}</button>`
+                `<button onclick="playYoutubeAudio('${musicaObj.title.replace(/'/g, "\\'")}', '${item.url}')" class="bg-red-700/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1"><span>📺</span> ${item.label}</button>`
             ).join('');
 
             htmlVersoes += `
-                <div class="mt-3 pt-3 border-t border-slate-700/50">
+                <div class="mt-3.5 pt-3.5 border-t border-slate-800/70">
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div class="flex items-center gap-2">
-                            ${podeVerLouvor ? `<span class="bg-slate-700 px-2 py-0.5 rounded text-brand-300 text-xs font-semibold">Tom: ${v.key} (${v.variation || 'Original'})</span>` : ''}
+                            ${podeVerLouvor ? `<span class="bg-night-950 border border-slate-800 px-2.5 py-0.5 rounded-md text-[11px] font-mono text-slate-200"><span class="text-slate-400 font-normal">Tom:</span> <span class="font-bold text-white">${v.key}</span> <span class="text-slate-400 font-normal">(${v.variation || 'Original'})</span></span>` : ''}
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                            ${(podeVerLouvor && v.vs) ? `<button onclick="playDriveAudio('${musicaObj.title.replace(/'/g, "\\'")}', '${fileId}')" class="bg-brand-600 hover:bg-brand-500 text-white px-2 py-1.5 rounded-lg text-xs font-medium transition">▶ Ouvir VS</button>` : ''}
+                            ${(podeVerLouvor && v.vs) ? `<button onclick="playDriveAudio('${musicaObj.title.replace(/'/g, "\\'")}', '${fileId}')" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer"><span>▶</span> Ouvir VS</button>` : ''}
                             ${btnLetraCard}
                             ${(podeVerLouvor && btnCifraCard) ? btnCifraCard : ''}
                             ${ytButtonsHtml}
-                            ${podeVerLouvor ? `<button onclick="toggleComentario('${itemId}')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1.5 rounded-lg text-xs font-medium transition">💬 Pedir Ajuste</button>` : ''}
+                            ${podeVerLouvor ? `<button onclick="toggleComentario('${itemId}')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1"><span>💬</span> Ajuste</button>` : ''}
                         </div>
                     </div>
-                    <div id="${itemId}" class="hidden pt-2 mt-2 space-y-2">
+                    <div id="${itemId}" class="hidden pt-3 mt-3 bg-night-950/60 p-3 rounded-xl border border-slate-800/80 space-y-2">
                         <div class="flex gap-2">
-                            <input type="text" id="autor-${itemId}" placeholder="Seu nome" class="w-1/3 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-brand-500">
-                            <input type="text" id="comentario-${itemId}" placeholder="Ex: Mudar tom para C..." class="w-2/3 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-brand-500">
-                            <button onclick="enviarComentario('${musicaObj.title.replace(/'/g, "\\'")}', 'autor-${itemId}', 'comentario-${itemId}', 'status-${itemId}', 'Ajuste de Tom')" class="bg-brand-700 hover:bg-brand-600 text-white px-3 py-1.5 rounded text-xs font-medium">Enviar</button>
+                            <input type="text" id="autor-${itemId}" placeholder="Seu nome" class="w-1/3 bg-night-950 border border-slate-800 px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none focus:border-liturge-500 font-sans">
+                            <input type="text" id="comentario-${itemId}" placeholder="Ex: Mudar tom para C..." class="w-2/3 bg-night-950 border border-slate-800 px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none focus:border-liturge-500 font-sans">
+                            <button onclick="enviarComentario('${musicaObj.title.replace(/'/g, "\\'")}', 'autor-${itemId}', 'comentario-${itemId}', 'status-${itemId}', 'Ajuste de Tom')" class="bg-liturge-500 hover:bg-liturge-400 text-night-950 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer transition">Enviar</button>
                         </div>
-                        <p id="status-${itemId}" class="text-xs text-brand-400 hidden">Solicitação enviada com sucesso!</p>
+                        <p id="status-${itemId}" class="text-xs text-liturge-400 hidden">Solicitação enviada com sucesso!</p>
                     </div>
                 </div>
             `;
@@ -1190,9 +1196,10 @@ function gerarHtmlCardMusica(musicaObj, prefix) {
     }
 
     return `
-        <div class="bg-slate-800 p-4 rounded-xl border ${musicaObj.status === 'nova' ? 'border-violet-700/30 hover:border-violet-600/50' : 'border-slate-700 hover:border-slate-600'} transition mb-3">
+        <div class="bg-night-900/90 p-5 rounded-2xl border ${musicaObj.status === 'nova' ? 'border-liturge-500/40 shadow-liturge-500/10' : 'border-slate-800/90'} shadow-xl hover:border-slate-700/80 transition mb-3.5">
             <div class="flex items-center justify-between">
-                <h3 class="font-bold text-lg text-white">${musicaObj.title} ${musicaObj.artist ? `<span class="text-xs font-normal text-indigo-300 ml-2">(${musicaObj.artist})</span>` : ''}</h3>
+                <h3 class="font-bold text-base sm:text-lg text-white">${musicaObj.title} ${musicaObj.artist ? `<span class="text-xs font-normal text-slate-400 ml-2">(${musicaObj.artist})</span>` : ''}</h3>
+                ${musicaObj.status === 'nova' ? '<span class="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-liturge-500/10 text-liturge-400 border border-liturge-500/30">Música Nova</span>' : ''}
             </div>
             ${htmlVersoes}
         </div>

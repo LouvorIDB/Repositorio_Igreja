@@ -1,22 +1,25 @@
 <div id="secao-midia" class="hidden space-y-4">
-    <div class="bg-slate-800/60 border border-indigo-700/40 rounded-2xl p-4 mb-4">
-        <p class="text-indigo-300 text-sm font-medium">📷 Banco de Mídias</p>
-        <p class="text-slate-400 text-xs mt-1">Faça upload de fotos e vídeos, ou baixe para projeção.</p>
+    <div class="bg-night-900/90 border border-slate-800 rounded-2xl p-5 mb-4 relative overflow-hidden backdrop-blur-sm">
+        <div class="flex items-center gap-2 mb-2">
+            <span class="badge-gold">Central de Mídia</span>
+        </div>
+        <h2 class="text-base font-bold text-white tracking-wide">Banco de Mídias e Projeção</h2>
+        <p class="text-slate-400 text-xs mt-1">Armazene e organize fotos, vídeos, avisos e mídias de suporte para transmissão e cultos.</p>
     </div>
     
     <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
         <div class="flex items-center gap-2">
             <span class="text-xs text-slate-400 font-medium">📁 Filtrar por:</span>
-            <select id="filtro-midia-ministerio" onchange="filtrarMidiasPorMinisterio(this.value)" class="bg-slate-800 border border-slate-700 text-xs text-white rounded-xl px-3 py-1.5 focus:outline-none focus:border-brand-500 cursor-pointer">
+            <select id="filtro-midia-ministerio" onchange="filtrarMidiasPorMinisterio(this.value)" class="bg-night-950 border border-slate-800 text-xs text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-liturge-500 cursor-pointer">
                 <option value="">Todos os Ministérios</option>
             </select>
         </div>
         
         <div id="container-midia-upload-acao" class="flex items-center gap-2">
-            <select id="upload-midia-ministerio-destino" class="bg-slate-800 border border-slate-700 text-xs text-white rounded-xl px-3 py-1.5 focus:outline-none focus:border-brand-500 cursor-pointer" title="Selecione qual ministério é dono deste arquivo">
+            <select id="upload-midia-ministerio-destino" class="bg-night-950 border border-slate-800 text-xs text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-liturge-500 cursor-pointer" title="Selecione qual ministério é dono deste arquivo">
                 <option value="">Geral da Igreja</option>
             </select>
-            <label id="btn-upload-midia-wrapper" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-xl font-medium text-xs sm:text-sm cursor-pointer inline-flex items-center gap-2 transition shadow">
+            <label id="btn-upload-midia-wrapper" class="btn-liturge-primary px-4 py-2 rounded-xl font-medium text-xs sm:text-sm cursor-pointer inline-flex items-center gap-2 shadow-lg shadow-liturge-500/10">
                 <span>⬆️ Fazer Upload</span>
                 <input type="file" id="input-upload-midia" class="hidden" multiple accept="image/*,video/*,application/pdf">
             </label>
@@ -24,22 +27,22 @@
     </div>
     
     <!-- Área de Drop -->
-    <div id="dropzone-midia" class="border-2 border-dashed border-slate-700 bg-slate-800/50 rounded-xl p-8 text-center transition hover:border-indigo-500 hover:bg-slate-800 flex flex-col items-center justify-center min-h-[160px] cursor-pointer" onclick="document.getElementById('input-upload-midia').click()">
+    <div id="dropzone-midia" class="border-2 border-dashed border-slate-800 bg-night-900/40 hover:bg-night-900/80 hover:border-liturge-500/50 rounded-2xl p-8 text-center transition flex flex-col items-center justify-center min-h-[160px] cursor-pointer" onclick="document.getElementById('input-upload-midia').click()">
         <span class="text-3xl mb-2">📁</span>
-        <p class="text-slate-400 font-medium">Clique ou arraste fotos e vídeos aqui</p>
-        <p class="text-slate-500 text-xs mt-1">Arquivos são enviados diretamente para a nuvem</p>
+        <p class="text-slate-200 font-medium text-sm">Clique ou arraste fotos e vídeos aqui</p>
+        <p class="text-slate-500 text-xs mt-1">Arquivos são enviados diretamente para o armazenamento seguro na nuvem</p>
     </div>
 
     <!-- Progresso e Lista -->
-    <div id="midia-upload-progress" class="hidden mt-4 bg-slate-800 p-3 rounded-lg border border-slate-700">
-        <p class="text-xs text-brand-400 mb-2 font-medium" id="midia-upload-text">Enviando arquivos...</p>
-        <div class="w-full bg-slate-900 rounded-full h-2">
-            <div id="midia-upload-bar" class="bg-brand-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+    <div id="midia-upload-progress" class="hidden mt-4 bg-night-950 p-4 rounded-xl border border-slate-800">
+        <p class="text-xs text-liturge-400 mb-2 font-medium" id="midia-upload-text">Enviando arquivos...</p>
+        <div class="w-full bg-night-900 rounded-full h-2 overflow-hidden">
+            <div id="midia-upload-bar" class="bg-gradient-to-r from-liturge-500 to-liturge-400 h-2 rounded-full transition-all" style="width: 0%"></div>
         </div>
     </div>
 
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6" id="lista-midias-grid">
         <!-- Cards de mídia aparecerão aqui -->
-        <p class="text-slate-500 text-sm col-span-full">Carregando arquivos da caixa de entrada...</p>
+        <p class="text-slate-500 text-sm col-span-full py-8 text-center">Carregando arquivos da caixa de entrada...</p>
     </div>
 </div>

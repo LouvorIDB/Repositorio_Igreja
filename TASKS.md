@@ -110,3 +110,12 @@
 - [ ] **Tarefa 11.1: Documentação de Schemas Relacionais e Contratos de API**
   - [ ] Mapeamento completo das rotas do Supabase (`REST API` e `Auth`) para fácil reutilização pelo aplicativo nativo em React Native / Expo.
   - [ ] Padronização das respostas JSON de cultos, versões de músicas e escalas.
+
+---
+
+### 🎨 ETAPA 12: Migração do Tailwind CSS de CDN para Build Vite (Otimização de Performance)
+- [ ] **Tarefa 12.1: Migração do Tailwind CDN para Pacote Local NPM**
+  - [ ] Substituir o script `<script src="https://cdn.tailwindcss.com">` no `index.html` por Tailwind CSS instalado como dependência de desenvolvimento (`tailwindcss`, `postcss`, `autoprefixer`).
+  - [ ] Configurar `tailwind.config.js` com o escopo de templates e cores personalizadas do tema (paletas das congregações).
+  - [ ] Gerar CSS otimizado e minificado durante o `npm run build` do Vite, eliminando latência de download da CDN externa e processamento em tempo real (JIT) no navegador.
+
