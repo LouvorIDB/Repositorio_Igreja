@@ -783,7 +783,7 @@ window.getMinistryForUser = getMinistryForUser;
         const tag = (el.tagName || '').toUpperCase();
         if (tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable) {
             try {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+                el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
             } catch (e) {
                 el.scrollIntoView(false);
             }

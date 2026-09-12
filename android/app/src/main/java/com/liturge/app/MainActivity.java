@@ -12,13 +12,16 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
 
         // Garante que o WebView respeite rigorosamente a barra de notificações,
-        // o recorte físico da câmera frontal (display cutout), a barra de navegação/gestos
-        // e o teclado virtual (IME), evitando que campos de texto fiquem cobertos.
+        // o recorte físico da câmera frontal (display cutout) e a barra de navegação/gestos.
+        // Quando o teclado virtual (IME) estiver aberto, o adjustResize do Android já ajusta a janela;
+        // portanto, zeramos o bottomPadding para não colapsar a altura do WebView.
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (view, windowInsets) -> {
             Insets insets = windowInsets.getInsets(
-                WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout() | WindowInsetsCompat.Type.ime()
+                WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout()
             );
-            view.setPadding(insets.left, insets.top, insets.right, insets.bottom);
+            boolean isImeVisible = windowInsets.isVisible(WindowInsetsCompat.Type.ime());
+            int bottomPadding = isImeVisible ? 0 : insets.bottom;
+            view.setPadding(insets.left, insets.top, insets.right, bottomPadding);
             return windowInsets;
         });
 
