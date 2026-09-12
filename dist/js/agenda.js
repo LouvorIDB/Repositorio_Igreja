@@ -851,15 +851,15 @@ async function renderizarAdminCultosEventos() {
 
         const temCulto = cultoIndex !== -1 || totalNoDia > 0;
 
-        let bgClass = "bg-slate-900 border-slate-700 hover:border-brand-500 cursor-pointer transition";
+        let bgClass = "bg-night-950 border-slate-800/80 hover:border-liturge-500/50 cursor-pointer transition text-slate-300";
         let indicator = "";
 
         if (temCulto) {
-            bgClass = "bg-brand-900/30 border-brand-500/50 hover:bg-brand-900/50 cursor-pointer transition text-brand-300";
+            bgClass = "bg-liturge-500/10 border-liturge-500/40 hover:bg-liturge-500/20 cursor-pointer transition text-liturge-300 font-semibold shadow-sm";
             if (totalNoDia > 1) {
-                indicator += `<span class="block w-2 h-2 rounded-full bg-purple-500 mt-1"></span><span class="block w-2 h-2 rounded-full bg-brand-500 mt-1"></span>`;
+                indicator += `<span class="block w-2 h-2 rounded-full bg-purple-400 mt-1"></span><span class="block w-2 h-2 rounded-full bg-liturge-400 glow-node mt-1"></span>`;
             } else {
-                indicator += `<span class="block w-2 h-2 rounded-full bg-brand-500 mt-1 mx-auto"></span>`;
+                indicator += `<span class="block w-2 h-2 rounded-full bg-liturge-400 glow-node mt-1 mx-auto"></span>`;
             }
         }
 
@@ -867,7 +867,7 @@ async function renderizarAdminCultosEventos() {
         let acaoClique = `abrirModalDetalhesDia('${dataStr}')`;
 
         html += `
-            <div onclick="${acaoClique}" class="rounded p-2 border flex flex-col items-center justify-center min-h-[50px] ${bgClass}">
+            <div onclick="${acaoClique}" class="rounded-xl p-2 border flex flex-col items-center justify-center min-h-[52px] ${bgClass}">
                 <span class="text-sm font-semibold">${d}</span>
                 <div class="flex gap-1">${indicator}</div>
             </div>
@@ -921,16 +921,28 @@ function renderizarEventosLateral(eventos) {
             if (p.length === 3) dStr = `${p[2]}/${p[1]}/${p[0]}`;
         }
 
-        const subtitulo = horaFormatada ? `📅 ${dStr} às ${horaFormatada}` : `📅 ${dStr}`;
-
+        const subtitulo = horaFormatada ? `${dStr} às ${horaFormatada}` : `${dStr}`;
+ 
         return `
-            <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg flex items-center justify-between group">
+            <div class="bg-night-950 border border-slate-800/80 hover:border-liturge-500/40 p-3 rounded-xl flex items-center justify-between group transition">
                 <div class="min-w-0 flex-1 mr-2">
-                    <p class="text-xs font-bold text-white truncate max-w-[150px]">${evt.title}</p>
-                    <p class="text-[10px] text-slate-400 truncate">${subtitulo}</p>
+                    <p class="text-xs font-bold text-white truncate max-w-[180px]">${evt.title}</p>
+                    <p class="text-[10px] text-slate-400 font-mono truncate flex items-center gap-1.5 mt-0.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400 shrink-0">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span>${subtitulo}</span>
+                    </p>
                 </div>
-                <div class="flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition shrink-0">
-                    <button onclick="editarEventoPorId('${evt.id}', '${evt.date}')" class="text-slate-400 hover:text-white p-1" title="Editar Evento">✏️</button>
+                <div class="flex gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition shrink-0">
+                    <button onclick="editarEventoPorId('${evt.id}', '${evt.date}')" class="text-slate-400 hover:text-liturge-400 p-1 transition" title="Editar Evento">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
         `;

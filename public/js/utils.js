@@ -657,9 +657,9 @@ const COMPLETE_PALETTES = {
         surfaces: { 700: '38 45 107', 800: '24 28 71', 850: '17 21 54', 900: '12 15 41', 950: '5 6 22' }
     },
     amber: {
-        name: '☀️ Âmbar Dourado & Obsidiana',
-        brand: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#d97706', 700: '#b45309', 800: '#92400e', 900: '#78350f', 950: '#451a03' },
-        surfaces: { 700: '79 54 28', 800: '51 35 18', 850: '39 26 13', 900: '29 19 8', 950: '17 11 4' }
+        name: '☀️ Âmbar Dourado & Noite Profunda (Oficial Liturge)',
+        brand: { 50: '#FFFBEB', 100: '#FEF3C7', 200: '#FDE68A', 300: '#FCD34D', 400: '#FBBF24', 500: '#F59E0B', 600: '#D97706', 700: '#B45309', 800: '#92400E', 900: '#78350F', 950: '#451A03' },
+        surfaces: { 700: '31 41 55', 800: '17 24 39', 850: '13 21 38', 900: '11 17 30', 950: '7 11 20' }
     },
     purple: {
         name: '👑 Ametista Real & Veludo',
@@ -700,9 +700,9 @@ const COMPLETE_PALETTES = {
 window.COMPLETE_PALETTES = COMPLETE_PALETTES;
 
 function aplicarTemaColor(corNome) {
-    if (!corNome) corNome = 'emerald';
+    if (!corNome) corNome = 'amber';
     const chave = corNome.toLowerCase().trim();
-    const p = COMPLETE_PALETTES[chave] || COMPLETE_PALETTES.emerald;
+    const p = COMPLETE_PALETTES[chave] || COMPLETE_PALETTES.amber;
     if (!p) return;
 
     const root = document.documentElement;

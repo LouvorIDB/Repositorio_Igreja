@@ -918,9 +918,9 @@ function renderizarCultos(rows) {
             if (blocoOculto) continue;
 
             const corHeader = blocoEmMontagem
-                ? 'bg-red-900/60 hover:bg-red-900/80 border-b border-red-700/50'
-                : 'bg-brand-900/60 hover:bg-brand-900/80 border-b border-brand-700/50';
-            const corTexto = blocoEmMontagem ? 'text-red-300' : 'text-brand-300';
+                ? 'bg-amber-950/25 hover:bg-amber-950/40 border-b border-amber-900/30 text-amber-200'
+                : 'bg-night-950/70 hover:bg-night-900 border-b border-slate-800/80 text-white';
+            const corTexto = blocoEmMontagem ? 'text-amber-300' : 'text-white';
 
             // Build a map of roleName -> ministry
             const roleToMinistry = {};
@@ -942,7 +942,6 @@ function renderizarCultos(rows) {
             }) || { name: 'Louvor', color: 'brand', icon: '⛪' };
 
             const groupedEscala = {};
-            const emojimap = { 'violão': '🎸', 'bateria': '🥁', 'teclado': '🎹', 'baixo': '🎸', 'projeção': '💻', 'fotografia': '📷', 'transmissão': '🎥' };
             
             // Unifica todos os cantores e vocalistas sem duplicações
             const vocaisList = [];
@@ -965,14 +964,13 @@ function renderizarCultos(rows) {
                         return; // Evita exibir campo duplicado
                     }
 
-                    const emoji = emojimap[keyLower] || '🎵';
                     const nomeFormato = key.charAt(0).toUpperCase() + key.slice(1);
                     const minInfo = roleToMinistry[keyLower] || louvorMin;
                     
                     if (!groupedEscala[minInfo.name]) {
                         groupedEscala[minInfo.name] = { color: minInfo.color, icon: minInfo.icon, parts: [] };
                     }
-                    groupedEscala[minInfo.name].parts.push(`${emoji} ${nomeFormato}: <span class="text-${minInfo.color}-300 font-medium">${instrObj[key]}</span>`);
+                    groupedEscala[minInfo.name].parts.push(`<span class="font-medium text-slate-400">${nomeFormato}:</span> <span class="text-liturge-300 font-semibold">${instrObj[key]}</span>`);
                 }
             });
 
@@ -983,7 +981,7 @@ function renderizarCultos(rows) {
                     groupedEscala[minName] = { color: louvorMin.color || 'brand', icon: louvorMin.icon || '⛪', parts: [] };
                 }
                 const labelVocal = vocaisList.length > 1 ? 'Vocalistas' : 'Vocalista';
-                groupedEscala[minName].parts.push(`🎤 ${labelVocal}: <span class="text-${louvorMin.color || 'brand'}-300 font-medium">${vocaisList.join(', ')}</span>`);
+                groupedEscala[minName].parts.push(`<span class="font-medium text-slate-400">${labelVocal}:</span> <span class="text-liturge-300 font-semibold">${vocaisList.join(', ')}</span>`);
             }
 
             let linhaInstrumentos = '';
@@ -995,8 +993,8 @@ function renderizarCultos(rows) {
 
                 if (canVerEscala && Object.keys(groupedEscala).length > 0) {
                     linhaInstrumentos = Object.entries(groupedEscala).map(([minName, info]) => {
-                        return `<div class="px-4 py-1.5 text-xs text-slate-300 bg-slate-900/40 border-b border-slate-700/30 flex flex-wrap items-center gap-3">
-                            <span class="font-bold text-${info.color}-400 mr-2">${info.icon} ${minName.toUpperCase()}</span>
+                        return `<div class="px-4 py-2 text-xs text-slate-300 bg-night-950/50 border-b border-slate-800/60 flex flex-wrap items-center gap-2.5">
+                            <span class="inline-flex items-center gap-1 font-bold text-liturge-400 bg-liturge-500/10 border border-liturge-500/20 px-2 py-0.5 rounded-md text-[10px] tracking-wider uppercase">${minName}</span>
                             ${info.parts.join('<span class="text-slate-600">|</span>')}
                         </div>`;
                     }).join('');
@@ -1004,9 +1002,12 @@ function renderizarCultos(rows) {
 
                 if (canVerMidia) {
                     if (midiasCulto && midiasCulto.length > 0) {
-                        const linksHtml = midiasCulto.map(m => `<a href="${m.url}" target="_blank" class="text-indigo-400 hover:text-indigo-300 font-medium underline px-1">${m.name}</a>`).join('');
-                        linhaMidias = `<div class="px-4 py-2 text-xs bg-indigo-900/20 border-b border-indigo-700/30 flex flex-wrap gap-2 items-center">
-                            <span class="text-indigo-300">📁 Mídias Anexadas: </span>
+                        const linksHtml = midiasCulto.map(m => `<a href="${m.url}" target="_blank" class="text-liturge-400 hover:text-liturge-300 hover:underline font-mono text-xs px-2 py-0.5 rounded bg-night-950/80 border border-slate-800 flex items-center gap-1">${m.name}</a>`).join('');
+                        linhaMidias = `<div class="px-4 py-2 text-xs bg-night-950/40 border-b border-slate-800/60 flex flex-wrap gap-2 items-center">
+                            <span class="text-slate-400 font-medium flex items-center gap-1.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400 shrink-0"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                                <span>Mídias Anexadas:</span>
+                            </span>
                             ${linksHtml}
                         </div>`;
                     }
@@ -1014,17 +1015,21 @@ function renderizarCultos(rows) {
             }
 
             htmlCultos += `
-                <div class="bg-slate-800/80 border border-slate-700 rounded-2xl overflow-hidden shadow-md mb-3">
-                    <button onclick="toggleCultoBloco('${idPlaylist}', '${idSeta}')" class="w-full flex items-center justify-between ${corHeader} px-4 py-2.5 transition text-left">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <h2 class="font-bold ${corTexto} text-sm uppercase tracking-wider">${blocoAtual.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim()}</h2>
-                            ${blocoEmMontagem ? '<span class="text-[10px] bg-red-950 text-red-300 border border-red-700/70 px-2 py-0.5 rounded-full font-bold shadow-sm">🚧 EM MONTAGEM</span>' : ''}
+                <div class="bg-night-900/90 border border-slate-800/90 rounded-2xl overflow-hidden shadow-lg mb-3.5 hover:border-slate-700/80 transition">
+                    <button onclick="toggleCultoBloco('${idPlaylist}', '${idSeta}')" class="w-full flex items-center justify-between ${corHeader} px-4 py-3 transition text-left cursor-pointer">
+                        <div class="flex items-center gap-2.5 flex-wrap">
+                            <h2 class="font-extrabold ${corTexto} text-sm uppercase tracking-wider">${blocoAtual.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim()}</h2>
+                            ${blocoEmMontagem ? '<span class="text-[10px] bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full font-bold tracking-wider uppercase shadow-sm flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span><span>Em Montagem</span></span>' : ''}
                         </div>
-                        <span id="${idSeta}" class="${corTexto} text-xs">▼</span>
+                        <span id="${idSeta}" class="text-liturge-400 text-xs transition-transform duration-200 inline-block">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </span>
                     </button>
                     ${linhaMidias}
                     ${linhaInstrumentos}
-                    <div id="${idPlaylist}" class="hidden divide-y divide-slate-700/50">
+                    <div id="${idPlaylist}" class="hidden divide-y divide-slate-800/60">
             `;
 
             if (blocoEmMontagem) {
@@ -1070,39 +1075,45 @@ function renderizarCultos(rows) {
             const canPedirAjuste = hasPermission('enviar_solic_musica');
 
             const btnLetraCulto = (lyricsTexto && canVerLetra)
-                ? `<button onclick="abrirModalLetraPublica('${musica.toString().replace(/'/g, "\\'")}', 'Tom: ${tom}', '${encodeURIComponent(lyricsTexto)}')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">📜 Letra</button>`
+                ? `<button onclick="abrirModalLetraPublica('${musica.toString().replace(/'/g, "\\'")}', 'Tom: ${tom}', '${encodeURIComponent(lyricsTexto)}')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 hover:border-liturge-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <span>Letra</span>
+                </button>`
                 : '';
             const btnCifraCulto = (chordsTexto && canVerCifra)
-                ? `<button onclick="abrirModalCifraPublica('${musica.toString().replace(/'/g, "\\'")}', '${tom}', '${encodeURIComponent(chordsTexto)}')" class="bg-indigo-700 hover:bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">🎸 Cifra</button>`
+                ? `<button onclick="abrirModalCifraPublica('${musica.toString().replace(/'/g, "\\'")}', '${tom}', '${encodeURIComponent(chordsTexto)}')" class="bg-slate-800 hover:bg-slate-700 text-liturge-300 border border-slate-700/80 hover:border-liturge-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <span>Cifra</span>
+                </button>`
                 : '';
             contadorCard++;
             
             htmlCultos += `
-                <div class="p-4 flex flex-col gap-2 hover:bg-slate-750 transition">
+                <div class="p-4 flex flex-col gap-2 hover:bg-night-950/30 transition">
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div>
-                            <h3 class="font-bold text-white text-base">${musica} ${artistaMusica ? `<span class="text-xs font-normal text-indigo-300 ml-1.5">(${artistaMusica})</span>` : ''}</h3>
-                            <div class="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-400">
-                                ${canVerCifra ? `<span class="bg-slate-700 px-2 py-0.5 rounded text-brand-300 font-semibold">Tom: ${tom} ${variacao ? '(' + variacao + ')' : ''}</span>` : ''}
-                                ${(canVerCantor && cantoresMusica) ? `<span class="text-slate-400">🎤 <span class="text-slate-300">${cantoresMusica}</span></span>` : ''}
+                            <h3 class="font-bold text-white text-base">${musica} ${artistaMusica ? `<span class="text-xs font-normal text-liturge-400 ml-1.5">(${artistaMusica})</span>` : ''}</h3>
+                            <div class="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-slate-400">
+                                ${canVerCifra ? `<span class="bg-night-950 border border-slate-800 px-2.5 py-0.5 rounded-md text-liturge-400 font-mono font-bold text-[11px]">Tom: ${tom} ${variacao ? '(' + variacao + ')' : ''}</span>` : ''}
+                                ${(canVerCantor && cantoresMusica) ? `<span class="text-slate-400 text-xs flex items-center gap-1.5 font-medium"><span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Voz:</span> <span class="text-slate-200">${cantoresMusica}</span></span>` : ''}
                             </div>
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                            ${(canVerVs && vsCelular) ? `<button onclick="playDriveAudio('${musica.toString().replace(/'/g, "\\'")}', '${fileId}')" class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">▶ Ouvir VS</button>` : ''}
+                            ${(canVerVs && vsCelular) ? `<button onclick="playDriveAudio('${musica.toString().replace(/'/g, "\\'")}', '${fileId}')" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer"><span>▶</span> Ouvir VS</button>` : ''}
                             ${btnLetraCulto}
                             ${btnCifraCulto}
-                            ${(canVerYoutube && linkYoutubeFinal) ? `<button onclick="playYoutubeAudio('${musica.toString().replace(/'/g, "\\'")}', '${linkYoutubeFinal}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">📺 YouTube</button>` : ''}
-                            ${canPedirAjuste ? `<button onclick="toggleComentario('culto-${contadorCard}')" class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium transition">💬 Pedir Ajuste</button>` : ''}
+                            ${(canVerYoutube && linkYoutubeFinal) ? `<button onclick="playYoutubeAudio('${musica.toString().replace(/'/g, "\\'")}', '${linkYoutubeFinal}')" class="bg-red-700/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1"><span>📺</span> YouTube</button>` : ''}
+                            ${canPedirAjuste ? `<button onclick="toggleComentario('culto-${contadorCard}')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1"><span>💬</span> Ajuste</button>` : ''}
                         </div>
                     </div>
                 </div>
-                <div id="culto-${contadorCard}" class="hidden p-4 bg-slate-900/50 border-t border-slate-700/50 space-y-2">
+                <div id="culto-${contadorCard}" class="hidden p-4 bg-night-950/70 border-t border-slate-800/80 space-y-2">
                     <div class="flex gap-2">
-                        <input type="text" id="autor-c-${contadorCard}" placeholder="Seu nome" class="w-1/3 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-brand-500">
-                        <input type="text" id="comentario-c-${contadorCard}" placeholder="Ex: Mudar tom para C..." class="w-2/3 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-xs text-white focus:outline-none focus:border-brand-500">
-                        <button onclick="enviarComentario('${musica.toString().replace(/'/g, "\\'")}','autor-c-${contadorCard}','comentario-c-${contadorCard}','status-c-${contadorCard}','Ajuste de Tom')" class="bg-brand-700 hover:bg-brand-600 text-white px-3 py-1.5 rounded text-xs font-medium">Enviar</button>
+                        <input type="text" id="autor-c-${contadorCard}" placeholder="Seu nome" class="w-1/3 bg-night-950 border border-slate-800 px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none focus:border-liturge-500 font-sans">
+                        <input type="text" id="comentario-c-${contadorCard}" placeholder="Ex: Mudar tom para C..." class="w-2/3 bg-night-950 border border-slate-800 px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none focus:border-liturge-500 font-sans">
+                        <button onclick="enviarComentario('${musica.toString().replace(/'/g, "\\'")}','autor-c-${contadorCard}','comentario-c-${contadorCard}','status-c-${contadorCard}','Ajuste de Tom')" class="bg-liturge-500 hover:bg-liturge-400 text-night-950 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer transition">Enviar</button>
                     </div>
-                    <p id="status-c-${contadorCard}" class="text-xs text-brand-400 hidden">Enviado com sucesso!</p>
+                    <p id="status-c-${contadorCard}" class="text-xs text-liturge-400 hidden">Enviado com sucesso!</p>
                 </div>
             `;
         }
@@ -1264,8 +1275,11 @@ function filtrarMusicas() {
 function toggleCultoBloco(idPlaylist, idSeta) {
     const playlist = document.getElementById(idPlaylist);
     const seta = document.getElementById(idSeta);
+    if (!playlist) return;
     playlist.classList.toggle('hidden');
-    seta.textContent = playlist.classList.contains('hidden') ? '▼' : '▲';
+    if (seta) {
+        seta.classList.toggle('rotate-180', !playlist.classList.contains('hidden'));
+    }
 }
 
 function toggleComentario(id) { document.getElementById(id).classList.toggle('hidden'); }
@@ -2129,18 +2143,15 @@ function aplicarVisibilidadePermissoes() {
 window.aplicarVisibilidadePermissoes = aplicarVisibilidadePermissoes;
 
 function atualizarTemaGlobal() {
-    let corTema = 'emerald';
+    let corTema = 'amber';
     
     console.log('[TEMA] atualizarTemaGlobal chamado. usuarioLogado:', !!usuarioLogado, 'church:', dadosGlobais.church);
 
-    // 1. A paleta configurada na congregação define a atmosfera principal do site
-    if (dadosGlobais.church && dadosGlobais.church.theme_color_secondary) {
-        corTema = dadosGlobais.church.theme_color_secondary;
-    } else if (usuarioLogado) {
-        const userMin = typeof getMinistryForUser === 'function' ? getMinistryForUser(usuarioLogado) : null;
-        if (userMin && userMin.color) {
-            corTema = userMin.color;
-        }
+    // 1. A paleta configurada na congregação define a atmosfera principal do site (padrão oficial: amber)
+    if (dadosGlobais.church && dadosGlobais.church.theme_color_secondary && window.COMPLETE_PALETTES && window.COMPLETE_PALETTES[dadosGlobais.church.theme_color_secondary.toLowerCase()]) {
+        corTema = dadosGlobais.church.theme_color_secondary.toLowerCase();
+    } else {
+        corTema = 'amber';
     }
 
     console.log('[TEMA] Paleta final aplicada:', corTema);
