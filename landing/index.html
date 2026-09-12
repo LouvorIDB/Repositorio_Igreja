@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#070B14">
+    <title>Liturge — Gestão de Escalas, Repertório e Cultos para Igrejas</title>
+    <meta name="description" content="A plataforma completa para centralizar repertórios musicais com cifras dinâmicas, organizar escalas de voluntários sem furos e sincronizar mídias da sua igreja com excelência.">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="alternate icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <!-- Open Graph / Redes Sociais -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://liturge.app.br/">
+    <meta property="og:title" content="Liturge — Gestão de Escalas, Repertório e Cultos">
+    <meta property="og:description" content="Plataforma multi-igrejas para gestão ministerial, cifras com transposição de tom, escalas inteligentes e integração Holyrics.">
+    <meta property="og:image" content="assets/liturge-logo-full.svg">
+
+    <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono (Brandbook Liturge) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN configurado com as especificações do Brandbook -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    },
+                    colors: {
+                        liturge: {
+                            50: '#FFFBEB',
+                            100: '#FEF3C7',
+                            200: '#FDE68A',
+                            300: '#FCD34D',
+                            400: '#FBBF24',
+                            500: '#F59E0B',
+                            600: '#D97706',
+                            700: '#B45309',
+                            800: '#92400E',
+                            900: '#78350F',
+                            950: '#451A03'
+                        },
+                        night: {
+                            800: '#111827',
+                            850: '#0D1526',
+                            900: '#0B111E',
+                            950: '#070B14'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glow-amber {
+            filter: drop-shadow(0 0 25px rgba(245, 166, 35, 0.35));
+        }
+        .glow-node {
+            filter: drop-shadow(0 0 10px rgba(255, 213, 79, 0.7));
+        }
+        .matrix-bg {
+            background-image: radial-gradient(rgba(245, 158, 11, 0.08) 1px, transparent 1px);
+            background-size: 28px 28px;
+        }
+        .gold-gradient-text {
+            background: linear-gradient(135deg, #FFE082 0%, #FFA726 50%, #E65100 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-night-950 text-slate-100 font-sans antialiased selection:bg-liturge-500 selection:text-night-950 min-h-screen flex flex-col">
+
+    <!-- ================= 1. CABEÇALHO / NAVBAR ================= -->
+    <header class="sticky top-0 z-50 backdrop-blur-xl bg-night-950/85 border-b border-slate-800/80 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Logo Oficial -->
+            <a href="/" class="flex items-center gap-3 group">
+                <img src="assets/liturge-logo-full.svg" alt="Liturge" class="h-9 sm:h-11 w-auto transition-transform duration-300 group-hover:scale-105">
+            </a>
+
+            <!-- Navegação Desktop -->
+            <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+                <a href="#recursos" class="hover:text-liturge-400 transition-colors">Recursos</a>
+                <a href="#showcase" class="hover:text-liturge-400 transition-colors">A Plataforma</a>
+                <a href="#ministerios" class="hover:text-liturge-400 transition-colors">Ministérios</a>
+                <a href="#diferenciais" class="hover:text-liturge-400 transition-colors">Diferenciais</a>
+                <a href="/privacidade" class="hover:text-liturge-400 transition-colors">Privacidade</a>
+            </nav>
+
+            <!-- Botões de Ação -->
+            <div class="flex items-center gap-3">
+                <a href="https://app.liturge.app.br" 
+                   class="relative inline-flex items-center justify-center px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-bold tracking-wide rounded-xl text-night-950 bg-gradient-to-r from-liturge-400 via-liturge-500 to-amber-600 hover:from-liturge-300 hover:to-amber-500 transition-all duration-200 shadow-lg shadow-liturge-500/20 hover:shadow-liturge-500/35 hover:-translate-y-0.5">
+                    <span>Acessar Plataforma</span>
+                    <svg class="w-4 h-4 ml-1.5 -mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <!-- ================= 2. HERO SECTION ================= -->
+        <section class="relative pt-12 pb-20 md:pt-20 md:pb-32 overflow-hidden matrix-bg">
+            <!-- Efeitos de Luz no Fundo -->
+            <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-liturge-500/10 rounded-full blur-[140px] pointer-events-none"></div>
+            <div class="absolute top-1/3 left-1/4 w-[350px] h-[350px] bg-amber-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+                <!-- Selo de Inovação -->
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-liturge-500/10 border border-liturge-500/30 text-liturge-300 text-xs font-semibold tracking-wide mb-8 shadow-inner">
+                    <span class="w-2 h-2 rounded-full bg-liturge-400 animate-ping"></span>
+                    <span>A Nova Referência em Gestão Ministerial & Liturgia</span>
+                </div>
+
+                <!-- Título Principal -->
+                <h1 class="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white max-w-5xl mx-auto leading-[1.15]">
+                    O Culto em Perfeita <br class="hidden sm:inline">
+                    <span class="gold-gradient-text">Harmonia, Ordem e Excelência</span>
+                </h1>
+
+                <!-- Subtítulo -->
+                <p class="mt-6 text-base sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-normal">
+                    Centralize repertórios com cifras e transposição dinâmica, organize escalas de voluntários sem conflitos e sincronize as mídias da igreja em uma única plataforma intuitiva.
+                </p>
+
+                <!-- CTAs Hero -->
+                <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
+                    <a href="https://app.liturge.app.br" 
+                       class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3.5 text-sm sm:text-base font-bold rounded-xl text-night-950 bg-gradient-to-r from-liturge-400 to-liturge-500 hover:from-liturge-300 hover:to-amber-500 transition-all duration-200 shadow-xl shadow-liturge-500/25 hover:scale-[1.02]">
+                        Acessar a Plataforma
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        </svg>
+                    </a>
+                    <a href="#recursos" 
+                       class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3.5 text-sm sm:text-base font-semibold rounded-xl text-slate-300 bg-night-900/80 hover:bg-slate-800 border border-slate-700/80 hover:border-slate-600 transition-all duration-200">
+                        Conhecer Recursos
+                    </a>
+                </div>
+
+                <!-- Badges de Confiança -->
+                <div class="mt-12 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-400 font-medium">
+                    <div class="flex items-center gap-2">
+                        <span class="text-liturge-400">✓</span> Compatível com Celular (PWA)
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-liturge-400">✓</span> Integração Holyrics (.hpls)
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-liturge-400">✓</span> Multi-igreja com RLS Seguro
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-liturge-400">✓</span> Cifras com Transposição de Tom
+                    </div>
+                </div>
+
+                <!-- ================= 3. VITRINE VISUAL (PLACEHOLDERS DE CAPTURAS DE TELA) ================= -->
+                <div id="showcase" class="mt-16 sm:mt-24 relative max-w-5xl mx-auto scroll-mt-24">
+                    <!-- Brilho ao redor da moldura -->
+                    <div class="absolute -inset-1 rounded-3xl bg-gradient-to-r from-liturge-500/30 via-amber-500/10 to-liturge-500/30 blur-xl opacity-75"></div>
+
+                    <!-- Moldura Principal do Sistema (Mockup) -->
+                    <div class="relative rounded-2xl sm:rounded-3xl border border-slate-700/80 bg-night-900 shadow-2xl overflow-hidden text-left">
+                        <!-- Barra Superior do Mockup -->
+                        <div class="bg-night-950 px-4 py-3.5 border-b border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full bg-rose-500/80"></div>
+                                <div class="w-3 h-3 rounded-full bg-amber-500/80"></div>
+                                <div class="w-3 h-3 rounded-full bg-emerald-500/80"></div>
+                                <span class="ml-2 text-xs font-mono text-slate-400">app.liturge.app.br</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs text-liturge-400 font-medium">
+                                <span class="inline-block w-2 h-2 rounded-full bg-liturge-500 animate-pulse"></span>
+                                Sistema Ativo
+                            </div>
+                        </div>
+
+                        <!-- Área de Conteúdo / Placeholder para Prints -->
+                        <div class="p-6 sm:p-12 bg-gradient-to-b from-night-900 to-night-950 min-h-[380px] sm:min-h-[460px] flex flex-col justify-center items-center text-center relative group">
+                            
+                            <!-- Ícone do Símbolo Central Liturge -->
+                            <div class="w-24 h-24 mb-6 relative flex items-center justify-center">
+                                <div class="absolute inset-0 bg-liturge-500/20 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500"></div>
+                                <img src="assets/liturge-symbol.svg" alt="Liturge Symbol" class="w-20 h-20 relative z-10 glow-amber">
+                            </div>
+
+                            <!-- Mensagem Informativa de Mockup -->
+                            <span class="text-xs uppercase font-bold tracking-[0.25em] text-liturge-400 bg-liturge-500/10 border border-liturge-500/20 px-3 py-1 rounded-full mb-3">
+                                Interface da Plataforma Liturge
+                            </span>
+                            <h3 class="text-xl sm:text-3xl font-bold text-white max-w-lg mb-3">
+                                Painel Integrado de Cultos, Escalas e Repertório
+                            </h3>
+                            <p class="text-slate-400 text-sm max-w-xl mx-auto mb-6">
+                                Gestão centralizada para ministros de louvor, líderes de ministério e voluntários com cifras transpostas, escalas transparentes e histórico de cultos.
+                            </p>
+
+                            <!-- Placeholder Indicativo para Inserção de Print -->
+                            <div class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800/80 border border-dashed border-liturge-500/50 text-slate-300 text-xs font-mono">
+                                📷 <span>Espaço preparado para inserção de capturas de tela reais do sistema</span>
+                            </div>
+
+                            <!-- Abas de Navegação Representativas -->
+                            <div class="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-3.5 w-full max-w-3xl">
+                                <div class="p-3.5 rounded-xl bg-night-950/90 border border-slate-800 text-left hover:border-liturge-500/30 transition">
+                                    <div class="text-liturge-400 text-xs font-bold">01. Escalas</div>
+                                    <div class="text-slate-400 text-[11px] mt-0.5">Confirmação e trocas</div>
+                                </div>
+                                <div class="p-3.5 rounded-xl bg-night-950/90 border border-slate-800 text-left hover:border-liturge-500/30 transition">
+                                    <div class="text-liturge-400 text-xs font-bold">02. Cifras Dinâmicas</div>
+                                    <div class="text-slate-400 text-[11px] mt-0.5">Transposição de tons</div>
+                                </div>
+                                <div class="p-3.5 rounded-xl bg-night-950/90 border border-slate-800 text-left hover:border-liturge-500/30 transition">
+                                    <div class="text-liturge-400 text-xs font-bold">03. Central de Mídias</div>
+                                    <div class="text-slate-400 text-[11px] mt-0.5">Slides e avisos</div>
+                                </div>
+                                <div class="p-3.5 rounded-xl bg-night-950/90 border border-slate-800 text-left hover:border-liturge-500/30 transition">
+                                    <div class="text-liturge-400 text-xs font-bold">04. Holyrics</div>
+                                    <div class="text-slate-400 text-[11px] mt-0.5">Exportação .hpls</div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= 4. PILARES DO CONCEITO GEOMÉTRICO (BRANDBOOK) ================= -->
+        <section id="diferenciais" class="py-16 sm:py-24 border-t border-slate-800/80 bg-night-900/40 scroll-mt-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto mb-16">
+                    <span class="text-xs uppercase font-bold tracking-[0.25em] text-liturge-400">Estrutura & Harmonia</span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-2">
+                        Criado para conectar cada engrenagem do culto
+                    </h2>
+                    <p class="text-slate-400 text-base mt-4">
+                        A arquitetura da plataforma inspira-se na harmonia e na certeza de que quando cada ministério atua conectado, a igreja experimenta excelência na liturgia.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Pilar 1 -->
+                    <div class="p-8 rounded-2xl bg-night-900/70 border border-slate-800 hover:border-liturge-500/40 transition-all duration-300 hover:-translate-y-1 shadow-lg">
+                        <div class="w-12 h-12 rounded-xl bg-liturge-500/10 border border-liturge-500/20 flex items-center justify-center text-2xl mb-6">
+                            ⬡
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Estrutura e Ordem</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">
+                            Organização estável. Diga adeus a improvisos de última hora: cultos planejados, cronogramas definidos e funções claras para cada voluntário.
+                        </p>
+                    </div>
+
+                    <!-- Pilar 2 -->
+                    <div class="p-8 rounded-2xl bg-night-900/70 border border-slate-800 hover:border-liturge-500/40 transition-all duration-300 hover:-translate-y-1 shadow-lg">
+                        <div class="w-12 h-12 rounded-xl bg-liturge-500/10 border border-liturge-500/20 flex items-center justify-center text-2xl mb-6">
+                            ✨
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Nós e Conexões</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">
+                            Cada voluntário é um nó de serviço vital: louvor, sonoplastia, projeção, recepção, pastoral e infantil. O Liturge sincroniza a equipe.
+                        </p>
+                    </div>
+
+                    <!-- Pilar 3 -->
+                    <div class="p-8 rounded-2xl bg-night-900/70 border border-slate-800 hover:border-liturge-500/40 transition-all duration-300 hover:-translate-y-1 shadow-lg">
+                        <div class="w-12 h-12 rounded-xl bg-liturge-500/10 border border-liturge-500/20 flex items-center justify-center text-2xl mb-6">
+                            ☀️
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">O Propósito Maior</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">
+                            A tecnologia elimina o peso operacional para que o foco principal permaneça naquilo que realmente importa: a adoração e o serviço com dedicação.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 5. GRADE DE FUNCIONALIDADES DETALHADAS ================= -->
+        <section id="recursos" class="py-20 sm:py-32 scroll-mt-20 relative">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto mb-16 sm:mb-24">
+                    <span class="text-xs uppercase font-bold tracking-[0.25em] text-liturge-400">Recursos Completos</span>
+                    <h2 class="text-3xl sm:text-5xl font-extrabold text-white mt-2">
+                        Tudo o que sua equipe precisa em um só lugar
+                    </h2>
+                    <p class="text-slate-400 text-base sm:text-lg mt-4">
+                        Elimine dezenas de mensagens perdidas em grupos de aplicativos. Tenha total clareza do repertório e das pessoas.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+                    <!-- Recurso 1: Escalas -->
+                    <div class="p-8 sm:p-10 rounded-3xl bg-night-900/60 border border-slate-800 hover:border-liturge-500/40 transition duration-300 flex flex-col justify-between">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-liturge-400 flex items-center justify-center text-xl font-bold mb-6">
+                                01
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-3">Gestão de Escalas Sem Furos</h3>
+                            <p class="text-slate-400 text-sm sm:text-base leading-relaxed mb-6">
+                                Crie escalas mensais ou semanais por ministério com facilidade. Os voluntários registram indisponibilidade prévia, confirmam presença diretamente pelo smartphone e solicitam trocas sem sobrecarregar a liderança.
+                            </p>
+                            <ul class="space-y-2.5 text-xs sm:text-sm text-slate-300">
+                                <li class="flex items-center gap-2">
+                                    <span class="text-liturge-400">✓</span> Bloqueio de datas indisponíveis por voluntário
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="text-liturge-400">✓</span> Confirmação rápida de presença no celular
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="text-liturge-400">✓</span> Visão personalizada "Minhas Escalas" para cada membro
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="mt-8 pt-6 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                            <span>Módulo de Escalas</span>
+                            <span class="text-liturge-400 font-medium">Disponível no app</span>
+                        </div>
+                    </div>
+
+                    <!-- Recurso 2: Repertório & Cifras -->
+                    <div class="p-8 sm:p-10 rounded-3xl bg-night-900/60 border border-slate-800 hover:border-liturge-500/40 transition duration-300 flex flex-col justify-between">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-liturge-400 flex items-center justify-center text-xl font-bold mb-6">
+                                02
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-3">Repertório & Cifras Dinâmicas</h3>
+                            <p class="text-slate-400 text-sm sm:text-base leading-relaxed mb-6">
+                                Centralize as músicas da igreja com cifras inteligentes. Transponha o tom das músicas com um único clique para se adequar à extensão vocal de cada ministro de louvor.
+                            </p>
+                            <ul class="space-y-2.5 text-xs sm:text-sm text-slate-300">
+                                <li class="flex items-center gap-2">
+                                    <span class="text-liturge-400">✓</span> Transposição tonal instantânea por versão
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="text-liturge-400">✓</span> Links diretos para áudio de referência (YouTube e Spotify)
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="text-liturge-400">✓</span> Exportação e importação nativa de listas do Holyrics (.hpls)
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="mt-8 pt-6 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                            <span>Módulo de Músicas</span>
+                            <span class="text-liturge-400 font-medium">Disponível no app</span>
+                        </div>
+                    </div>
+
+                    <!-- Recurso 3: Central de Mídias -->
+                    <div class="p-8 sm:p-10 rounded-3xl bg-night-900/60 border border-slate-800 hover:border-liturge-500/40 transition duration-300 flex flex-col justify-between">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-liturge-400 flex items-center justify-center text-xl font-bold mb-6">
+                                03
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-3">Central de Mídias & Ordem de Culto</h3>
+                            <p class="text-slate-400 text-sm sm:text-base leading-relaxed mb-6">
+                                Nunca mais atrase o início do culto aguardando arquivos de apresentação. Armazene e organize os avisos, vídeos de abertura e temas de sermão associados ao culto.
+                            </p>
+                            <ul class="space-y-2.5 text-xs sm:text-sm text-slate-300">
+                                <li class="flex items-center gap-2">
+                                    <span class="text-liturge-400">✓</span> Roteiro detalhado com tempos e momentos litúrgicos
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="text-liturge-400">✓</span> Armazenamento seguro de arquivos de apoio
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="text-liturge-400">✓</span> Sincronização entre equipe de som, projeção e transmissão
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="mt-8 pt-6 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                            <span>Módulo de Cultos</span>
+                            <span class="text-liturge-400 font-medium">Disponível no app</span>
+                        </div>
+                    </div>
+
+                    <!-- Recurso 4: Multi-igreja & Segurança -->
+                    <div class="p-8 sm:p-10 rounded-3xl bg-night-900/60 border border-slate-800 hover:border-liturge-500/40 transition duration-300 flex flex-col justify-between">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-liturge-400 flex items-center justify-center text-xl font-bold mb-6">
+                                04
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-3">Arquitetura Multi-Igreja Segura</h3>
+                            <p class="text-slate-400 text-sm sm:text-base leading-relaxed mb-6">
+                                Cada congregação tem seu banco de dados e usuários completamente isolados via Row Level Security (RLS) de padrão bancário. Pastores e líderes gerenciam apenas suas respectivas áreas.
+                            </p>
+                            <ul class="space-y-2.5 text-xs sm:text-sm text-slate-300">
+                                <li class="flex items-center gap-2">
+                                    <span class="text-liturge-400">✓</span> Níveis de acesso granulares (Admin, Líder, Voluntário)
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="text-liturge-400">✓</span> Rigorosa conformidade com a LGPD e privacidade
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="text-liturge-400">✓</span> Escalabilidade em nuvem rápida e segura
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="mt-8 pt-6 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                            <span>Segurança & Infraestrutura</span>
+                            <span class="text-liturge-400 font-medium">Isolamento Multi-tenant</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 6. MINISTÉRIOS ATENDIDOS ================= -->
+        <section id="ministerios" class="py-16 sm:py-24 border-t border-slate-800/80 bg-night-900/20 scroll-mt-20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto mb-16">
+                    <span class="text-xs uppercase font-bold tracking-[0.25em] text-liturge-400">Ecossistema Completo</span>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white mt-2">
+                        Projetado para toda a liderança da igreja
+                    </h2>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div class="p-5 rounded-2xl bg-night-900/50 border border-slate-800 text-center hover:border-liturge-500/30 transition">
+                        <div class="text-3xl mb-2">🎸</div>
+                        <div class="font-bold text-sm text-white">Louvor</div>
+                        <div class="text-[11px] text-slate-400 mt-1">Músicos & Ministros</div>
+                    </div>
+                    <div class="p-5 rounded-2xl bg-night-900/50 border border-slate-800 text-center hover:border-liturge-500/30 transition">
+                        <div class="text-3xl mb-2">🎚️</div>
+                        <div class="font-bold text-sm text-white">Áudio & Som</div>
+                        <div class="text-[11px] text-slate-400 mt-1">Técnicos & Operadores</div>
+                    </div>
+                    <div class="p-5 rounded-2xl bg-night-900/50 border border-slate-800 text-center hover:border-liturge-500/30 transition">
+                        <div class="text-3xl mb-2">🖥️</div>
+                        <div class="font-bold text-sm text-white">Mídia & Projeção</div>
+                        <div class="text-[11px] text-slate-400 mt-1">Slides & Holyrics</div>
+                    </div>
+                    <div class="p-5 rounded-2xl bg-night-900/50 border border-slate-800 text-center hover:border-liturge-500/30 transition">
+                        <div class="text-3xl mb-2">🤝</div>
+                        <div class="font-bold text-sm text-white">Recepção</div>
+                        <div class="text-[11px] text-slate-400 mt-1">Boas-vindas & Apoio</div>
+                    </div>
+                    <div class="p-5 rounded-2xl bg-night-900/50 border border-slate-800 text-center hover:border-liturge-500/30 transition">
+                        <div class="text-3xl mb-2">👶</div>
+                        <div class="font-bold text-sm text-white">Infantil</div>
+                        <div class="text-[11px] text-slate-400 mt-1">Professores & Cuidados</div>
+                    </div>
+                    <div class="p-5 rounded-2xl bg-night-900/50 border border-slate-800 text-center hover:border-liturge-500/30 transition">
+                        <div class="text-3xl mb-2">📖</div>
+                        <div class="font-bold text-sm text-white">Pastoral</div>
+                        <div class="text-[11px] text-slate-400 mt-1">Direção & Ministração</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 7. BANNER FINAL (CTA) ================= -->
+        <section class="py-20 relative overflow-hidden">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="rounded-3xl p-10 sm:p-16 bg-gradient-to-r from-night-900 via-night-850 to-night-900 border border-liturge-500/30 shadow-2xl text-center relative overflow-hidden">
+                    <div class="absolute -top-24 -right-24 w-64 h-64 bg-liturge-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-amber-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
+                        Pronto para transformar a organização do culto?
+                    </h2>
+                    <p class="mt-4 text-base sm:text-lg text-slate-400 max-w-2xl mx-auto">
+                        Acesse a plataforma Liturge e experimente o novo padrão de gestão para os ministérios da sua congregação.
+                    </p>
+
+                    <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <a href="https://app.liturge.app.br" 
+                           class="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-xl text-night-950 bg-gradient-to-r from-liturge-400 via-liturge-500 to-amber-600 hover:from-liturge-300 hover:to-amber-500 transition-all duration-200 shadow-xl shadow-liturge-500/25 hover:scale-105">
+                            Acessar o Sistema Agora
+                            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ================= 8. RODAPÉ INSTITUCIONAL (FOOTER) ================= -->
+    <footer class="border-t border-slate-800/80 bg-night-950 py-12 text-slate-400 text-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+                <!-- Coluna 1: Marca -->
+                <div class="md:col-span-2 space-y-4">
+                    <img src="assets/liturge-logo-full.svg" alt="Liturge" class="h-9 w-auto">
+                    <p class="text-xs sm:text-sm text-slate-400 max-w-sm leading-relaxed">
+                        Plataforma inteligente de gestão de escalas, repertórios e cultos para os ministérios da igreja. Harmonia, ordem e excelência.
+                    </p>
+                    <div class="text-xs text-slate-500">
+                        Ambiente do sistema: <a href="https://app.liturge.app.br" class="text-liturge-400 hover:underline">app.liturge.app.br</a>
+                    </div>
+                </div>
+
+                <!-- Coluna 2: Navegação -->
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-widest text-slate-200 mb-4">Navegação</h4>
+                    <ul class="space-y-2.5 text-xs sm:text-sm">
+                        <li><a href="#recursos" class="hover:text-liturge-400 transition">Recursos</a></li>
+                        <li><a href="#showcase" class="hover:text-liturge-400 transition">Demonstração</a></li>
+                        <li><a href="#ministerios" class="hover:text-liturge-400 transition">Ministérios</a></li>
+                        <li><a href="https://app.liturge.app.br" class="hover:text-liturge-400 transition font-semibold text-liturge-400">Entrar no App</a></li>
+                    </ul>
+                </div>
+
+                <!-- Coluna 3: Legal & Contato -->
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-widest text-slate-200 mb-4">Privacidade & Suporte</h4>
+                    <ul class="space-y-2.5 text-xs sm:text-sm">
+                        <li><a href="/privacidade" class="hover:text-liturge-400 transition font-medium text-slate-300">Política de Privacidade</a></li>
+                        <li><a href="/privacidade#exclusao-dados" class="hover:text-liturge-400 transition">Exclusão de Dados (Meta)</a></li>
+                        <li><a href="mailto:contato@liturge.app.br" class="hover:text-liturge-400 transition">contato@liturge.app.br</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="pt-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+                <p>© 2026 Liturge. Todos os direitos reservados.</p>
+                <div class="flex items-center gap-6">
+                    <a href="/privacidade" class="hover:text-slate-400 transition">Privacidade (LGPD)</a>
+                    <span>•</span>
+                    <a href="https://app.liturge.app.br" class="hover:text-slate-400 transition">Acesso ao Sistema</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

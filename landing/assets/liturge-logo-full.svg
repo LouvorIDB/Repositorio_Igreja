@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 90" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- Gradiente Dourado Liturge -->
+    <linearGradient id="logo-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE082" />
+      <stop offset="50%" stop-color="#FFA726" />
+      <stop offset="100%" stop-color="#E65100" />
+    </linearGradient>
+
+    <linearGradient id="logo-facet" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFB300" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#FF6F00" stop-opacity="0.08" />
+    </linearGradient>
+
+    <radialGradient id="logo-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFF9C4" />
+      <stop offset="40%" stop-color="#FFD54F" />
+      <stop offset="80%" stop-color="#FFA000" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#FF8F00" stop-opacity="0" />
+    </radialGradient>
+
+    <filter id="logo-glow-filter" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.8" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- SÍMBOLO POLIÉDRICO (ESQUERDA) -->
+  <g transform="translate(10, 5) scale(0.4)" filter="url(#logo-glow-filter)">
+    <!-- Facetas -->
+    <polygon points="100,22 148,68 100,46" fill="url(#logo-facet)" />
+    <polygon points="100,22 52,68 100,46" fill="url(#logo-facet)" />
+    <polygon points="100,46 128,84 100,100" fill="url(#logo-facet)" />
+    <polygon points="100,46 72,84 100,100" fill="url(#logo-facet)" />
+    <polygon points="100,100 128,116 100,154" fill="url(#logo-facet)" />
+    <polygon points="100,100 72,116 100,154" fill="url(#logo-facet)" />
+
+    <!-- Arestas Principais -->
+    <path d="M 100,22 L 148,68 L 172,62 L 148,132 L 172,138 L 100,178 L 52,132 L 28,138 L 52,68 L 28,62 Z" 
+          stroke="url(#logo-gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.75" />
+
+    <polygon points="100,46 148,68 148,132 100,154 52,132 52,68" 
+             stroke="url(#logo-gold)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+
+    <polygon points="100,46 128,84 128,116 100,154 72,116 72,84" 
+             stroke="url(#logo-gold)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Raios Centrais -->
+    <line x1="100" y1="100" x2="100" y2="46" stroke="url(#logo-gold)" stroke-width="2.2" />
+    <line x1="100" y1="100" x2="128" y2="84" stroke="url(#logo-gold)" stroke-width="2.2" />
+    <line x1="100" y1="100" x2="128" y2="116" stroke="url(#logo-gold)" stroke-width="2.2" />
+    <line x1="100" y1="100" x2="100" y2="154" stroke="url(#logo-gold)" stroke-width="2.2" />
+    <line x1="100" y1="100" x2="72" y2="116" stroke="url(#logo-gold)" stroke-width="2.2" />
+    <line x1="100" y1="100" x2="72" y2="84" stroke="url(#logo-gold)" stroke-width="2.2" />
+
+    <!-- Arestas Externas -->
+    <line x1="100" y1="22" x2="100" y2="46" stroke="url(#logo-gold)" stroke-width="2" />
+    <line x1="100" y1="178" x2="100" y2="154" stroke="url(#logo-gold)" stroke-width="2" />
+    <line x1="28" y1="62" x2="72" y2="84" stroke="url(#logo-gold)" stroke-width="1.8" />
+    <line x1="172" y1="62" x2="128" y2="84" stroke="url(#logo-gold)" stroke-width="1.8" />
+    <line x1="28" y1="138" x2="72" y2="116" stroke="url(#logo-gold)" stroke-width="1.8" />
+    <line x1="172" y1="138" x2="128" y2="116" stroke="url(#logo-gold)" stroke-width="1.8" />
+
+    <!-- Nós -->
+    <circle cx="100" cy="22" r="4.5" fill="#FFE082" />
+    <circle cx="28" cy="62" r="4" fill="#FFE082" />
+    <circle cx="172" cy="62" r="4" fill="#FFE082" />
+    <circle cx="28" cy="138" r="4" fill="#FFE082" />
+    <circle cx="172" cy="138" r="4" fill="#FFE082" />
+    <circle cx="100" cy="178" r="4.5" fill="#FFE082" />
+
+    <circle cx="100" cy="46" r="5" fill="#FFF9C4" />
+    <circle cx="128" cy="84" r="5" fill="#FFF9C4" />
+    <circle cx="128" cy="116" r="5" fill="#FFF9C4" />
+    <circle cx="100" cy="154" r="5" fill="#FFF9C4" />
+    <circle cx="72" cy="116" r="5" fill="#FFF9C4" />
+    <circle cx="72" cy="84" r="5" fill="#FFF9C4" />
+
+    <!-- Nó Central -->
+    <circle cx="100" cy="100" r="10" fill="url(#logo-glow)" />
+    <circle cx="100" cy="100" r="5.5" fill="#FFFFFF" />
+  </g>
+
+  <!-- TIPOGRAFIA: WORDMARK LITURGE -->
+  <text x="108" y="47" 
+        font-family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+        font-size="28" 
+        font-weight="800" 
+        letter-spacing="5" 
+        fill="#FFFFFF">
+    LITURGE
+  </text>
+
+  <!-- PONTO DE LUZ SUTIL ACIMA DO 'E' OU LINHA DIVISÓRIA -->
+  <line x1="108" y1="58" x2="415" y2="58" stroke="url(#logo-gold)" stroke-width="1.2" opacity="0.35" />
+
+  <!-- TAGLINE DE APOIO -->
+  <text x="109" y="72" 
+        font-family="'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+        font-size="8.8" 
+        font-weight="600" 
+        letter-spacing="2.8" 
+        fill="#FFA726">
+    GESTÃO DE ESCALAS E REPERTÓRIO
+  </text>
+</svg>
