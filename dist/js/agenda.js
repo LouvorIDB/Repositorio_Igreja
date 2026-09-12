@@ -855,7 +855,7 @@ async function renderizarAdminCultosEventos() {
         let indicator = "";
 
         if (temCulto) {
-            bgClass = "bg-liturge-500/10 border-liturge-500/40 hover:bg-liturge-500/20 cursor-pointer transition text-liturge-300 font-semibold shadow-sm";
+            bgClass = "bg-liturge-500/10 border-liturge-500/40 hover:bg-liturge-500/20 cursor-pointer transition text-white font-bold shadow-sm";
             if (totalNoDia > 1) {
                 indicator += `<span class="block w-2 h-2 rounded-full bg-purple-400 mt-1"></span><span class="block w-2 h-2 rounded-full bg-liturge-400 glow-node mt-1"></span>`;
             } else {

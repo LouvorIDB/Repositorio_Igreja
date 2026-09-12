@@ -918,9 +918,9 @@ function renderizarCultos(rows) {
             if (blocoOculto) continue;
 
             const corHeader = blocoEmMontagem
-                ? 'bg-amber-950/25 hover:bg-amber-950/40 border-b border-amber-900/30 text-amber-200'
+                ? 'bg-amber-950/15 hover:bg-amber-950/30 border-b border-amber-900/30 text-white'
                 : 'bg-night-950/70 hover:bg-night-900 border-b border-slate-800/80 text-white';
-            const corTexto = blocoEmMontagem ? 'text-amber-300' : 'text-white';
+            const corTexto = 'text-white';
 
             // Build a map of roleName -> ministry
             const roleToMinistry = {};
@@ -970,7 +970,7 @@ function renderizarCultos(rows) {
                     if (!groupedEscala[minInfo.name]) {
                         groupedEscala[minInfo.name] = { color: minInfo.color, icon: minInfo.icon, parts: [] };
                     }
-                    groupedEscala[minInfo.name].parts.push(`<span class="font-medium text-slate-400">${nomeFormato}:</span> <span class="text-liturge-300 font-semibold">${instrObj[key]}</span>`);
+                    groupedEscala[minInfo.name].parts.push(`<span class="font-medium text-slate-400">${nomeFormato}:</span> <span class="text-white font-semibold">${instrObj[key]}</span>`);
                 }
             });
 
@@ -981,7 +981,7 @@ function renderizarCultos(rows) {
                     groupedEscala[minName] = { color: louvorMin.color || 'brand', icon: louvorMin.icon || '⛪', parts: [] };
                 }
                 const labelVocal = vocaisList.length > 1 ? 'Vocalistas' : 'Vocalista';
-                groupedEscala[minName].parts.push(`<span class="font-medium text-slate-400">${labelVocal}:</span> <span class="text-liturge-300 font-semibold">${vocaisList.join(', ')}</span>`);
+                groupedEscala[minName].parts.push(`<span class="font-medium text-slate-400">${labelVocal}:</span> <span class="text-white font-semibold">${vocaisList.join(', ')}</span>`);
             }
 
             let linhaInstrumentos = '';
@@ -1002,7 +1002,7 @@ function renderizarCultos(rows) {
 
                 if (canVerMidia) {
                     if (midiasCulto && midiasCulto.length > 0) {
-                        const linksHtml = midiasCulto.map(m => `<a href="${m.url}" target="_blank" class="text-liturge-400 hover:text-liturge-300 hover:underline font-mono text-xs px-2 py-0.5 rounded bg-night-950/80 border border-slate-800 flex items-center gap-1">${m.name}</a>`).join('');
+                        const linksHtml = midiasCulto.map(m => `<a href="${m.url}" target="_blank" class="text-slate-200 hover:text-white hover:border-slate-700 text-xs px-2.5 py-1 rounded-md bg-night-950/90 border border-slate-800 flex items-center gap-1.5 transition font-medium"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400 shrink-0"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg><span>${m.name}</span></a>`).join('');
                         linhaMidias = `<div class="px-4 py-2 text-xs bg-night-950/40 border-b border-slate-800/60 flex flex-wrap gap-2 items-center">
                             <span class="text-slate-400 font-medium flex items-center gap-1.5">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400 shrink-0"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
@@ -1081,7 +1081,7 @@ function renderizarCultos(rows) {
                 </button>`
                 : '';
             const btnCifraCulto = (chordsTexto && canVerCifra)
-                ? `<button onclick="abrirModalCifraPublica('${musica.toString().replace(/'/g, "\\'")}', '${tom}', '${encodeURIComponent(chordsTexto)}')" class="bg-slate-800 hover:bg-slate-700 text-liturge-300 border border-slate-700/80 hover:border-liturge-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
+                ? `<button onclick="abrirModalCifraPublica('${musica.toString().replace(/'/g, "\\'")}', '${tom}', '${encodeURIComponent(chordsTexto)}')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700/80 hover:border-liturge-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                     <span>Cifra</span>
                 </button>`
@@ -1092,9 +1092,9 @@ function renderizarCultos(rows) {
                 <div class="p-4 flex flex-col gap-2 hover:bg-night-950/30 transition">
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                         <div>
-                            <h3 class="font-bold text-white text-base">${musica} ${artistaMusica ? `<span class="text-xs font-normal text-liturge-400 ml-1.5">(${artistaMusica})</span>` : ''}</h3>
+                            <h3 class="font-bold text-white text-base">${musica} ${artistaMusica ? `<span class="text-xs font-normal text-slate-400 ml-1.5">(${artistaMusica})</span>` : ''}</h3>
                             <div class="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-slate-400">
-                                ${canVerCifra ? `<span class="bg-night-950 border border-slate-800 px-2.5 py-0.5 rounded-md text-liturge-400 font-mono font-bold text-[11px]">Tom: ${tom} ${variacao ? '(' + variacao + ')' : ''}</span>` : ''}
+                                ${canVerCifra ? `<span class="bg-night-950 border border-slate-800 px-2.5 py-0.5 rounded-md text-[11px] font-mono"><span class="text-slate-400 font-normal">Tom:</span> <span class="text-slate-200 font-bold">${tom} ${variacao ? '(' + variacao + ')' : ''}</span></span>` : ''}
                                 ${(canVerCantor && cantoresMusica) ? `<span class="text-slate-400 text-xs flex items-center gap-1.5 font-medium"><span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Voz:</span> <span class="text-slate-200">${cantoresMusica}</span></span>` : ''}
                             </div>
                         </div>
