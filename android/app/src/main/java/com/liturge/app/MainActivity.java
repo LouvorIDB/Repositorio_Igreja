@@ -25,19 +25,35 @@ public class MainActivity extends BridgeActivity {
             return windowInsets;
         });
 
-        // Interface nativa para abrir arquivos .ics diretamente no app de calendário do celular
-        registrarInterfaceCalendario();
+        // Solicita permissão de notificação nativa no Android 13+ (One UI / Galaxy S24)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
+
+        // Interfaces nativas (Calendário e Controle Multimídia em 2º plano)
+        registrarInterfacesNativas();
     }
 
     @Override
     public void onStart() {
         super.onStart();
-        registrarInterfaceCalendario();
+        registrarInterfacesNativas();
     }
 
-    private void registrarInterfaceCalendario() {
+    @Override
+    public void onDestroy() {
+        MediaNotificationService.setWebView(null);
+        super.onDestroy();
+    }
+
+    private void registrarInterfacesNativas() {
         if (getBridge() != null && getBridge().getWebView() != null) {
-            getBridge().getWebView().addJavascriptInterface(new CalendarExportInterface(this), "AndroidCalendar");
+            android.webkit.WebView webView = getBridge().getWebView();
+            webView.addJavascriptInterface(new CalendarExportInterface(this), "AndroidCalendar");
+            webView.addJavascriptInterface(new MediaBridgeInterface(this), "AndroidMedia");
+            MediaNotificationService.setWebView(webView);
         }
     }
 }
