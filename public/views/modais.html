@@ -799,104 +799,110 @@
 </div>
 
 <!-- ===================== MODAL NOVO/EDITAR MINISTÉRIO ===================== -->
-<div id="modal-ministerio-admin" class="hidden fixed inset-0 bg-black/80 z-[140] flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-            <h3 id="modal-ministerio-titulo" class="text-lg font-bold text-brand-400">🏢 Novo Ministério</h3>
-            <button onclick="fecharModalMinisterioAdmin()" class="text-slate-400 hover:text-white text-sm">✕</button>
+<div id="modal-ministerio-admin" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[140] flex items-center justify-center p-4">
+    <div class="bg-night-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 id="modal-ministerio-titulo" class="text-lg font-bold text-liturge-400 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                Novo Ministério
+            </h3>
+            <button onclick="fecharModalMinisterioAdmin()" class="text-slate-400 hover:text-white text-sm cursor-pointer">✕</button>
         </div>
         <input type="hidden" id="ministerio-admin-id">
         <div>
-            <label class="block text-xs text-slate-300 mb-1">Nome do Ministério</label>
-            <input type="text" id="ministerio-admin-nome" required placeholder="Ex: Louvor & Adoração" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+            <label class="block text-xs text-slate-300 mb-1 font-medium">Nome do Ministério</label>
+            <input type="text" id="ministerio-admin-nome" required placeholder="Ex: Louvor & Adoração" class="w-full bg-night-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-liturge-500 transition">
         </div>
         <div>
-            <label class="block text-xs text-slate-300 mb-1">Descrição</label>
-            <textarea id="ministerio-admin-descricao" rows="2" placeholder="Descrição ou atribuições..." class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500"></textarea>
+            <label class="block text-xs text-slate-300 mb-1 font-medium">Descrição</label>
+            <textarea id="ministerio-admin-descricao" rows="2" placeholder="Descrição ou atribuições..." class="w-full bg-night-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-liturge-500 transition"></textarea>
         </div>
         <div class="grid grid-cols-2 gap-3">
             <div>
-                <label class="block text-xs text-slate-300 mb-1">Ícone (Emoji)</label>
-                <input type="text" id="ministerio-admin-icone" placeholder="🎸, 🎥, 🎤" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                <label class="block text-xs text-slate-300 mb-1 font-medium">Ícone / Rótulo</label>
+                <input type="text" id="ministerio-admin-icone" placeholder="Louvor, Mídia, Recepção" class="w-full bg-night-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-liturge-500 transition">
             </div>
             <div>
-                <label class="block text-xs text-slate-300 mb-1">Cor do Card</label>
-                <select id="ministerio-admin-cor" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                <label class="block text-xs text-slate-300 mb-1 font-medium">Cor do Card</label>
+                <select id="ministerio-admin-cor" class="w-full bg-night-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-liturge-500 cursor-pointer">
+                    <option value="amber">Âmbar (Dourado Oficial)</option>
                     <option value="emerald">Emerald (Verde)</option>
                     <option value="blue">Blue (Azul)</option>
-                    <option value="amber">Amber (Amarelo)</option>
                     <option value="purple">Purple (Roxo)</option>
                     <option value="rose">Rose (Rosa)</option>
                 </select>
             </div>
-            <div class="col-span-full bg-slate-800/60 p-2.5 rounded-xl border border-slate-700/60 mt-1">
+            <div class="col-span-full bg-night-950/80 p-3 rounded-xl border border-slate-800 mt-1">
                 <label class="flex items-center gap-2.5 cursor-pointer select-none">
-                    <input type="checkbox" id="ministerio-admin-can-upload-media" class="rounded accent-brand-500 w-4 h-4">
+                    <input type="checkbox" id="ministerio-admin-can-upload-media" class="rounded accent-liturge-500 w-4 h-4">
                     <div>
-                        <span class="text-xs font-semibold text-white block">📁 Permitir Upload de Mídias</span>
+                        <span class="text-xs font-semibold text-white block">Permitir Upload de Mídias</span>
                         <span class="text-[10px] text-slate-400 block">Autoriza os integrantes deste ministério a enviar fotos, vídeos e avisos de projeção.</span>
                     </div>
                 </label>
             </div>
         </div>
 
-        <div class="border-t border-slate-700 pt-3">
+        <div class="border-t border-slate-800 pt-3">
             <label class="block text-xs font-semibold text-slate-300 mb-2">Permissões de Acesso do Ministério</label>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-2 max-h-56 overflow-y-auto p-1 text-xs">
-                <label class="flex items-center gap-2"><input type="checkbox" id="perm-ver_escala" class="min-perm-cb rounded accent-brand-500"> 📅 Ver Escala</label>
-                <label class="flex items-center gap-2"><input type="checkbox" id="perm-ver_letra" class="min-perm-cb rounded accent-brand-500"> 📜 Ver Letra</label>
-                <label class="flex items-center gap-2"><input type="checkbox" id="perm-ver_cifra" class="min-perm-cb rounded accent-brand-500"> 🎸 Ver Cifra</label>
-                <label class="flex items-center gap-2"><input type="checkbox" id="perm-ver_vs" class="min-perm-cb rounded accent-brand-500"> ▶ Ver Áudio / VS</label>
-                <label class="flex items-center gap-2"><input type="checkbox" id="perm-ver_youtube" class="min-perm-cb rounded accent-brand-500"> 📺 Ver YouTube</label>
-                <label class="flex items-center gap-2"><input type="checkbox" id="perm-ver_cantor" class="min-perm-cb rounded accent-brand-500"> 🎤 Ver Vocalistas</label>
-                <label class="flex items-center gap-2"><input type="checkbox" id="perm-ver_midia" class="min-perm-cb rounded accent-brand-500"> 🖼️ Ver Mídias / Projeção</label>
-                <label class="flex items-center gap-2 text-amber-300"><input type="checkbox" id="perm-enviar_solic_musica" class="min-perm-cb rounded accent-brand-500"> 💬 Pedir Ajuste de Tom</label>
-                <label class="flex items-center gap-2 text-amber-300"><input type="checkbox" id="perm-enviar_sugestao_culto" class="min-perm-cb rounded accent-brand-500"> 💡 Sugerir para Culto</label>
-                <label class="flex items-center gap-2 text-indigo-300"><input type="checkbox" id="perm-ver_repertorio" class="min-perm-cb rounded accent-brand-500"> 🎼 Aba Repertório</label>
-                <label class="flex items-center gap-2 text-indigo-300"><input type="checkbox" id="perm-ver_musicas_novas" class="min-perm-cb rounded accent-brand-500"> 🌟 Aba Músicas Novas</label>
-                <label class="flex items-center gap-2 text-indigo-300"><input type="checkbox" id="perm-ver_aba_midias_upadas" class="min-perm-cb rounded accent-brand-500"> 📥 Aba Mídias Upadas</label>
-                <label class="flex items-center gap-2 text-indigo-300"><input type="checkbox" id="perm-ver_agenda" class="min-perm-cb rounded accent-brand-500"> 🗓️ Aba Agenda & Eventos</label>
-                <label class="flex items-center gap-2 text-cyan-300"><input type="checkbox" id="perm-gerar_script_holyrics" class="min-perm-cb rounded accent-brand-500"> 📋 Exportar Holyrics</label>
+                <label class="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer"><input type="checkbox" id="perm-ver_escala" class="min-perm-cb rounded accent-liturge-500"> Ver Escala</label>
+                <label class="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer"><input type="checkbox" id="perm-ver_letra" class="min-perm-cb rounded accent-liturge-500"> Ver Letra</label>
+                <label class="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer"><input type="checkbox" id="perm-ver_cifra" class="min-perm-cb rounded accent-liturge-500"> Ver Cifra</label>
+                <label class="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer"><input type="checkbox" id="perm-ver_vs" class="min-perm-cb rounded accent-liturge-500"> Ver Áudio / VS</label>
+                <label class="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer"><input type="checkbox" id="perm-ver_youtube" class="min-perm-cb rounded accent-liturge-500"> Ver YouTube</label>
+                <label class="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer"><input type="checkbox" id="perm-ver_cantor" class="min-perm-cb rounded accent-liturge-500"> Ver Vocalistas</label>
+                <label class="flex items-center gap-2 text-slate-300 hover:text-white cursor-pointer"><input type="checkbox" id="perm-ver_midia" class="min-perm-cb rounded accent-liturge-500"> Ver Mídias / Projeção</label>
+                <label class="flex items-center gap-2 text-amber-300 hover:text-amber-200 cursor-pointer"><input type="checkbox" id="perm-enviar_solic_musica" class="min-perm-cb rounded accent-liturge-500"> Pedir Ajuste de Tom</label>
+                <label class="flex items-center gap-2 text-amber-300 hover:text-amber-200 cursor-pointer"><input type="checkbox" id="perm-enviar_sugestao_culto" class="min-perm-cb rounded accent-liturge-500"> Sugerir para Culto</label>
+                <label class="flex items-center gap-2 text-liturge-400 hover:text-liturge-300 cursor-pointer"><input type="checkbox" id="perm-ver_repertorio" class="min-perm-cb rounded accent-liturge-500"> Aba Repertório</label>
+                <label class="flex items-center gap-2 text-liturge-400 hover:text-liturge-300 cursor-pointer"><input type="checkbox" id="perm-ver_musicas_novas" class="min-perm-cb rounded accent-liturge-500"> Aba Músicas Novas</label>
+                <label class="flex items-center gap-2 text-liturge-400 hover:text-liturge-300 cursor-pointer"><input type="checkbox" id="perm-ver_aba_midias_upadas" class="min-perm-cb rounded accent-liturge-500"> Aba Mídias Upadas</label>
+                <label class="flex items-center gap-2 text-liturge-400 hover:text-liturge-300 cursor-pointer"><input type="checkbox" id="perm-ver_agenda" class="min-perm-cb rounded accent-liturge-500"> Aba Agenda & Eventos</label>
+                <label class="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 cursor-pointer"><input type="checkbox" id="perm-gerar_script_holyrics" class="min-perm-cb rounded accent-liturge-500"> Exportar Holyrics</label>
             </div>
         </div>
 
-        <div class="flex gap-2 pt-3 border-t border-slate-700">
-            <button onclick="fecharModalMinisterioAdmin()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
-            <button onclick="salvarMinisterioAdmin()" id="btn-salvar-ministerio-admin" class="flex-1 bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Ministério</button>
+        <div class="flex gap-2 pt-3 border-t border-slate-800">
+            <button onclick="fecharModalMinisterioAdmin()" class="flex-1 bg-night-950 hover:bg-slate-800 text-slate-300 border border-slate-800 px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer">Fechar</button>
+            <button onclick="salvarMinisterioAdmin()" id="btn-salvar-ministerio-admin" class="flex-1 bg-gradient-to-r from-liturge-500 to-amber-600 hover:brightness-110 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow-lg shadow-liturge-500/20 cursor-pointer">Salvar Ministério</button>
         </div>
     </div>
 </div>
 
 <!-- ===================== MODAL NOVA FUNÇÃO DE MINISTÉRIO ===================== -->
-<div id="modal-funcao-admin" class="hidden fixed inset-0 bg-black/80 z-[150] flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-            <h3 id="modal-funcao-admin-titulo" class="text-lg font-bold text-brand-400">➕ Nova Função no Ministério</h3>
-            <button onclick="fecharModalFuncaoAdmin()" class="text-slate-400 hover:text-white text-sm">✕</button>
+<div id="modal-funcao-admin" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
+    <div class="bg-night-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h3 id="modal-funcao-admin-titulo" class="text-lg font-bold text-liturge-400 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Nova Função no Ministério
+            </h3>
+            <button onclick="fecharModalFuncaoAdmin()" class="text-slate-400 hover:text-white text-sm cursor-pointer">✕</button>
         </div>
         <input type="hidden" id="funcao-admin-id" value="">
         <div>
-            <label class="block text-xs text-slate-300 mb-1">Ministério</label>
-            <select id="funcao-admin-ministerio-id" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+            <label class="block text-xs text-slate-300 mb-1 font-medium">Ministério</label>
+            <select id="funcao-admin-ministerio-id" class="w-full bg-night-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-liturge-500 cursor-pointer">
                 <option value="">Selecione um ministério...</option>
             </select>
         </div>
         <div>
-            <label class="block text-xs text-slate-300 mb-1">Nome da Nova Função</label>
-            <input type="text" id="funcao-admin-nome" required placeholder="Ex: Operador de Luz, Ministro de Louvor" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+            <label class="block text-xs text-slate-300 mb-1 font-medium">Nome da Nova Função</label>
+            <input type="text" id="funcao-admin-nome" required placeholder="Ex: Operador de Luz, Ministro de Louvor" class="w-full bg-night-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-liturge-500 transition">
         </div>
         <div>
             <label class="block text-xs text-slate-300 mb-1.5 font-medium">Onde essa função é escalada?</label>
             <div class="grid grid-cols-2 gap-2">
-                <label class="flex items-start gap-2 p-2.5 rounded-xl border border-slate-700 bg-slate-800/60 cursor-pointer hover:border-slate-500 transition select-none">
-                    <input type="radio" name="funcao-admin-escopo" id="funcao-escopo-service" value="service" checked class="accent-brand-500 mt-0.5">
+                <label class="flex items-start gap-2 p-2.5 rounded-xl border border-slate-800 bg-night-950/80 cursor-pointer hover:border-slate-700 transition select-none">
+                    <input type="radio" name="funcao-admin-escopo" id="funcao-escopo-service" value="service" checked class="accent-liturge-500 mt-0.5">
                     <div>
                         <span class="text-xs font-bold text-white block">No Culto Geral</span>
                         <span class="text-[10px] text-slate-400 block leading-tight mt-0.5">Escala única para todo o culto (ex: Bateria, Som, Mídia)</span>
                     </div>
                 </label>
-                <label class="flex items-start gap-2 p-2.5 rounded-xl border border-slate-700 bg-slate-800/60 cursor-pointer hover:border-slate-500 transition select-none">
-                    <input type="radio" name="funcao-admin-escopo" id="funcao-escopo-song" value="song" class="accent-brand-500 mt-0.5">
+                <label class="flex items-start gap-2 p-2.5 rounded-xl border border-slate-800 bg-night-950/80 cursor-pointer hover:border-slate-700 transition select-none">
+                    <input type="radio" name="funcao-admin-escopo" id="funcao-escopo-song" value="song" class="accent-liturge-500 mt-0.5">
                     <div>
                         <span class="text-xs font-bold text-white block">Por Música</span>
                         <span class="text-[10px] text-slate-400 block leading-tight mt-0.5">Escalado em cada faixa individual (ex: Cantores, Ministros, Solistas)</span>
@@ -904,9 +910,9 @@
                 </label>
             </div>
         </div>
-        <div class="flex gap-2 pt-3 border-t border-slate-700">
-            <button onclick="fecharModalFuncaoAdmin()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Fechar</button>
-            <button onclick="salvarFuncaoAdmin()" id="btn-salvar-funcao-admin" class="flex-1 bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Salvar Função</button>
+        <div class="flex gap-2 pt-3 border-t border-slate-800">
+            <button onclick="fecharModalFuncaoAdmin()" class="flex-1 bg-night-950 hover:bg-slate-800 text-slate-300 border border-slate-800 px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer">Fechar</button>
+            <button onclick="salvarFuncaoAdmin()" id="btn-salvar-funcao-admin" class="flex-1 bg-gradient-to-r from-liturge-500 to-amber-600 hover:brightness-110 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow-lg shadow-liturge-500/20 cursor-pointer">Salvar Função</button>
         </div>
     </div>
 </div>
@@ -1086,36 +1092,39 @@
 </div>
 
 <!-- ===================== MODAL APROVAR E ALTERAR TOM (ADMIN) ===================== -->
-<div id="modal-aprovar-tom-admin" class="hidden fixed inset-0 bg-black/80 z-[120] flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-        <div class="flex items-center justify-between border-b border-slate-700 pb-3">
-            <h2 class="text-lg font-bold text-brand-400">🎶 Aprovar e Ajustar Tom</h2>
-            <button onclick="fecharModalAprovarTomAdmin()" class="text-slate-400 hover:text-white text-sm">✕</button>
+<div id="modal-aprovar-tom-admin" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[120] flex items-center justify-center p-4">
+    <div class="bg-night-900 border border-slate-800 rounded-3xl w-full max-w-md shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <h2 class="text-lg font-bold text-liturge-400 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+                Aprovar e Ajustar Tom
+            </h2>
+            <button onclick="fecharModalAprovarTomAdmin()" class="text-slate-400 hover:text-white text-sm cursor-pointer">✕</button>
         </div>
         <input type="hidden" id="aprovar-tom-solic-id">
         <div>
-            <p id="aprovar-tom-resumo-solic" class="text-xs text-slate-300 bg-slate-900 p-3 rounded-xl border border-slate-700 font-medium leading-relaxed"></p>
+            <p id="aprovar-tom-resumo-solic" class="text-xs text-slate-300 bg-night-950 p-3 rounded-xl border border-slate-800 font-medium leading-relaxed"></p>
         </div>
 
         <div>
             <label class="text-xs text-slate-300 mb-1 block font-semibold">1. Selecione a Música (Repertório ou Nova)</label>
             <select id="aprovar-tom-select-musica" onchange="atualizarVersoesSelectAprovarTom()"
-                class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white focus:outline-none focus:border-liturge-500 cursor-pointer transition">
                 <option value="">Selecione uma música...</option>
             </select>
         </div>
 
         <!-- Opções de Modo: Alterar Existente vs Criar Nova -->
-        <div class="space-y-2 pt-1 border-t border-slate-700">
+        <div class="space-y-2 pt-1 border-t border-slate-800">
             <label class="text-xs text-slate-300 block font-semibold">2. Ação da Versão</label>
-            <div class="flex gap-2 bg-slate-900 p-1.5 rounded-xl border border-slate-700">
+            <div class="flex gap-2 bg-night-950 p-1.5 rounded-xl border border-slate-800">
                 <button type="button" id="btn-mode-versao-existente" onclick="alternarModoAprovacaoTom('existente')"
-                    class="flex-1 py-1.5 rounded-lg text-xs font-medium bg-brand-600 text-white transition">
-                    ✏️ Alterar Versão Existente
+                    class="flex-1 py-1.5 rounded-lg text-xs font-semibold bg-liturge-500 text-night-950 transition shadow-sm cursor-pointer">
+                    Alterar Versão Existente
                 </button>
                 <button type="button" id="btn-mode-versao-nova" onclick="alternarModoAprovacaoTom('nova')"
-                    class="flex-1 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition">
-                    ✨ Criar Nova Versão
+                    class="flex-1 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition cursor-pointer">
+                    Criar Nova Versão
                 </button>
             </div>
         </div>
@@ -1124,96 +1133,99 @@
         <div id="container-aprovar-versao-existente" class="space-y-2">
             <label class="text-xs text-slate-400 mb-1 block font-medium">Selecione a Versão Existente para Alterar</label>
             <select id="aprovar-tom-select-versao"
-                class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white focus:outline-none focus:border-liturge-500 cursor-pointer transition">
                 <option value="">Selecione a versão...</option>
             </select>
         </div>
 
         <!-- MODO B: Nova Versão -->
-        <div id="container-aprovar-versao-nova" class="hidden space-y-3 bg-slate-900/60 p-3 rounded-xl border border-indigo-500/30">
+        <div id="container-aprovar-versao-nova" class="hidden space-y-3 bg-night-950/80 p-3.5 rounded-xl border border-liturge-500/30">
             <div>
-                <label class="text-xs text-indigo-300 mb-1 block font-medium">Nome da Variação da Nova Versão</label>
+                <label class="text-xs text-liturge-400 mb-1 block font-medium">Nome da Variação da Nova Versão</label>
                 <input type="text" id="aprovar-tom-input-variacao-nova" placeholder="Ex: Tom Abaixo, Versão Feminina, Acústica"
-                    class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                    class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white focus:outline-none focus:border-liturge-500 transition">
             </div>
             <div>
                 <label class="text-xs text-slate-300 mb-1 block font-medium">Áudio / VS da Nova Versão (Upload direto para Cloudflare R2)</label>
                 <div class="space-y-1.5">
                     <input type="file" id="aprovar-tom-input-vs-file" accept="audio/*,.mp3,.wav,.m4a,.pdf"
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-slate-300 focus:outline-none focus:border-brand-500">
+                        class="w-full bg-night-950 border border-slate-800 px-3 py-1.5 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-liturge-500 cursor-pointer">
                     <input type="text" id="aprovar-tom-input-vs-nova" placeholder="Ou cole a URL do arquivo/R2/Drive: https://..."
-                        class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                        class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white focus:outline-none focus:border-liturge-500 transition">
                 </div>
             </div>
             <div>
-                <label class="text-xs text-slate-400 mb-1 block">Link do YouTube</label>
+                <label class="text-xs text-slate-400 mb-1 block font-medium">Link do YouTube</label>
                 <input type="text" id="aprovar-tom-input-yt-nova" placeholder="https://youtube.com/..."
-                    class="w-full bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500">
+                    class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white focus:outline-none focus:border-liturge-500 transition">
             </div>
         </div>
 
         <!-- Tom -->
         <div>
-            <label class="text-xs text-brand-300 mb-1 block font-semibold">3. Novo Tom Aprovado</label>
+            <label class="text-xs text-liturge-400 mb-1 block font-semibold">3. Novo Tom Aprovado</label>
             <input type="text" id="aprovar-tom-input-novo-tom" placeholder="Ex: G, C, Dm, F#"
-                class="w-full bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500 font-bold">
+                class="w-full bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white focus:outline-none focus:border-liturge-500 font-bold transition">
         </div>
 
-        <div class="flex gap-2 pt-3 border-t border-slate-700">
+        <div class="flex gap-2 pt-3 border-t border-slate-800">
             <button onclick="fecharModalAprovarTomAdmin()"
-                class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 px-4 py-2 rounded-lg text-sm">Cancelar</button>
+                class="flex-1 bg-night-950 hover:bg-slate-800 text-slate-300 border border-slate-800 px-4 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer">Cancelar</button>
             <button onclick="confirmarAprovacaoTomAdmin()" id="btn-confirmar-aprovar-tom"
-                class="flex-1 bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Confirmar & Salvar</button>
+                class="flex-1 bg-gradient-to-r from-liturge-500 to-amber-600 hover:brightness-110 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition shadow-lg shadow-liturge-500/20 cursor-pointer">Confirmar & Salvar</button>
         </div>
     </div>
 </div>
 
 <!-- ===================== MODAL GESTÃO DE MEMBRO / USUÁRIO (ADMIN) ===================== -->
-<div id="modal-membro-admin" class="hidden fixed inset-0 bg-black/80 z-[140] flex items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative space-y-4 my-8">
-        <button onclick="fecharModalMembroAdmin()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">✕</button>
+<div id="modal-membro-admin" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[140] flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-night-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative space-y-4 my-8">
+        <button onclick="fecharModalMembroAdmin()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg cursor-pointer">✕</button>
         
-        <h3 id="modal-membro-admin-titulo" class="text-xl font-bold text-white mb-1">👤 Adicionar / Editar Membro</h3>
+        <h3 id="modal-membro-admin-titulo" class="text-xl font-bold text-white mb-1 flex items-center gap-2">
+            <svg class="w-5 h-5 text-liturge-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            Adicionar / Editar Membro
+        </h3>
         <p class="text-xs text-slate-400">Defina os dados, o ministério e o nível de acesso deste membro no site.</p>
 
         <form onsubmit="salvarMembroAdmin(event)" class="space-y-3">
             <input type="hidden" id="edit-membro-id">
 
             <div>
-                <label class="block text-xs text-slate-300 mb-1">Nome Completo</label>
-                <input type="text" id="edit-membro-nome" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500" placeholder="Ex: Maria Santos">
+                <label class="block text-xs text-slate-300 mb-1 font-medium">Nome Completo</label>
+                <input type="text" id="edit-membro-nome" required class="w-full bg-night-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-liturge-500 transition" placeholder="Ex: Maria Santos">
             </div>
 
             <div>
-                <label class="block text-xs text-slate-300 mb-1">E-mail</label>
-                <input type="email" id="edit-membro-email" required class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500" placeholder="membro@igreja.com">
+                <label class="block text-xs text-slate-300 mb-1 font-medium">E-mail</label>
+                <input type="email" id="edit-membro-email" required class="w-full bg-night-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-liturge-500 transition" placeholder="membro@igreja.com">
             </div>
 
             <div id="div-membro-senha">
-                <label class="block text-xs text-slate-300 mb-1">Senha Inicial (mín. 6 caracteres)</label>
-                <input type="password" id="edit-membro-senha" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500" placeholder="••••••••">
+                <label class="block text-xs text-slate-300 mb-1 font-medium">Senha Inicial (mín. 6 caracteres)</label>
+                <input type="password" id="edit-membro-senha" class="w-full bg-night-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-liturge-500 transition" placeholder="••••••••">
             </div>
 
             <div>
-                <label class="block text-xs text-slate-300 mb-1">Ministério Vinculado</label>
-                <select id="edit-membro-ministerio" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
+                <label class="block text-xs text-slate-300 mb-1 font-medium">Ministério Vinculado</label>
+                <select id="edit-membro-ministerio" class="w-full bg-night-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-liturge-500 cursor-pointer">
                     <option value="">Nenhum (Membro Comum / Visitante)</option>
                 </select>
             </div>
 
             <div>
-                <label class="block text-xs text-slate-300 mb-1">Nível de Permissão / Acesso</label>
-                <select id="edit-membro-role" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-500">
-                    <option value="membro">👤 Membro Geral (Acesso Super Limitado)</option>
-                    <option value="voluntario">🎸 Voluntário (Acesso ao Ministério)</option>
-                    <option value="lider">⭐ Líder (Gestão do Ministério)</option>
-                    <option value="admin">👑 Administrador (Acesso Total)</option>
+                <label class="block text-xs text-slate-300 mb-1 font-medium">Nível de Permissão / Acesso</label>
+                <select id="edit-membro-role" class="w-full bg-night-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-liturge-500 cursor-pointer">
+                    <option value="membro">Membro Geral (Acesso Super Limitado)</option>
+                    <option value="voluntario">Voluntário (Acesso ao Ministério)</option>
+                    <option value="lider">Líder (Gestão do Ministério)</option>
+                    <option value="admin">Administrador (Acesso Total)</option>
                 </select>
             </div>
 
             <div class="flex gap-2 pt-3 border-t border-slate-800">
-                <button type="button" onclick="fecharModalMembroAdmin()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-xl text-sm font-medium transition">Cancelar</button>
-                <button type="submit" id="btn-salvar-membro-admin" class="flex-1 bg-brand-600 hover:bg-brand-500 text-white py-2 rounded-xl text-sm font-medium transition shadow-lg">Salvar Membro</button>
+                <button type="button" onclick="fecharModalMembroAdmin()" class="flex-1 bg-night-950 hover:bg-slate-800 text-slate-300 border border-slate-800 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer">Cancelar</button>
+                <button type="submit" id="btn-salvar-membro-admin" class="flex-1 bg-gradient-to-r from-liturge-500 to-amber-600 hover:brightness-110 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-liturge-500/20 cursor-pointer">Salvar Membro</button>
             </div>
         </form>
     </div>

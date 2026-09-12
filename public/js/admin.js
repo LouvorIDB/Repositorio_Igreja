@@ -417,7 +417,7 @@ function mudarAbaAdmin(aba) {
         'mensagens-membros': document.getElementById('btn-admin-aba-whatsapp')
     };
 
-    const ativo = "w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition bg-brand-600/20 text-brand-400 border border-brand-500/30 flex items-center gap-3";
+    const ativo = "w-full text-left px-4 py-2.5 rounded-xl font-semibold text-sm transition bg-liturge-500/10 text-liturge-400 border border-liturge-500/40 shadow-sm flex items-center gap-3";
     const inativo = "w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3";
 
     const userToEvaluate = (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null) || (window.usuarioLogado || null);
@@ -801,20 +801,34 @@ function filtrarAdminRepertorio() {
             versoesHtml = song.song_versions.map((v, index) => {
                 const tom = v.key || 'N/A';
                 const variacao = v.variation || 'Original';
-                return `<div class="mt-2 text-xs text-slate-400">🎵 Tom: <span class="text-brand-300 font-semibold">${tom} (${variacao})</span></div>`;
+                return `<div class="mt-2 text-xs text-slate-400 flex items-center gap-2 flex-wrap"><span class="bg-night-950 border border-slate-800 px-2.5 py-0.5 rounded-md text-[11px] font-mono"><span class="text-slate-500">Tom:</span> <span class="text-slate-200 font-bold">${tom}</span> <span class="text-slate-400">(${variacao})</span></span></div>`;
             }).join('');
         }
 
         return `
-            <div class="flex flex-col p-4 rounded-xl border border-slate-700 bg-slate-800/60 gap-3 mb-2">
+            <div class="flex flex-col p-4 rounded-xl border border-slate-800/90 bg-night-900/90 hover:border-slate-700/80 transition gap-3 mb-2.5 shadow-sm">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <h3 class="font-bold text-white text-base">${song.title || 'Sem Título'} ${song.artist ? `<span class="text-xs font-normal text-indigo-300 ml-1.5">(${song.artist})</span>` : ''}</h3>
-                    <div class="flex gap-2 shrink-0">
-                        <button onclick="abrirModalEditarLetraAdmin('${song.id}')" class="text-xs bg-indigo-700 hover:bg-indigo-600 text-white px-2 py-1.5 rounded transition font-medium">📜 Letra</button>
-                        <button onclick="abrirModalEditarCifraAdmin('${song.id}')" class="text-xs bg-indigo-900 hover:bg-indigo-800 text-indigo-200 border border-indigo-700 px-2 py-1.5 rounded transition font-medium">🎸 Cifra</button>
-                        <button onclick="abrirModalEditarMusicaAdmin('${song.id}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-amber-300 px-2 py-1.5 rounded transition">✏️ Editar</button>
-                        <button onclick="abrirModalNovaVersao('${song.id}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-brand-400 px-2 py-1.5 rounded transition">+ Versão</button>
-                        <button onclick="excluirMusicaAdmin('${song.id}')" class="bg-slate-700 hover:bg-red-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs transition">🗑️ Excluir</button>
+                    <h3 class="font-bold text-white text-base">${song.title || 'Sem Título'} ${song.artist ? `<span class="text-xs font-normal text-slate-400 ml-1.5">(${song.artist})</span>` : ''}</h3>
+                    <div class="flex gap-2 shrink-0 flex-wrap">
+                        <button onclick="abrirModalEditarLetraAdmin('${song.id}')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700/80 hover:border-liturge-500/40 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                            <span>Letra</span>
+                        </button>
+                        <button onclick="abrirModalEditarCifraAdmin('${song.id}')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700/80 hover:border-liturge-500/40 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            <span>Cifra</span>
+                        </button>
+                        <button onclick="abrirModalEditarMusicaAdmin('${song.id}')" class="text-xs bg-night-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                            <span>Editar</span>
+                        </button>
+                        <button onclick="abrirModalNovaVersao('${song.id}')" class="text-xs bg-liturge-500/10 hover:bg-liturge-500/20 text-liturge-400 border border-liturge-500/30 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1 cursor-pointer">
+                            <span>+</span> Versão
+                        </button>
+                        <button onclick="excluirMusicaAdmin('${song.id}')" class="bg-night-950 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-800/40 px-2.5 py-1.5 rounded-lg text-xs transition font-semibold flex items-center gap-1 cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            <span>Excluir</span>
+                        </button>
                     </div>
                 </div>
                 <div>${versoesHtml}</div>
@@ -879,24 +893,41 @@ async function renderizarAdminListaNovas() {
                 versoesHtml = song.song_versions.map((v, index) => {
                     const tom = v.key || 'N/A';
                     const variacao = v.variation || 'Original';
-                    return `<div class="mt-2 text-xs text-slate-400">🎵 Tom: <span class="text-brand-300 font-semibold">${tom} (${variacao})</span></div>`;
+                    return `<div class="mt-2 text-xs text-slate-400 flex items-center gap-2 flex-wrap"><span class="bg-night-950 border border-slate-800 px-2.5 py-0.5 rounded-md text-[11px] font-mono"><span class="text-slate-500">Tom:</span> <span class="text-slate-200 font-bold">${tom}</span> <span class="text-slate-400">(${variacao})</span></span></div>`;
                 }).join('');
             }
 
             return `
-                <div class="flex flex-col p-4 rounded-xl border border-violet-700/50 bg-violet-900/20 gap-3 mb-2">
+                <div class="flex flex-col p-4 rounded-xl border border-liturge-500/30 bg-night-900/90 hover:border-liturge-500/50 transition gap-3 mb-2.5 shadow-sm">
                     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                        <div class="flex items-center gap-2">
-                            <h3 class="font-bold text-white text-base">${song.title || 'Sem Título'}</h3>
-                            <span class="bg-violet-800/60 text-violet-300 text-xs px-2 py-0.5 rounded font-medium">🌟 Nova</span>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="font-bold text-white text-base">${song.title || 'Sem Título'} ${song.artist ? `<span class="text-xs font-normal text-slate-400 ml-1.5">(${song.artist})</span>` : ''}</h3>
+                            <span class="bg-liturge-500/15 text-liturge-300 border border-liturge-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Nova</span>
                         </div>
-                        <div class="flex gap-2 shrink-0">
-                            <button onclick="abrirModalEditarLetraAdmin('${song.id}')" class="text-xs bg-indigo-700 hover:bg-indigo-600 text-white px-2 py-1.5 rounded transition font-medium">📜 Letra</button>
-                            <button onclick="abrirModalEditarCifraAdmin('${song.id}')" class="text-xs bg-indigo-900 hover:bg-indigo-800 text-indigo-200 border border-indigo-700 px-2 py-1.5 rounded transition font-medium">🎸 Cifra</button>
-                            <button onclick="abrirModalEditarMusicaAdmin('${song.id}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-amber-300 px-2 py-1.5 rounded transition">✏️ Editar</button>
-                            <button onclick="abrirModalNovaVersao('${song.id}')" class="text-xs bg-slate-700 hover:bg-slate-600 text-brand-400 px-2 py-1.5 rounded transition">+ Versão</button>
-                            <button onclick="aprovarMusicaNovaAdmin('${song.id}')" class="bg-violet-600 hover:bg-violet-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition">🌟 Aprovar</button>
-                            <button onclick="excluirMusicaAdmin('${song.id}')" class="bg-slate-700 hover:bg-red-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs transition">🗑️ Excluir</button>
+                        <div class="flex gap-2 shrink-0 flex-wrap">
+                            <button onclick="abrirModalEditarLetraAdmin('${song.id}')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700/80 hover:border-liturge-500/40 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                                <span>Letra</span>
+                            </button>
+                            <button onclick="abrirModalEditarCifraAdmin('${song.id}')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700/80 hover:border-liturge-500/40 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                                <span>Cifra</span>
+                            </button>
+                            <button onclick="abrirModalEditarMusicaAdmin('${song.id}')" class="text-xs bg-night-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                <span>Editar</span>
+                            </button>
+                            <button onclick="abrirModalNovaVersao('${song.id}')" class="text-xs bg-liturge-500/10 hover:bg-liturge-500/20 text-liturge-400 border border-liturge-500/30 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1 cursor-pointer">
+                                <span>+</span> Versão
+                            </button>
+                            <button onclick="aprovarMusicaNovaAdmin('${song.id}')" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 font-bold px-3 py-1.5 rounded-lg text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <span>Aprovar</span>
+                            </button>
+                            <button onclick="excluirMusicaAdmin('${song.id}')" class="bg-night-950 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-800/40 px-2.5 py-1.5 rounded-lg text-xs transition font-semibold flex items-center gap-1 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                <span>Excluir</span>
+                            </button>
                         </div>
                     </div>
                     <div>${versoesHtml}</div>
@@ -939,32 +970,32 @@ const METADATA_CATEGORIAS_SOLICITACOES = {
     whatsapp: {
         chave: 'whatsapp',
         label: 'WhatsApp',
-        icone: '📱',
-        badgeClasse: 'bg-emerald-900/60 text-emerald-300 border-emerald-700/50'
+        icone: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`,
+        badgeClasse: 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60'
     },
     ajuste_tom: {
         chave: 'ajuste_tom',
         label: 'Ajuste de Tom',
-        icone: '🎸',
-        badgeClasse: 'bg-indigo-900/60 text-indigo-300 border-indigo-700/50'
+        icone: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><path d="M9 18V5l12-2v13"/></svg>`,
+        badgeClasse: 'bg-liturge-500/10 text-liturge-400 border-liturge-500/30'
     },
     musica_nova: {
         chave: 'musica_nova',
         label: 'Sugestão de Música Nova',
-        icone: '🌟',
-        badgeClasse: 'bg-amber-900/60 text-amber-300 border-amber-700/50'
+        icone: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+        badgeClasse: 'bg-amber-950/60 text-amber-400 border-amber-800/60'
     },
     culto_especifico: {
         chave: 'culto_especifico',
         label: 'Sugestão para Culto',
-        icone: '📅',
-        badgeClasse: 'bg-cyan-900/60 text-cyan-300 border-cyan-700/50'
+        icone: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+        badgeClasse: 'bg-slate-800/80 text-slate-300 border-slate-700/60'
     },
     indisponibilidade: {
         chave: 'indisponibilidade',
         label: 'Indisponibilidade',
-        icone: '🚫',
-        badgeClasse: 'bg-rose-900/60 text-rose-300 border-rose-700/50'
+        icone: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>`,
+        badgeClasse: 'bg-rose-950/60 text-rose-400 border-rose-800/60'
     }
 };
 
@@ -1014,9 +1045,9 @@ function selecionarCategoriaSolicitacoes(cat) {
         const btn = document.getElementById(`btn-solic-cat-${c}`);
         if (!btn) return;
         if (c === cat) {
-            btn.className = "px-3 py-2 rounded-xl font-semibold transition bg-brand-600 text-white shrink-0 flex items-center gap-1.5 shadow";
+            btn.className = "px-3 py-2 rounded-xl font-semibold transition bg-liturge-500/15 text-liturge-400 border border-liturge-500/40 shadow-sm shrink-0 flex items-center gap-1.5";
         } else {
-            btn.className = "px-3 py-2 rounded-xl font-medium transition bg-slate-700/80 text-slate-300 hover:text-white shrink-0 flex items-center gap-1.5";
+            btn.className = "px-3 py-2 rounded-xl font-medium transition bg-night-950/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800/80 shrink-0 flex items-center gap-1.5";
         }
     });
 
@@ -1033,8 +1064,8 @@ function filtrarSubAbaSolicitacoes(subAba) {
     const btnPendentes = document.getElementById('btn-solic-sub-pendentes');
     const btnConcluidas = document.getElementById('btn-solic-sub-concluidas');
 
-    const ativo = "flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold transition bg-brand-600 text-white flex items-center justify-center gap-1.5 shadow";
-    const inativo = "flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold transition bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center gap-1.5";
+    const ativo = "flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold transition bg-liturge-500/15 text-liturge-400 border border-liturge-500/40 flex items-center justify-center gap-1.5 shadow-sm";
+    const inativo = "flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-semibold transition bg-night-950/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800/80 flex items-center justify-center gap-1.5";
 
     if (btnPendentes) btnPendentes.className = solicitacoesSubAbaAtual === 'pendentes' ? ativo : inativo;
     if (btnConcluidas) btnConcluidas.className = solicitacoesSubAbaAtual === 'concluidas' ? ativo : inativo;
@@ -1062,7 +1093,7 @@ function atualizarDropdownMesesSolicitacoes(itens) {
     const mesesOrdenados = Array.from(mesesSet).sort().reverse();
     const valorAtual = select.value || solicitacoesMesAtual || 'todos';
 
-    let html = '<option value="todos">📅 Todos os meses</option>';
+    let html = '<option value="todos">Todos os meses</option>';
     mesesOrdenados.forEach(mesAno => {
         const partes = mesAno.split('-');
         if (partes.length === 2) {
@@ -1295,9 +1326,11 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
         const mesLabel = solicitacoesMesAtual === 'todos' ? '' : ' neste mês';
 
         container.innerHTML = `
-            <div class="py-12 text-center bg-slate-800/30 rounded-2xl border border-slate-700/50">
-                <p class="text-2xl mb-2">📭</p>
-                <p class="text-slate-400 text-sm font-medium">Nenhuma solicitação ${statusLabel}${catLabel}${mesLabel}.</p>
+            <div class="py-12 text-center bg-night-900/60 rounded-2xl border border-slate-800/80">
+                <div class="w-10 h-10 rounded-full bg-slate-800/50 flex items-center justify-center mx-auto mb-2 text-slate-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                </div>
+                <p class="text-slate-300 text-sm font-medium">Nenhuma solicitação ${statusLabel}${catLabel}${mesLabel}.</p>
                 <p class="text-slate-500 text-xs mt-1">Altere a categoria, mês ou status para visualizar outros registros.</p>
             </div>
         `;
@@ -1308,7 +1341,11 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
     container.innerHTML = listaExibida.map(item => {
         const idEscapado = (item.id || '').toString().replace(/'/g, "\\'");
         const catChave = item._catNormalizada || 'ajuste_tom';
-        const metaCat = METADATA_CATEGORIAS_SOLICITACOES[catChave] || { label: item.category || 'Solicitação', icone: '💬', badgeClasse: 'bg-slate-700 text-slate-300' };
+        const metaCat = METADATA_CATEGORIAS_SOLICITACOES[catChave] || { 
+            label: item.category || 'Solicitação', 
+            icone: `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`, 
+            badgeClasse: 'bg-slate-800/80 text-slate-300 border-slate-700/60' 
+        };
         
         const texto = item.comment_text || '';
         const status = item.status || 'pendente';
@@ -1318,11 +1355,11 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
 
         let badgeStatusHtml = '';
         if (status === 'aprovado') {
-            badgeStatusHtml = '<span class="bg-emerald-900/60 text-emerald-300 border border-emerald-700/50 text-xs px-2.5 py-0.5 rounded-full font-medium">✅ Aprovada</span>';
+            badgeStatusHtml = '<span class="bg-emerald-950/60 text-emerald-400 border border-emerald-800/60 text-xs px-2.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Aprovada</span>';
         } else if (status === 'rejeitado') {
-            badgeStatusHtml = '<span class="bg-red-900/60 text-red-300 border border-red-700/50 text-xs px-2.5 py-0.5 rounded-full font-medium">❌ Rejeitada</span>';
+            badgeStatusHtml = '<span class="bg-rose-950/60 text-rose-400 border border-rose-800/60 text-xs px-2.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg> Rejeitada</span>';
         } else {
-            badgeStatusHtml = '<span class="bg-amber-900/60 text-amber-300 border border-amber-700/50 text-xs px-2.5 py-0.5 rounded-full font-medium">⏳ Pendente</span>';
+            badgeStatusHtml = '<span class="bg-amber-950/60 text-amber-400 border border-amber-800/60 text-xs px-2.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Pendente</span>';
         }
 
         const isTom = catChave === 'ajuste_tom';
@@ -1334,45 +1371,51 @@ async function renderizarAdminListaSolicitacoes(buscarDoBanco = true) {
         const zapLink = autorTelRaw ? `https://wa.me/${autorTelRaw.startsWith('55') ? autorTelRaw : '55' + autorTelRaw}` : null;
 
         return `
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl border border-slate-700/80 bg-slate-800/80 hover:bg-slate-800 transition gap-3 shadow-sm">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl border border-slate-800/80 bg-night-900/90 hover:bg-night-900 transition gap-3 shadow-sm">
                 <div class="space-y-1.5 w-full">
                     <div class="flex items-center gap-2 flex-wrap">
-                        <span class="${metaCat.badgeClasse} border text-xs px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1">
-                            <span>${metaCat.icone}</span>
+                        <span class="${metaCat.badgeClasse} border text-xs px-2.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1.5">
+                            ${metaCat.icone}
                             <span>${metaCat.label}</span>
                         </span>
                         ${badgeStatusHtml}
-                        ${dataStr ? `<span class="text-xs text-slate-500 font-mono">🕒 ${dataStr}</span>` : ''}
-                        ${autorNome ? `<span class="text-xs bg-slate-900/80 border border-slate-700 text-slate-300 px-2 py-0.5 rounded-md font-medium">👤 ${autorNome}</span>` : ''}
+                        ${dataStr ? `<span class="text-xs text-slate-400 font-mono inline-flex items-center gap-1"><svg class="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${dataStr}</span>` : ''}
+                        ${autorNome ? `<span class="text-xs bg-night-950/80 border border-slate-800 text-slate-300 px-2 py-0.5 rounded-md font-medium inline-flex items-center gap-1"><svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg> ${autorNome}</span>` : ''}
                     </div>
-                    <p class="text-sm text-white font-medium mt-1 leading-relaxed break-words">${texto}</p>
+                    <p class="text-sm text-slate-100 font-medium mt-1 leading-relaxed break-words">${texto}</p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0 flex-wrap mt-2 sm:mt-0">
                     ${zapLink ? `
-                        <a href="${zapLink}" target="_blank" rel="noopener noreferrer" class="bg-emerald-700/80 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-xs transition font-medium flex items-center gap-1 shadow" title="Abrir conversa no WhatsApp">
-                            💬 WhatsApp
+                        <a href="${zapLink}" target="_blank" rel="noopener noreferrer" class="bg-emerald-950/80 hover:bg-emerald-900 text-emerald-400 border border-emerald-800/60 px-3 py-1.5 rounded-lg text-xs transition font-semibold flex items-center gap-1.5 shadow" title="Abrir conversa no WhatsApp">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                            WhatsApp
                         </a>
                     ` : ''}
                     ${status === 'pendente' ? `
                         ${isTom ? `
-                            <button onclick="abrirModalAprovarTomAdmin('${idEscapado}', '${textoEscapado}')" class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg text-xs transition font-medium flex items-center gap-1 shadow">
-                                🎶 Aprovar & Alterar Tom
+                            <button onclick="abrirModalAprovarTomAdmin('${idEscapado}', '${textoEscapado}')" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:brightness-110 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1.5 shadow-sm">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                                Aprovar & Alterar Tom
                             </button>
                         ` : `
-                            <button onclick="alterarStatusSolicitacaoAdmin('${idEscapado}', 'aprovado')" class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg text-xs transition font-medium flex items-center gap-1 shadow">
-                                ✅ Aprovar
+                            <button onclick="alterarStatusSolicitacaoAdmin('${idEscapado}', 'aprovado')" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:brightness-110 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1.5 shadow-sm">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                                Aprovar
                             </button>
                         `}
-                        <button onclick="alterarStatusSolicitacaoAdmin('${idEscapado}', 'rejeitado')" class="bg-red-800/80 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs transition font-medium flex items-center gap-1">
-                            ❌ Rejeitar
+                        <button onclick="alterarStatusSolicitacaoAdmin('${idEscapado}', 'rejeitado')" class="bg-night-950/80 hover:bg-rose-950/40 text-rose-400 border border-rose-800/40 px-3 py-1.5 rounded-lg text-xs transition font-semibold flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                            Rejeitar
                         </button>
                     ` : `
-                        <button onclick="alterarStatusSolicitacaoAdmin('${idEscapado}', 'pendente')" class="bg-slate-700 hover:bg-slate-600 text-amber-300 hover:text-white px-3 py-1.5 rounded-lg text-xs transition font-medium flex items-center gap-1" title="Reabrir como pendente">
-                            ↩️ Reabrir
+                        <button onclick="alterarStatusSolicitacaoAdmin('${idEscapado}', 'pendente')" class="bg-night-950/80 hover:bg-slate-800 text-liturge-400 border border-liturge-500/30 px-3 py-1.5 rounded-lg text-xs transition font-semibold flex items-center gap-1.5" title="Reabrir como pendente">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            Reabrir
                         </button>
                     `}
-                    <button onclick="excluirSolicitacaoAdmin('${idEscapado}')" class="bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs transition font-medium">
-                        🗑️ Excluir
+                    <button onclick="excluirSolicitacaoAdmin('${idEscapado}')" class="bg-night-950/80 hover:bg-slate-800 text-slate-400 hover:text-rose-400 border border-slate-800 px-3 py-1.5 rounded-lg text-xs transition font-medium flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Excluir
                     </button>
                 </div>
             </div>
@@ -1464,13 +1507,13 @@ function alternarModoAprovacaoTom(modo) {
     const containerNova = document.getElementById('container-aprovar-versao-nova');
 
     if (modo === 'existente') {
-        if (btnExistente) btnExistente.className = "flex-1 py-1.5 rounded-lg text-xs font-medium bg-brand-600 text-white transition";
+        if (btnExistente) btnExistente.className = "flex-1 py-1.5 rounded-lg text-xs font-semibold bg-liturge-500 text-night-950 transition shadow-sm";
         if (btnNova) btnNova.className = "flex-1 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition";
         if (containerExistente) containerExistente.classList.remove('hidden');
         if (containerNova) containerNova.classList.add('hidden');
     } else {
         if (btnExistente) btnExistente.className = "flex-1 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition";
-        if (btnNova) btnNova.className = "flex-1 py-1.5 rounded-lg text-xs font-medium bg-brand-600 text-white transition";
+        if (btnNova) btnNova.className = "flex-1 py-1.5 rounded-lg text-xs font-semibold bg-liturge-500 text-night-950 transition shadow-sm";
         if (containerExistente) containerExistente.classList.add('hidden');
         if (containerNova) containerNova.classList.remove('hidden');
     }
@@ -3510,19 +3553,19 @@ async function renderizarAdminMinisterios() {
         }
 
         const coresMap = {
-            emerald: 'border-emerald-500/40 bg-emerald-950/20 text-emerald-400',
-            blue: 'border-blue-500/40 bg-blue-950/20 text-blue-400',
-            amber: 'border-amber-500/40 bg-amber-950/20 text-amber-400',
-            purple: 'border-purple-500/40 bg-purple-950/20 text-purple-400',
-            rose: 'border-rose-500/40 bg-rose-950/20 text-rose-400'
+            emerald: 'border-emerald-500/30 bg-night-900/90 text-emerald-400',
+            blue: 'border-slate-800/90 bg-night-900/90 text-slate-200',
+            amber: 'border-liturge-500/30 bg-night-900/90 text-liturge-400',
+            purple: 'border-purple-500/30 bg-night-900/90 text-purple-400',
+            rose: 'border-rose-500/30 bg-night-900/90 text-rose-400'
         };
 
         const rolesBadgesCor = {
-            admin: 'bg-red-900/60 text-red-300 border-red-700/50',
-            lider: 'bg-amber-900/60 text-amber-300 border-amber-700/50',
-            voluntario: 'bg-emerald-900/60 text-emerald-300 border-emerald-700/50',
+            admin: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+            lider: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+            voluntario: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
             membro: 'bg-slate-800 text-slate-300 border-slate-700',
-            volunteer: 'bg-emerald-900/60 text-emerald-300 border-emerald-700/50',
+            volunteer: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
             member: 'bg-slate-800 text-slate-300 border-slate-700'
         };
 
@@ -3541,15 +3584,15 @@ async function renderizarAdminMinisterios() {
             const badgesRolesHtml = roles.map(r => {
                 const isSong = r.scale_scope === 'song' || (r.name && (r.name.toLowerCase().includes('cantor') || r.name.toLowerCase().includes('vocal')));
                 const scopeBadge = isSong
-                    ? `<span class="text-[9px] bg-purple-900/60 text-purple-300 border border-purple-700/50 px-1.5 py-0.2 rounded font-semibold" title="Escalado em cada música individual">🎵 Por Música</span>`
-                    : `<span class="text-[9px] bg-indigo-900/60 text-indigo-300 border border-indigo-700/50 px-1.5 py-0.2 rounded font-semibold" title="Escalado no culto geral">⛪ Culto</span>`;
+                    ? `<span class="text-[9px] bg-purple-500/10 text-purple-300 border border-purple-500/20 px-1.5 py-0.5 rounded font-semibold" title="Escalado em cada música individual">Por Música</span>`
+                    : `<span class="text-[9px] bg-liturge-500/10 text-liturge-300 border border-liturge-500/20 px-1.5 py-0.5 rounded font-semibold" title="Escalado no culto geral">Culto Geral</span>`;
                 const botaoEditarRole = roleUsuario === 'admin'
-                    ? `<button onclick='abrirModalFuncaoAdmin("${min.id}", ${JSON.stringify(r).replace(/'/g, "&apos;")})' class="text-slate-400 hover:text-white font-bold text-[10px] ml-0.5" title="Editar Função">✏️</button>`
+                    ? `<button onclick='abrirModalFuncaoAdmin("${min.id}", ${JSON.stringify(r).replace(/'/g, "&apos;")})' class="text-slate-400 hover:text-white p-0.5 ml-1 transition cursor-pointer" title="Editar Função"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>`
                     : '';
                 const botaoDeletarRole = roleUsuario === 'admin'
-                    ? `<button onclick="excluirFuncaoMinisterioAdmin('${r.id}')" class="text-slate-400 hover:text-red-400 font-bold text-[10px] ml-0.5" title="Excluir Função">✕</button>`
+                    ? `<button onclick="excluirFuncaoMinisterioAdmin('${r.id}')" class="text-slate-400 hover:text-rose-400 p-0.5 ml-0.5 transition cursor-pointer" title="Excluir Função"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>`
                     : '';
-                return `<span class="bg-slate-900 border border-slate-700 text-slate-300 text-[11px] px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1">
+                return `<span class="bg-night-950 border border-slate-800 text-slate-300 text-[11px] px-2.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1">
                     ${r.name || r.role_name}
                     ${scopeBadge}
                     ${botaoEditarRole}
@@ -3576,15 +3619,19 @@ async function renderizarAdminMinisterios() {
                 }
 
                 return `
-                    <div class="flex items-center justify-between p-2 rounded-lg bg-slate-900/60 border border-slate-700/50 text-xs">
+                    <div class="flex items-center justify-between p-2 rounded-lg bg-night-950/70 border border-slate-800/80 text-xs hover:border-slate-700/80 transition">
                         <div class="truncate mr-2">
                             <span class="font-medium text-white block truncate">${m.name}</span>
                             <span class="text-[11px] text-slate-400 block truncate">${m.email || 'Sem e-mail'}${m.phone ? ' • ' + m.phone : ''}</span>
                         </div>
                         <div class="flex items-center gap-1.5 flex-shrink-0">
                             <span class="${roleBadge} border text-[10px] px-2 py-0.5 rounded-full font-bold uppercase">${badgeText}</span>
-                            <button onclick="abrirModalIntegranteMinisterio('${m.id}')" class="text-slate-400 hover:text-white p-1 text-xs" title="Editar Integrante">✏️</button>
-                            <button onclick="excluirIntegranteMinisterioAdmin('${m.id}')" class="text-red-400 hover:text-red-300 p-1 text-xs" title="Excluir Integrante">🗑️</button>
+                            <button onclick="abrirModalIntegranteMinisterio('${m.id}')" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer" title="Editar Integrante">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                            </button>
+                            <button onclick="excluirIntegranteMinisterioAdmin('${m.id}')" class="text-slate-400 hover:text-rose-400 p-1 rounded hover:bg-rose-950/40 transition cursor-pointer" title="Excluir Integrante">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
                         </div>
                     </div>
                 `;
@@ -3592,25 +3639,34 @@ async function renderizarAdminMinisterios() {
 
             const botoesMinisterio = roleUsuario === 'admin'
                 ? `<div class="flex items-center gap-1.5">
-                       <button onclick='abrirModalMinisterioAdmin(${JSON.stringify(min).replace(/'/g, "&apos;")})' class="text-slate-400 hover:text-white text-xs font-medium bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-700">✏️ Editar</button>
-                       <button onclick="excluirMinisterioAdmin('${min.id}')" class="text-red-400 hover:text-red-300 text-xs font-medium bg-slate-900 px-2 py-1 rounded-lg border border-slate-700" title="Excluir Ministério">🗑️ Excluir</button>
+                       <button onclick='abrirModalMinisterioAdmin(${JSON.stringify(min).replace(/'/g, "&apos;")})' class="text-slate-300 hover:text-white text-xs font-semibold bg-night-950 hover:bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-800 flex items-center gap-1 transition cursor-pointer">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                           <span>Editar</span>
+                       </button>
+                       <button onclick="excluirMinisterioAdmin('${min.id}')" class="text-slate-400 hover:text-rose-400 text-xs font-semibold bg-night-950 hover:bg-rose-950/40 px-2.5 py-1 rounded-lg border border-slate-800 hover:border-rose-800/40 flex items-center gap-1 transition cursor-pointer" title="Excluir Ministério">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                           <span>Excluir</span>
+                       </button>
                    </div>`
                 : '';
 
             const botaoAdicionarFuncao = roleUsuario === 'admin'
-                ? `<button onclick="abrirModalFuncaoAdmin('${min.id}')" class="text-xs text-brand-400 hover:text-brand-300 font-medium">+ Adicionar Função</button>`
+                ? `<button onclick="abrirModalFuncaoAdmin('${min.id}')" class="text-xs text-liturge-400 hover:text-liturge-300 font-semibold transition cursor-pointer">+ Adicionar Função</button>`
                 : '';
 
             const mediaBadge = min.can_upload_media 
-                ? `<span class="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800/60 px-2 py-0.5 rounded-full font-semibold inline-flex items-center gap-1">📁 Upload de Mídias</span>`
+                ? `<span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-semibold inline-flex items-center gap-1">
+                       <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                       <span>Upload de Mídias</span>
+                   </span>`
                 : '';
 
             html += `
-                <div class="bg-slate-800/80 border ${corEstilo.split(' ')[0]} rounded-2xl p-5 shadow-lg flex flex-col justify-between space-y-4">
+                <div class="bg-night-900/90 border border-slate-800/90 rounded-2xl p-5 shadow-lg flex flex-col justify-between space-y-4 hover:border-slate-700/80 transition">
                     <div>
                         <div class="flex items-start justify-between">
                             <div class="flex items-center gap-3">
-                                <span class="text-2xl p-2 bg-slate-900/60 border border-slate-700/60 rounded-xl">${min.icon || '🏢'}</span>
+                                <span class="text-xl p-2 bg-night-950 border border-slate-800 rounded-xl flex items-center justify-center">${min.icon || '🏢'}</span>
                                 <div>
                                     <div class="flex items-center gap-2 flex-wrap">
                                         <h3 class="font-bold text-base text-white">${min.name}</h3>
@@ -3623,7 +3679,7 @@ async function renderizarAdminMinisterios() {
                         </div>
 
                         <!-- Funções do Ministério -->
-                        <div class="mt-4 pt-3 border-t border-slate-700/50">
+                        <div class="mt-4 pt-3 border-t border-slate-800/80">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-xs font-semibold text-slate-300">Funções (${roles.length})</span>
                                 ${botaoAdicionarFuncao}
@@ -3634,12 +3690,12 @@ async function renderizarAdminMinisterios() {
                         </div>
 
                         <!-- Integrantes do Ministério -->
-                        <div class="mt-4 pt-3 border-t border-slate-700/50">
+                        <div class="mt-4 pt-3 border-t border-slate-800/80">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="text-xs font-semibold text-slate-300">Integrantes (${membros.length})</span>
-                                <button onclick="abrirModalIntegranteMinisterio(null, '${min.id}')" class="text-xs text-brand-400 hover:text-brand-300 font-medium">+ Integrante</button>
+                                <button onclick="abrirModalIntegranteMinisterio(null, '${min.id}')" class="text-xs text-liturge-400 hover:text-liturge-300 font-semibold transition cursor-pointer">+ Integrante</button>
                             </div>
-                            <div class="space-y-1.5 max-h-44 overflow-y-auto">
+                            <div class="space-y-1.5 max-h-44 overflow-y-auto pr-1">
                                 ${membrosHtml || '<span class="text-xs text-slate-500 italic">Nenhum integrante vinculado a este ministério.</span>'}
                             </div>
                         </div>
@@ -3658,26 +3714,30 @@ async function renderizarAdminMinisterios() {
             const membrosSemMinHtml = perfisSemMinisterio.map(p => {
                 const name = p.name || p.email || 'Sem nome';
                 let sysRole = (p.system_role || p.role || 'voluntario').toLowerCase();
-                let badgeClass = 'bg-slate-700 text-slate-300';
+                let badgeClass = 'bg-slate-800 text-slate-300 border border-slate-700';
                 let badgeText = 'Sem Ministério';
 
                 if (sysRole === 'admin') {
-                    badgeClass = 'bg-indigo-900/60 text-indigo-300 border border-indigo-700/50';
-                    badgeText = '👑 Admin';
+                    badgeClass = 'bg-rose-500/10 text-rose-400 border border-rose-500/20';
+                    badgeText = 'Admin';
                 } else if (sysRole === 'membro') {
-                    badgeClass = 'bg-amber-950/60 text-amber-300 border border-amber-700/50';
-                    badgeText = '👤 Membro';
+                    badgeClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+                    badgeText = 'Membro';
                 }
 
                 return `
-                    <div class="flex items-center justify-between p-2 bg-slate-900/80 rounded-lg border border-slate-700/60 text-xs">
+                    <div class="flex items-center justify-between p-2 bg-night-950/70 rounded-lg border border-slate-800/80 text-xs hover:border-slate-700/80 transition">
                         <div class="truncate mr-2 flex items-center gap-2">
                             <span class="font-medium text-white truncate block">${name}</span>
-                            <span class="text-[10px] px-1.5 py-0.5 rounded ${badgeClass} flex-shrink-0">${badgeText}</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full ${badgeClass} flex-shrink-0 font-bold uppercase">${badgeText}</span>
                         </div>
                         <div class="flex items-center gap-1.5 flex-shrink-0">
-                            <button onclick="abrirModalIntegranteMinisterio('${p.id}')" class="text-slate-400 hover:text-white p-1 text-xs" title="Editar Perfil">✏️</button>
-                            <button onclick="excluirIntegranteMinisterioAdmin('${p.id}')" class="text-red-400 hover:text-red-300 p-1 text-xs" title="Excluir Perfil">🗑️</button>
+                            <button onclick="abrirModalIntegranteMinisterio('${p.id}')" class="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition cursor-pointer" title="Editar Perfil">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                            </button>
+                            <button onclick="excluirIntegranteMinisterioAdmin('${p.id}')" class="text-slate-400 hover:text-rose-400 p-1 rounded hover:bg-rose-950/40 transition cursor-pointer" title="Excluir Perfil">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
                         </div>
                     </div>
                 `;

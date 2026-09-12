@@ -2611,8 +2611,7 @@ function renderizarHistoricoCultos() {
             const rName = typeof removerAcentos === 'function' ? removerAcentos(r.name.toLowerCase()) : r.name.toLowerCase();
             roleToMinistry[rName] = {
                 name: min.name,
-                color: min.color || 'emerald',
-                icon: min.icon || '🏢'
+                color: min.color || 'liturge'
             };
         });
     });
@@ -2661,11 +2660,9 @@ function renderizarHistoricoCultos() {
             const louvorMin = (dadosGlobais.ministries || []).find(m => {
                 const n = (m.name || '').toLowerCase();
                 return n.includes('louvor') || n.includes('musica') || n.includes('adora');
-            }) || { name: 'Louvor', color: 'brand', icon: '⛪' };
+            }) || { name: 'Louvor', color: 'liturge' };
 
             const groupedEscala = {};
-            const emojimap = { 'violão': '🎸', 'bateria': '🥁', 'teclado': '🎹', 'baixo': '🎸', 'projeção': '💻', 'fotografia': '📷', 'transmissão': '🎥' };
-            
             const vocaisList = [];
             if (cantoresCultoStr) {
                 cantoresCultoStr.split(',').map(s => s.trim()).filter(Boolean).forEach(c => {
@@ -2685,31 +2682,30 @@ function renderizarHistoricoCultos() {
                         return;
                     }
 
-                    const emoji = emojimap[keyLower] || '🎵';
                     const nomeFormato = key.charAt(0).toUpperCase() + key.slice(1);
                     const minInfo = roleToMinistry[keyLower] || louvorMin;
                     if (!groupedEscala[minInfo.name]) {
-                        groupedEscala[minInfo.name] = { color: minInfo.color, icon: minInfo.icon, parts: [] };
+                        groupedEscala[minInfo.name] = { color: minInfo.color, parts: [] };
                     }
-                    groupedEscala[minInfo.name].parts.push(`${emoji} ${nomeFormato}: <span class="text-${minInfo.color}-300 font-medium">${instrObj[key]}</span>`);
+                    groupedEscala[minInfo.name].parts.push(`<span class="text-slate-400">${nomeFormato}:</span> <span class="text-white font-semibold">${instrObj[key]}</span>`);
                 }
             });
 
             if (vocaisList.length > 0) {
                 const minName = louvorMin.name || 'Louvor';
                 if (!groupedEscala[minName]) {
-                    groupedEscala[minName] = { color: louvorMin.color || 'brand', icon: louvorMin.icon || '⛪', parts: [] };
+                    groupedEscala[minName] = { color: louvorMin.color || 'liturge', parts: [] };
                 }
                 const labelVocal = vocaisList.length > 1 ? 'Vocalistas' : 'Vocalista';
-                groupedEscala[minName].parts.push(`🎤 ${labelVocal}: <span class="text-${louvorMin.color || 'brand'}-300 font-medium">${vocaisList.join(', ')}</span>`);
+                groupedEscala[minName].parts.push(`<span class="text-slate-400">${labelVocal}:</span> <span class="text-white font-semibold">${vocaisList.join(', ')}</span>`);
             }
 
             let linhaInstrumentos = '';
             if ((canVerEscala || canVerCantor) && Object.keys(groupedEscala).length > 0) {
                 linhaInstrumentos = Object.entries(groupedEscala).map(([minName, info]) => {
-                    return `<div class="px-4 py-1.5 text-xs text-slate-300 bg-slate-900/40 border-b border-slate-700/30 flex flex-wrap items-center gap-3">
-                        <span class="font-bold text-${info.color}-400 mr-2">${info.icon} ${minName.toUpperCase()}</span>
-                        ${info.parts.join('<span class="text-slate-600">|</span>')}
+                    return `<div class="px-4 py-2 text-xs text-slate-300 bg-night-950/70 border-b border-slate-800/80 flex flex-wrap items-center gap-2.5">
+                        <span class="font-bold text-liturge-400 tracking-wider text-[11px] uppercase mr-1">${minName}</span>
+                        ${info.parts.join('<span class="text-slate-600 font-light">•</span>')}
                     </div>`;
                 }).join('');
             }
@@ -2720,9 +2716,12 @@ function renderizarHistoricoCultos() {
             }
             let linhaMidias = '';
             if (canVerMidia && midiasCulto && midiasCulto.length > 0) {
-                const linksHtml = midiasCulto.map(m => `<a href="${m.url}" target="_blank" class="text-indigo-400 hover:text-indigo-300 font-medium underline px-1">${m.name}</a>`).join('');
-                linhaMidias = `<div class="px-4 py-2 text-xs bg-indigo-900/20 border-b border-indigo-700/30 flex flex-wrap gap-2 items-center">
-                    <span class="text-indigo-300">📁 Mídias Anexadas: </span>
+                const linksHtml = midiasCulto.map(m => `<a href="${m.url}" target="_blank" class="text-slate-300 hover:text-liturge-400 font-medium underline px-1 transition">${m.name}</a>`).join('');
+                linhaMidias = `<div class="px-4 py-2 text-xs bg-liturge-500/5 border-b border-slate-800/80 flex flex-wrap gap-2 items-center">
+                    <span class="text-liturge-400 font-semibold flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                        Mídias Anexadas:
+                    </span>
                     ${linksHtml}
                 </div>`;
             }
@@ -2745,29 +2744,41 @@ function renderizarHistoricoCultos() {
                 const linkYoutubeFinal = obterLinkYoutube(yt, nomeMusica);
 
                 const btnLetra = (lyrics && canVerLetra)
-                    ? `<button onclick="abrirModalLetraPublica('${nomeMusica.replace(/'/g, "\\'")}', 'Tom: ${tom}', '${encodeURIComponent(lyrics)}')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-lg text-[11px] font-medium transition">📜 Letra</button>`
+                    ? `<button onclick="abrirModalLetraPublica('${nomeMusica.replace(/'/g, "\\'")}', 'Tom: ${tom}', '${encodeURIComponent(lyrics)}')" class="bg-night-950/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1 shadow-sm">
+                        <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Letra
+                    </button>`
                     : '';
                 const btnCifra = (chords && canVerCifra)
-                    ? `<button onclick="abrirModalCifraPublica('${nomeMusica.replace(/'/g, "\\'")}', '${tom}', '${encodeURIComponent(chords)}')" class="bg-indigo-700 hover:bg-indigo-600 text-white px-2.5 py-1 rounded-lg text-[11px] font-medium transition">🎸 Cifra</button>`
+                    ? `<button onclick="abrirModalCifraPublica('${nomeMusica.replace(/'/g, "\\'")}', '${tom}', '${encodeURIComponent(chords)}')" class="bg-night-950/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1 shadow-sm">
+                        <svg class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><path d="M9 18V5l12-2v13"/></svg>
+                        Cifra
+                    </button>`
                     : '';
                 const btnYt = (linkYoutubeFinal && canVerYoutube)
-                    ? `<button onclick="playYoutubeAudio('${nomeMusica.replace(/'/g, "\\'")}', '${linkYoutubeFinal}')" class="bg-red-600 hover:bg-red-500 text-white px-2.5 py-1 rounded-lg text-[11px] font-medium transition">📺 YouTube</button>`
+                    ? `<button onclick="playYoutubeAudio('${nomeMusica.replace(/'/g, "\\'")}', '${linkYoutubeFinal}')" class="bg-night-950/80 hover:bg-rose-950/40 text-rose-400 border border-rose-800/40 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition flex items-center gap-1 shadow-sm">
+                        <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                        YouTube
+                    </button>`
                     : '';
                 const btnPlayVs = (vs && canVerVs)
-                    ? `<button onclick="playDriveAudio('${nomeMusica.replace(/'/g, "\\'")}', '${fileId}')" class="bg-brand-600 hover:bg-brand-500 text-white px-2.5 py-1 rounded-lg text-[11px] font-medium transition">▶ VS</button>`
+                    ? `<button onclick="playDriveAudio('${nomeMusica.replace(/'/g, "\\'")}', '${fileId}')" class="bg-night-950/80 hover:bg-slate-800 text-liturge-400 border border-liturge-500/30 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition flex items-center gap-1 shadow-sm">
+                        <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        VS
+                    </button>`
                     : '';
 
                 musicasHtml += `
-                    <div class="py-2.5 flex items-center justify-between border-b border-slate-700/40 last:border-0 hover:bg-slate-750 px-4 transition text-xs">
+                    <div class="py-2.5 flex items-center justify-between border-b border-slate-800/60 last:border-0 hover:bg-slate-800/30 px-4 transition text-xs">
                         <div>
                             <span class="font-bold text-white">${nomeMusica}</span>
                             ${artist ? `<span class="text-[10px] text-slate-400 ml-1">(${artist})</span>` : ''}
                             <div class="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400">
-                                ${tom ? `<span class="text-brand-300 font-semibold">Tom: ${tom}</span>` : ''}
-                                ${cantoresMusica ? `<span>• 🎤 ${cantoresMusica}</span>` : ''}
+                                ${tom ? `<span class="text-liturge-400 font-mono font-semibold">Tom: ${tom}</span>` : ''}
+                                ${cantoresMusica ? `<span class="text-slate-300">• ${cantoresMusica}</span>` : ''}
                             </div>
                         </div>
-                        <div class="flex items-center gap-1">
+                        <div class="flex items-center gap-1.5 flex-wrap justify-end">
                             ${btnPlayVs}
                             ${btnLetra}
                             ${btnCifra}
@@ -2780,38 +2791,43 @@ function renderizarHistoricoCultos() {
             const totalMusicas = songList.length;
 
             servicosHtml += `
-                <div class="border border-slate-700/70 rounded-xl overflow-hidden bg-slate-900/60 mb-2.5 transition hover:border-slate-600 shadow-sm">
+                <div class="border border-slate-800/80 rounded-2xl overflow-hidden bg-night-900/90 mb-2.5 transition hover:border-slate-700 shadow-sm">
                     <div onclick="toggleHistoricoCultoCard('${service.id}')" 
-                        class="flex items-center justify-between p-3.5 cursor-pointer hover:bg-slate-800/60 transition select-none flex-wrap gap-2.5">
+                        class="flex items-center justify-between p-3.5 cursor-pointer hover:bg-night-950/60 transition select-none flex-wrap gap-2.5">
                         <div class="flex items-center gap-3 min-w-0 flex-1">
                             <span id="seta-hist-${service.id}" class="text-slate-400 text-xs font-bold transition-transform shrink-0">▼</span>
                             <div class="min-w-0 flex items-center gap-2 flex-wrap">
-                                <span class="font-bold text-slate-200 text-xs uppercase truncate">${titulo}</span>
-                                <span class="text-[10px] text-slate-400 font-semibold bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800">${dataFormatada}</span>
-                                <span class="text-[10px] text-brand-400 font-bold bg-brand-950/80 px-2 py-0.5 rounded-full border border-brand-800/80">🎵 ${totalMusicas} ${totalMusicas === 1 ? 'música' : 'músicas'}</span>
+                                <span class="font-bold text-slate-200 text-xs uppercase tracking-wide truncate">${titulo}</span>
+                                <span class="text-[10px] text-slate-300 font-semibold bg-night-950 px-2.5 py-0.5 rounded-full border border-slate-800">${dataFormatada}</span>
+                                <span class="text-[10px] text-liturge-400 font-bold bg-liturge-500/10 px-2.5 py-0.5 rounded-full border border-liturge-500/30 inline-flex items-center gap-1">
+                                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                                    ${totalMusicas} ${totalMusicas === 1 ? 'música' : 'músicas'}
+                                </span>
                             </div>
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
                             ${totalMusicas > 0 ? `
                                 <button type="button" onclick="event.stopPropagation(); abrirModalCopiarPlaylist('${service.id}')" 
-                                    class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm flex items-center gap-1.5 cursor-pointer">
-                                    <span>📋</span> Copiar Playlist
+                                    class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:brightness-110 text-white font-semibold px-3 py-1.5 rounded-lg text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                                    Copiar Playlist
                                 </button>
                             ` : ''}
                         </div>
                     </div>
                     
-                    <div id="content-hist-${service.id}" class="hidden border-t border-slate-800/80 p-3.5 bg-slate-950/40 space-y-3">
+                    <div id="content-hist-${service.id}" class="hidden border-t border-slate-800/80 p-3.5 bg-night-950/40 space-y-3">
                         ${linhaMidias}
                         ${linhaInstrumentos}
-                        <div class="divide-y divide-slate-800/60 bg-slate-900/70 rounded-xl border border-slate-800/80 overflow-hidden">
+                        <div class="divide-y divide-slate-800/60 bg-night-900/90 rounded-xl border border-slate-800/80 overflow-hidden">
                             ${musicasHtml || '<p class="text-center text-slate-500 py-3 text-[11px]">Nenhuma música cadastrada neste culto.</p>'}
                         </div>
                         ${totalMusicas > 0 ? `
                             <div class="flex justify-end pt-1">
                                 <button type="button" onclick="abrirModalCopiarPlaylist('${service.id}')" 
-                                    class="bg-slate-800 hover:bg-slate-700 text-brand-400 hover:text-brand-300 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 cursor-pointer">
-                                    <span>📋</span> Copiar esta Playlist para outro Culto
+                                    class="bg-night-950 hover:bg-slate-800 text-liturge-400 hover:text-liturge-300 border border-liturge-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+                                    Copiar esta Playlist para outro Culto
                                 </button>
                             </div>
                         ` : ''}
@@ -2821,10 +2837,10 @@ function renderizarHistoricoCultos() {
         });
 
         html += `
-            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl overflow-hidden shadow-md mb-3">
-                <button onclick="toggleCultoBloco('${idAccordion}', '${idSeta}')" class="w-full flex items-center justify-between bg-slate-900/60 hover:bg-slate-900/80 border-b border-slate-700/50 px-4 py-2.5 transition text-left">
-                    <h2 class="font-bold text-slate-300 text-sm uppercase tracking-wider">${mesAno}</h2>
-                    <span id="${idSeta}" class="text-slate-400 text-xs">▼</span>
+            <div class="bg-night-900/80 border border-slate-800/80 rounded-2xl overflow-hidden shadow-md mb-3">
+                <button onclick="toggleCultoBloco('${idAccordion}', '${idSeta}')" class="w-full flex items-center justify-between bg-night-950/80 hover:bg-night-950 border-b border-slate-800/80 px-4 py-3 transition text-left cursor-pointer">
+                    <h2 class="font-bold text-slate-200 text-xs sm:text-sm uppercase tracking-wider">${mesAno}</h2>
+                    <span id="${idSeta}" class="text-slate-400 text-xs font-bold transition-transform">▼</span>
                 </button>
                 <div id="${idAccordion}" class="hidden p-4 space-y-2">
                     ${servicosHtml}
