@@ -614,14 +614,32 @@ async function carregarDados() {
         aplicarVisibilidadePermissoes();
         carregarOpcoesSimulacaoPerfil();
 
-        renderizarCultos(dadosGlobais.cultos);
-        renderizarRepertorio(dadosGlobais.repertorio);
-        renderizarMusicasNovas(dadosGlobais.novas);
+        try {
+            renderizarCultos(dadosGlobais.cultos);
+        } catch (errCultos) {
+            console.error("Erro ao renderizar cultos:", errCultos);
+        }
+
+        try {
+            renderizarRepertorio(dadosGlobais.repertorio);
+        } catch (errRep) {
+            console.error("Erro ao renderizar repertório:", errRep);
+        }
+
+        try {
+            renderizarMusicasNovas(dadosGlobais.novas);
+        } catch (errNovas) {
+            console.error("Erro ao renderizar músicas novas:", errNovas);
+        }
         
         if (isAdmin) {
-            renderizarAdminListaCultos();
-            if (typeof renderizarHistoricoCultos === 'function') {
-                renderizarHistoricoCultos();
+            try {
+                renderizarAdminListaCultos();
+                if (typeof renderizarHistoricoCultos === 'function') {
+                    renderizarHistoricoCultos();
+                }
+            } catch (errAdmin) {
+                console.error("Erro ao renderizar painel admin:", errAdmin);
             }
         }
         if (typeof finalizarTelaCarregamento === 'function') {
@@ -873,6 +891,7 @@ function renderizarCultos(rows) {
     container.innerHTML = '';
 
     let blocoAtual = null;
+    let idPlaylistAtual = '';
     let blocoEmMontagem = false;
     let blocoOculto = false;
     let htmlCultos = '';
@@ -887,10 +906,11 @@ function renderizarCultos(rows) {
             if (blocoAtual && !blocoOculto) htmlCultos += `</div></div>`;
 
             contadorBloco++;
-            const idPlaylist = `playlist-culto-${contadorBloco}`;
+            idPlaylistAtual = `playlist-culto-${contadorBloco}`;
+            const idPlaylist = idPlaylistAtual;
             const idSeta = `seta-culto-${contadorBloco}`;
             window.liturgeCultosPlaylists = window.liturgeCultosPlaylists || {};
-            window.liturgeCultosPlaylists[idPlaylist] = [];
+            window.liturgeCultosPlaylists[idPlaylistAtual] = [];
             blocoAtual = textoPrimeiraColuna;
             blocoEmMontagem = blocoAtual.toUpperCase().includes('EM MONTAGEM');
             blocoOculto = blocoAtual.toUpperCase().includes('OCULTO');
@@ -1078,17 +1098,18 @@ function renderizarCultos(rows) {
 
             // Registra faixa na playlist do culto atual para controle contínuo em segundo plano e tela de bloqueio
             let trackIndexCulto = -1;
+            const currentListId = idPlaylistAtual || `playlist-culto-${contadorBloco}`;
             if (canVerVs && vsCelular) {
                 window.liturgeCultosPlaylists = window.liturgeCultosPlaylists || {};
-                window.liturgeCultosPlaylists[idPlaylist] = window.liturgeCultosPlaylists[idPlaylist] || [];
-                window.liturgeCultosPlaylists[idPlaylist].push({
+                window.liturgeCultosPlaylists[currentListId] = window.liturgeCultosPlaylists[currentListId] || [];
+                window.liturgeCultosPlaylists[currentListId].push({
                     title: musica.toString().trim(),
                     fileIdOrUrl: fileId,
                     artist: artistaMusica || cantoresMusica || 'Liturge • Louvor',
                     album: blocoAtual.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim(),
-                    cultoId: idPlaylist
+                    cultoId: currentListId
                 });
-                trackIndexCulto = window.liturgeCultosPlaylists[idPlaylist].length - 1;
+                trackIndexCulto = window.liturgeCultosPlaylists[currentListId].length - 1;
             }
 
             const btnLetraCulto = (lyricsTexto && canVerLetra)
@@ -1116,7 +1137,7 @@ function renderizarCultos(rows) {
                             </div>
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                            ${(canVerVs && vsCelular) ? `<button onclick="LiturgePlayer.tocarDoCulto('${idPlaylist}', ${trackIndexCulto})" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer"><span>▶</span> Ouvir VS</button>` : ''}
+                            ${(canVerVs && vsCelular) ? `<button onclick="LiturgePlayer.tocarDoCulto('${currentListId}', ${trackIndexCulto})" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer"><span>▶</span> Ouvir VS</button>` : ''}
                             ${btnLetraCulto}
                             ${btnCifraCulto}
                             ${(canVerYoutube && linkYoutubeFinal) ? `<button onclick="playYoutubeAudio('${musica.toString().replace(/'/g, "\\'")}', '${linkYoutubeFinal}')" class="bg-red-700/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1"><span>📺</span> YouTube</button>` : ''}
