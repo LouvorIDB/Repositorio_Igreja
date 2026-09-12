@@ -260,12 +260,12 @@ async function carregarDados() {
             }
         }
 
-        // Se não achou por login, tenta buscar pelo slug na URL (?c=slug)
+        // Se não achou por login, tenta buscar pela TAG na URL (?tag=..., ?c=..., ?church=...)
         if (!currentChurchId) {
             const params = new URLSearchParams(window.location.search);
-            const slug = params.get('c') || params.get('church');
-            if (slug) {
-                const { data: cData } = await supabaseClient.from('churches').select('*').eq('slug', slug.toLowerCase().trim()).maybeSingle();
+            const tag = params.get('tag') || params.get('c') || params.get('church');
+            if (tag) {
+                const { data: cData } = await supabaseClient.from('churches').select('*').eq('slug', tag.toLowerCase().trim()).maybeSingle();
                 if (cData) {
                     dadosGlobais.church = cData;
                     currentChurchId = cData.id;
@@ -276,7 +276,7 @@ async function carregarDados() {
             }
         }
 
-        // Se NÃO há igreja definida (usuário deslogado sem slug na URL)
+        // Se NÃO há igreja definida (usuário deslogado sem TAG na URL)
         if (!currentChurchId) {
             dadosGlobais.church = null;
             try { localStorage.removeItem('cached_church_data'); } catch (e) {}
@@ -2205,9 +2205,9 @@ async function realizarOnboardingIgreja(event) {
         }
     }
     const nomeIgreja = document.getElementById('onboarding-nome-igreja').value.trim();
-    const typedSlug = document.getElementById('onboarding-slug-igreja')?.value.trim();
-    const slugBase = nomeIgreja.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-    const slugIgreja = typedSlug ? typedSlug.toLowerCase().replace(/[^a-z0-9_-]/g, '-') : `${slugBase || 'igreja'}-${Math.floor(Math.random() * 8999 + 1000)}`;
+    const typedTag = document.getElementById('onboarding-slug-igreja')?.value.trim();
+    const tagBase = nomeIgreja.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    const tagIgreja = typedTag ? typedTag.toLowerCase().replace(/[^a-z0-9_-]/g, '-') : `${tagBase || 'igreja'}-${Math.floor(Math.random() * 8999 + 1000)}`;
     
     const corTema = document.getElementById('onboarding-cor-igreja').value;
     const nomeAdmin = document.getElementById('onboarding-nome-admin').value.trim();
@@ -2250,7 +2250,7 @@ async function realizarOnboardingIgreja(event) {
             .from('churches')
             .insert({
                 name: nomeIgreja,
-                slug: slugIgreja,
+                slug: tagIgreja,
                 theme_color_primary: corTema,
                 status: 'pending',
                 agreed_payment: 'A combinar',
@@ -2264,84 +2264,42 @@ async function realizarOnboardingIgreja(event) {
         if (churchErr) throw churchErr;
         const churchId = newChurch.id;
 
-        // 2. Provisionar o Ministério padrão para a nova igreja (com permissões desativadas por padrão)
-        const { data: newMin } = await supabaseClient
-            .from('ministries')
-            .insert({
-                church_id: churchId,
-                name: 'Ministério de Louvor & Adoração',
-                description: 'Equipe principal de louvor da igreja',
-                icon: '🎵',
-                permissions: emptyPerms,
-                can_upload_media: false
-            })
-            .select('id')
-            .single();
-
-        // 2.1 Provisionar funções padrão com escopo explícito (Música vs Culto)
-        if (newMin && newMin.id) {
-            await supabaseClient.from('ministry_roles').insert([
-                { ministry_id: newMin.id, name: 'Ministro de Louvor', scale_scope: 'song' },
-                { ministry_id: newMin.id, name: 'Cantor(a) / Vocal', scale_scope: 'song' },
-                { ministry_id: newMin.id, name: 'Violão', scale_scope: 'service' },
-                { ministry_id: newMin.id, name: 'Bateria', scale_scope: 'service' },
-                { ministry_id: newMin.id, name: 'Teclado', scale_scope: 'service' }
-            ]);
-        }
-
-        // 3. Cadastrar usuário no Supabase Auth
+        // 2. Criar a conta Auth do Administrador no Supabase
         const { data: authData, error: authErr } = await supabaseClient.auth.signUp({
             email: emailAdmin,
             password: senhaAdmin,
             options: {
                 data: {
-                    full_name: nomeAdmin,
                     name: nomeAdmin,
-                    church_id: churchId,
                     role: 'admin',
-                    system_role: 'admin'
+                    system_role: 'admin',
+                    church_id: churchId
                 }
             }
         });
 
         if (authErr) throw authErr;
+        const userId = authData.user?.id;
 
-        // 4. Criar ou Atualizar perfil do Administrador na tabela 'profiles'
-        if (authData && authData.user) {
-            await supabaseClient
-                .from('profiles')
-                .upsert({
-                    id: authData.user.id,
-                    church_id: churchId,
-                    name: nomeAdmin,
-                    email: emailAdmin,
-                    role: 'admin',
-                    system_role: 'admin'
-                }, { onConflict: 'id' });
+        // 3. Criar registro inicial na tabela 'profiles' para o Admin
+        if (userId) {
+            await supabaseClient.from('profiles').upsert({
+                id: userId,
+                name: nomeAdmin,
+                email: emailAdmin,
+                phone: whatsappAdmin,
+                role: 'admin',
+                system_role: 'admin',
+                church_id: churchId,
+                instruments: ['Líder']
+            });
         }
 
-        // Garantir atualização caso o email já possuísse um registro prévio
-        try {
-            await supabaseClient
-                .from('profiles')
-                .update({
-                    church_id: churchId,
-                    name: nomeAdmin,
-                    role: 'admin',
-                    system_role: 'admin'
-                })
-                .eq('email', emailAdmin);
-        } catch (eProf) {
-            console.warn("Aviso ao sincronizar perfil do admin por email:", eProf);
-        }
+        // Registrar timestamp para anti-spam
+        try { localStorage.setItem('last_church_onboarding_ts', Date.now().toString()); } catch (e) {}
 
         fecharModalCadastroIgreja();
-        localStorage.setItem('liturge_last_church_creation', Date.now().toString());
-        try {
-            localStorage.removeItem(`louvoridb_events_${churchId}`);
-            if (typeof eventosMemoria !== 'undefined') eventosMemoria = [];
-        } catch(e) {}
-        mostrarToast(`⛪ A igreja "${nomeIgreja}" foi cadastrada e está aguardando ativação!`, 'sucesso');
+        mostrarToast('Igreja cadastrada com sucesso! Redirecionando...', 'sucesso');
         
         // Recarregar app com o novo ambiente da igreja (irá detectar status 'pending' e travar na tela pendente)
         await carregarDados();
@@ -2349,7 +2307,7 @@ async function realizarOnboardingIgreja(event) {
         // Dispara o WhatsApp imediatamente para o Administrador Global
         const adminPhone = "5511997787992"; // WhatsApp do Administrador do Liturge
         const texto = `Olá! Acabei de cadastrar a minha igreja no Liturge e gostaria de solicitar a ativação.
-- *Igreja:* ${nomeIgreja} (${slugIgreja})
+- *Igreja:* ${nomeIgreja} (TAG: ${tagIgreja})
 - *Líder:* ${nomeAdmin} (${emailAdmin})
 - *WhatsApp:* ${whatsappAdmin}`;
         
@@ -2359,7 +2317,7 @@ async function realizarOnboardingIgreja(event) {
     } catch (err) {
         console.error("Erro no Onboarding da Igreja:", err);
         if (erroEl) {
-            erroEl.textContent = `Erro ao cadastrar igreja: ${err.message || 'Verifique se o slug ou e-mail já estão em uso.'}`;
+            erroEl.textContent = `Erro ao cadastrar igreja: ${err.message || 'Verifique se a TAG ou e-mail já estão em uso.'}`;
             erroEl.classList.remove('hidden');
         }
         mostrarToast('Erro ao realizar onboarding da igreja.', 'erro');
@@ -2405,10 +2363,10 @@ async function irParaIgrejaBuscada() {
     const erroEl = document.getElementById('landing-busca-erro');
     if (!input) return;
     
-    const slug = input.value.trim().toLowerCase();
-    if (!slug) {
+    const tag = input.value.trim().toLowerCase();
+    if (!tag) {
         if (erroEl) {
-            erroEl.textContent = "Digite o identificador (slug) da igreja.";
+            erroEl.textContent = "Digite a TAG da igreja.";
             erroEl.classList.remove('hidden');
         }
         return;
@@ -2418,17 +2376,18 @@ async function irParaIgrejaBuscada() {
     
     try {
         if (!supabaseClient) throw new Error("Cliente Supabase não carregado.");
-        const { data, error } = await supabaseClient.from('churches').select('slug').eq('slug', slug).maybeSingle();
+        const { data, error } = await supabaseClient.from('churches').select('slug').eq('slug', tag).maybeSingle();
         
         if (error) throw error;
         
         if (data) {
             const url = new URL(window.location.href);
-            url.searchParams.set('c', slug);
+            url.searchParams.set('tag', tag);
+            url.searchParams.set('c', tag);
             window.location.href = url.toString();
         } else {
             if (erroEl) {
-                erroEl.textContent = `Igreja com slug "${slug}" não encontrada. Verifique se digitou correto.`;
+                erroEl.textContent = `Igreja com TAG "${tag}" não encontrada. Verifique se digitou correto.`;
                 erroEl.classList.remove('hidden');
             }
         }
@@ -2471,7 +2430,7 @@ function exibirLandingPendente(church) {
             const adminPhone = "5511997787992"; // WhatsApp do Administrador do Liturge
             const texto = `Olá! Gostaria de solicitar a ativação do Liturge para a minha igreja:
 - *Igreja:* ${church.name}
-- *Identificador (slug):* ${church.slug}
+- *TAG da Igreja:* ${church.slug}
 - *Líder/WhatsApp:* ${church.leader_whatsapp || 'Não informado'}`;
             
             const encodedText = encodeURIComponent(texto);

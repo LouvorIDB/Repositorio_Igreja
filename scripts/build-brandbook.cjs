@@ -1,0 +1,698 @@
+const fs = require('fs');
+const path = require('path');
+
+const svgData = JSON.parse(fs.readFileSync(path.join(__dirname, '../docs/branding/svg-data.json'), 'utf8'));
+
+const htmlContent = `<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brandbook & Identidade Visual — Liturge</title>
+    <link rel="icon" type="image/svg+xml" href="${svgData.favicon}">
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    },
+                    colors: {
+                        liturge: {
+                            50: '#FFFBEB',
+                            100: '#FEF3C7',
+                            200: '#FDE68A',
+                            300: '#FCD34D',
+                            400: '#FBBF24',
+                            500: '#F59E0B',
+                            600: '#D97706',
+                            700: '#B45309',
+                            800: '#92400E',
+                            900: '#78350F',
+                            950: '#451A03'
+                        },
+                        night: {
+                            800: '#111827',
+                            850: '#0D1526',
+                            900: '#0B111E',
+                            950: '#070B14'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glow-amber {
+            filter: drop-shadow(0 0 25px rgba(245, 166, 35, 0.45));
+        }
+        .glow-node {
+            filter: drop-shadow(0 0 8px rgba(255, 213, 79, 0.8));
+        }
+        .matrix-bg-dark {
+            background-image: radial-gradient(rgba(245, 158, 11, 0.1) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .matrix-bg-light {
+            background-image: radial-gradient(rgba(217, 119, 6, 0.12) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        
+        /* ESTILOS DE IMPRESSÃO / PDF OFICIAL */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 1.2cm;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            header, #modal-exportar, .no-print {
+                display: none !important;
+            }
+            body {
+                padding: 0 !important;
+                background-color: var(--print-bg) !important;
+                color: var(--print-color) !important;
+            }
+            main {
+                max-width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                space-y: 1.5rem !important;
+            }
+            section {
+                break-inside: avoid;
+                page-break-inside: avoid;
+                margin-bottom: 2rem !important;
+                border-color: rgba(148, 163, 184, 0.3) !important;
+            }
+            .matrix-bg-dark, .matrix-bg-light {
+                background-image: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-night-950 text-slate-100 font-sans antialiased selection:bg-liturge-500 selection:text-black transition-colors duration-300">
+
+    <!-- ================= BARRA SUPERIOR DE NAVEGAÇÃO ================= -->
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-night-900/80 dark:bg-night-900/80 bg-white/80 border-b border-slate-800 dark:border-slate-800 border-slate-200 px-6 py-3.5 transition-colors">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img src="${svgData.symbol}" alt="Liturge Symbol" class="w-8 h-8 glow-node">
+                <span class="font-extrabold tracking-[0.25em] text-white dark:text-white text-slate-900 text-base">LITURGE</span>
+                <span class="hidden sm:inline-block text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-liturge-500/10 text-liturge-400 border border-liturge-500/20">Brand Manual v1.0</span>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+                <!-- Alternador de Tema -->
+                <button onclick="toggleTheme()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 dark:border-slate-700 border-slate-300 bg-slate-800/60 dark:bg-slate-800/60 bg-slate-100 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-slate-200 text-xs font-medium text-slate-300 dark:text-slate-300 text-slate-700 transition cursor-pointer" title="Alternar entre modo claro e escuro">
+                    <span id="theme-icon">☀️</span> <span id="theme-text">Modo Claro</span>
+                </button>
+
+                <!-- Botão de Exportação -->
+                <button onclick="abrirModalExportar()" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 font-bold px-3.5 py-1.5 rounded-lg text-xs tracking-wide transition shadow-lg shadow-liturge-500/20 flex items-center gap-1.5 cursor-pointer">
+                    📤 <span>Exportar</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-10 space-y-20">
+
+        <!-- ================= HERO SECTION ================= -->
+        <section class="text-center relative py-12 matrix-bg-dark rounded-3xl border border-slate-800 dark:border-slate-800 border-slate-300 bg-night-900/60 dark:bg-night-900/60 bg-white/70 overflow-hidden transition-colors shadow-xl shadow-black/10">
+            <div class="absolute inset-0 bg-gradient-to-b from-liturge-500/10 via-transparent to-transparent pointer-events-none"></div>
+            
+            <!-- Símbolo em Destaque -->
+            <div class="w-36 h-36 mx-auto mb-8 relative flex items-center justify-center">
+                <div class="absolute inset-0 bg-liturge-500/20 rounded-full blur-3xl animate-pulse"></div>
+                <img src="${svgData.symbol}" alt="Liturge" class="w-full h-full relative z-10 glow-amber transition hover:scale-105 duration-500">
+            </div>
+
+            <h1 class="text-4xl sm:text-6xl font-black tracking-[0.25em] text-white dark:text-white text-slate-900 uppercase mb-3">
+                L I T U R G E
+            </h1>
+            <p class="text-xs sm:text-sm uppercase tracking-[0.35em] text-liturge-400 dark:text-liturge-400 text-liturge-600 font-bold mb-5">
+                Gestão de Escalas e Repertório
+            </p>
+            <p class="max-w-2xl mx-auto text-slate-400 dark:text-slate-400 text-slate-600 text-sm sm:text-base leading-relaxed font-normal">
+                Manual oficial de identidade visual. Uma arquitetura de marca inspirada na geometria sagrada, na harmonia matemática e na união orgânica de todos os ministérios do culto.
+            </p>
+        </section>
+
+        <!-- ================= 1. CONCEITO E GEOMETRIA SAGRADA ================= -->
+        <section class="space-y-8">
+            <div class="border-b border-slate-800 dark:border-slate-800 border-slate-200 pb-4">
+                <span class="text-liturge-400 dark:text-liturge-400 text-liturge-600 text-xs font-bold tracking-widest uppercase">01. Fundamento Conceitual</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-white dark:text-white text-slate-900 mt-1">A Geometria da Adoração e do Serviço</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="p-6 rounded-2xl bg-slate-900/60 dark:bg-slate-900/60 bg-white border border-slate-800 dark:border-slate-800 border-slate-200 shadow-sm hover:border-liturge-500/40 transition">
+                    <div class="text-2xl mb-3">⬡</div>
+                    <h3 class="text-lg font-bold text-white dark:text-white text-slate-900 mb-2">A Matriz Hexagonal</h3>
+                    <p class="text-xs text-slate-400 dark:text-slate-400 text-slate-600 leading-relaxed">
+                        Inspirada na projeção do cubo isométrico e na geometria sagrada (Metatron), expressando ordem, estabilidade e estrutura impecável no culto.
+                    </p>
+                </div>
+
+                <div class="p-6 rounded-2xl bg-slate-900/60 dark:bg-slate-900/60 bg-white border border-slate-800 dark:border-slate-800 border-slate-200 shadow-sm hover:border-liturge-500/40 transition">
+                    <div class="text-2xl mb-3">✨</div>
+                    <h3 class="text-lg font-bold text-white dark:text-white text-slate-900 mb-2">Nós & Conexões</h3>
+                    <p class="text-xs text-slate-400 dark:text-slate-400 text-slate-600 leading-relaxed">
+                        Cada nó luminoso representa um voluntário ou ministério (louvor, som, mídia, recepção, pastoral). A união das arestas gera a harmonia e o fluxo da liturgia.
+                    </p>
+                </div>
+
+                <div class="p-6 rounded-2xl bg-slate-900/60 dark:bg-slate-900/60 bg-white border border-slate-800 dark:border-slate-800 border-slate-200 shadow-sm hover:border-liturge-500/40 transition">
+                    <div class="text-2xl mb-3">☀️</div>
+                    <h3 class="text-lg font-bold text-white dark:text-white text-slate-900 mb-2">O Nó Central de Luz</h3>
+                    <p class="text-xs text-slate-400 dark:text-slate-400 text-slate-600 leading-relaxed">
+                        O centro radiante simboliza o propósito maior e transcendente: Cristo e a adoração congregacional, ponto focal para onde convergem todas as funções.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 2. VARIAÇÕES OFICIAIS DO LOGOTIPO ================= -->
+        <section class="space-y-8">
+            <div class="border-b border-slate-800 dark:border-slate-800 border-slate-200 pb-4">
+                <span class="text-liturge-400 dark:text-liturge-400 text-liturge-600 text-xs font-bold tracking-widest uppercase">02. Arquitetura da Marca</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-white dark:text-white text-slate-900 mt-1">Variações Oficiais do Logotipo</h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Principal Dark Mode -->
+                <div class="p-7 rounded-3xl bg-night-900 dark:bg-night-900 bg-slate-900 border border-slate-800 flex flex-col justify-between space-y-6 shadow-md">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-liturge-500/10 text-liturge-400 border border-liturge-500/20">Assinatura Oficial Primária</span>
+                        <h4 class="text-sm font-semibold text-slate-200 mt-2">Dourado Luminoso sobre Noite Profunda</h4>
+                    </div>
+                    <div class="py-10 px-4 flex items-center justify-center bg-night-950 rounded-2xl border border-slate-800/80">
+                        <img src="${svgData.logoFull}" alt="Liturge Logo Oficial" class="max-w-xs sm:max-w-md w-full">
+                    </div>
+                    <p class="text-xs text-slate-400">Aplicação padrão em telas de splash, cabeçalhos escuros, sites institucionais e interfaces noturnas.</p>
+                </div>
+
+                <!-- Monocromático Branco -->
+                <div class="p-7 rounded-3xl bg-night-900 dark:bg-night-900 bg-slate-900 border border-slate-800 flex flex-col justify-between space-y-6 shadow-md">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">Versão Monocromática</span>
+                        <h4 class="text-sm font-semibold text-slate-200 mt-2">Branco Puro (High-Contrast)</h4>
+                    </div>
+                    <div class="py-10 px-4 flex items-center justify-center bg-night-950 rounded-2xl border border-slate-800/80">
+                        <img src="${svgData.logoWhite}" alt="Liturge Logo Branco" class="max-w-xs sm:max-w-md w-full">
+                    </div>
+                    <p class="text-xs text-slate-400">Para projeções de telão, impressões monocromáticas, carimbos, marcas d'água em vídeos e fundos fotográficos.</p>
+                </div>
+
+                <!-- Versão em Fundo Claro -->
+                <div class="p-7 rounded-3xl bg-white dark:bg-slate-100 text-slate-900 border border-slate-300 dark:border-slate-300 flex flex-col justify-between space-y-6 shadow-md">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-liturge-100 text-liturge-800 border border-liturge-300">Versão Diurna / Impressão Clara</span>
+                        <h4 class="text-sm font-semibold text-slate-800 mt-2">Bronze & Âmbar sobre Off-White</h4>
+                    </div>
+                    <div class="py-10 px-4 flex items-center justify-center bg-slate-50 rounded-2xl border border-slate-200 shadow-inner">
+                        <div class="flex items-center gap-4">
+                            <img src="${svgData.symbol}" alt="Symbol" class="w-12 h-12">
+                            <div>
+                                <span class="font-extrabold tracking-[0.25em] text-slate-950 text-2xl block">LITURGE</span>
+                                <span class="text-[8px] font-bold tracking-[0.25em] text-liturge-700 uppercase block mt-1">Gestão de Escalas e Repertório</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-600">Aplicação em relatórios impressos, folhas de escalas físicas e materiais administrativos diurnos.</p>
+                </div>
+
+                <!-- Ícone Isolado e Favicon -->
+                <div class="p-7 rounded-3xl bg-night-900 dark:bg-night-900 bg-slate-900 border border-slate-800 flex flex-col justify-between space-y-6 shadow-md">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-liturge-500/10 text-liturge-400 border border-liturge-500/20">Ícone Isolado & Favicon</span>
+                        <h4 class="text-sm font-semibold text-slate-200 mt-2">Símbolo Autônomo para App & PWA</h4>
+                    </div>
+                    <div class="py-10 px-4 flex items-center justify-center gap-8 bg-night-950 rounded-2xl border border-slate-800/80">
+                        <div class="text-center">
+                            <img src="${svgData.symbol}" alt="Símbolo" class="w-16 h-16 mx-auto mb-2 glow-node">
+                            <span class="text-[10px] text-slate-400">SVG Original (200px)</span>
+                        </div>
+                        <div class="h-12 w-px bg-slate-800"></div>
+                        <div class="text-center">
+                            <img src="${svgData.favicon}" alt="Favicon" class="w-12 h-12 mx-auto mb-2 rounded-xl shadow-lg">
+                            <span class="text-[10px] text-slate-400">Favicon (64px)</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400">Escalabilidade impecável de 16px até 4K sem perda de nitidez.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 3. PALETA CROMÁTICA & TOKENS ================= -->
+        <section class="space-y-8">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-slate-800 dark:border-slate-800 border-slate-200 pb-4 gap-4">
+                <div>
+                    <span class="text-liturge-400 dark:text-liturge-400 text-liturge-600 text-xs font-bold tracking-widest uppercase">03. Cores & Design Tokens</span>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white dark:text-white text-slate-900 mt-1">Paleta Âmbar Dourado & Noite Profunda</h2>
+                </div>
+                <button onclick="copiarTokensCSS()" class="self-start sm:self-auto px-3.5 py-1.5 rounded-lg border border-slate-700 dark:border-slate-700 border-slate-300 bg-slate-800 dark:bg-slate-800 bg-slate-100 hover:bg-slate-700 dark:hover:bg-slate-700 hover:bg-slate-200 text-xs font-medium text-slate-200 dark:text-slate-200 text-slate-800 transition flex items-center gap-1.5 cursor-pointer">
+                    📋 <span id="copy-btn-label">Copiar Tokens CSS</span>
+                </button>
+            </div>
+
+            <!-- Swatches Âmbar Dourado -->
+            <div>
+                <h3 class="text-sm font-bold text-slate-300 dark:text-slate-300 text-slate-800 uppercase tracking-wider mb-3">Tom Primário: Âmbar Dourado (Liturge Gold)</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    <div class="p-3 rounded-xl bg-[#FFFBEB] text-slate-900 border border-slate-300">
+                        <div class="text-xs font-bold">50</div>
+                        <div class="font-mono text-[10px]">#FFFBEB</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-[#FEF3C7] text-slate-900 border border-slate-300">
+                        <div class="text-xs font-bold">100</div>
+                        <div class="font-mono text-[10px]">#FEF3C7</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-[#FDE68A] text-slate-900">
+                        <div class="text-xs font-bold">200</div>
+                        <div class="font-mono text-[10px]">#FDE68A</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-[#FCD34D] text-slate-900">
+                        <div class="text-xs font-bold">300</div>
+                        <div class="font-mono text-[10px]">#FCD34D</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-[#FBBF24] text-slate-900">
+                        <div class="text-xs font-bold">400</div>
+                        <div class="font-mono text-[10px]">#FBBF24</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-[#F59E0B] text-slate-950 font-black shadow-lg shadow-liturge-500/20 ring-2 ring-white dark:ring-white ring-slate-900">
+                        <div class="text-xs font-black">500 (Base)</div>
+                        <div class="font-mono text-[10px]">#F59E0B</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-[#D97706] text-white">
+                        <div class="text-xs font-bold">600</div>
+                        <div class="font-mono text-[10px]">#D97706</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-[#B45309] text-white">
+                        <div class="text-xs font-bold">700</div>
+                        <div class="font-mono text-[10px]">#B45309</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-[#92400E] text-white">
+                        <div class="text-xs font-bold">800</div>
+                        <div class="font-mono text-[10px]">#92400E</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-[#78350F] text-white">
+                        <div class="text-xs font-bold">900</div>
+                        <div class="font-mono text-[10px]">#78350F</div>
+                    </div>
+                    <div class="p-3 rounded-xl bg-[#451A03] text-white">
+                        <div class="text-xs font-bold">950</div>
+                        <div class="font-mono text-[10px]">#451A03</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Swatches Noite Profunda -->
+            <div>
+                <h3 class="text-sm font-bold text-slate-300 dark:text-slate-300 text-slate-800 uppercase tracking-wider mb-3">Superfícies: Noite Profunda (Obsidian & Slate)</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="p-4 rounded-xl bg-[#111827] text-white border border-slate-700">
+                        <div class="text-xs font-bold">Card Surface (800)</div>
+                        <div class="font-mono text-[11px] text-slate-400">#111827</div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-[#0D1526] text-white border border-slate-700">
+                        <div class="text-xs font-bold">Elevated Panel (850)</div>
+                        <div class="font-mono text-[11px] text-slate-400">#0D1526</div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-[#0B111E] text-white border border-slate-700">
+                        <div class="text-xs font-bold">Background Base (900)</div>
+                        <div class="font-mono text-[11px] text-slate-400">#0B111E</div>
+                    </div>
+                    <div class="p-4 rounded-xl bg-[#070B14] text-white border border-slate-700">
+                        <div class="text-xs font-bold">Splash / Deep Root (950)</div>
+                        <div class="font-mono text-[11px] text-slate-400">#070B14</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 4. TIPOGRAFIA ================= -->
+        <section class="space-y-8">
+            <div class="border-b border-slate-800 dark:border-slate-800 border-slate-200 pb-4">
+                <span class="text-liturge-400 dark:text-liturge-400 text-liturge-600 text-xs font-bold tracking-widest uppercase">04. Tipografia</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-white dark:text-white text-slate-900 mt-1">Plus Jakarta Sans</h2>
+            </div>
+
+            <div class="p-8 rounded-3xl bg-slate-900/60 dark:bg-slate-900/60 bg-white border border-slate-800 dark:border-slate-800 border-slate-200 shadow-sm space-y-6">
+                <div class="border-b border-slate-800 dark:border-slate-800 border-slate-200 pb-4">
+                    <div class="text-4xl font-extrabold text-white dark:text-white text-slate-950 tracking-[0.25em]">L I T U R G E</div>
+                    <div class="text-xs uppercase tracking-[0.3em] text-liturge-400 dark:text-liturge-400 text-liturge-600 font-semibold mt-1">Gestão de Escalas e Repertório</div>
+                    <p class="text-xs text-slate-400 dark:text-slate-400 text-slate-600 mt-2">Caixa alta com tracking amplo (0.25em a 0.3em) para assinaturas e títulos institucionais.</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <span class="text-xs text-slate-500 block mb-1">H1 / Título de Seção (Bold 24px)</span>
+                        <div class="text-2xl font-bold text-white dark:text-white text-slate-900">Escala do Culto de Celebração — Domingo 18h</div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 block mb-1">Body Text (Regular 14px)</span>
+                        <div class="text-sm text-slate-300 dark:text-slate-300 text-slate-700 leading-relaxed max-w-3xl">
+                            Todos os ministros de louvor e operadores técnicos estão confirmados. O repertório musical com 5 louvores foi sincronizado com as cifras dinâmicas e a ordem do culto.
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 block mb-1">Tag / Metadado (Medium 11px uppercase)</span>
+                        <div class="text-xs font-medium tracking-wider text-liturge-400 dark:text-liturge-400 text-liturge-700 uppercase">Tom Original: G | Andamento: 72 BPM | Ministro: Pr. Marcos</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= 5. MOCKUPS REAIS NO ECOSSISTEMA ================= -->
+        <section class="space-y-8">
+            <div class="border-b border-slate-800 dark:border-slate-800 border-slate-200 pb-4">
+                <span class="text-liturge-400 dark:text-liturge-400 text-liturge-600 text-xs font-bold tracking-widest uppercase">05. Aplicação no Ecossistema Liturge</span>
+                <h2 class="text-2xl sm:text-3xl font-bold text-white dark:text-white text-slate-900 mt-1">Simulações de Interface</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Mockup do App Mobile (PWA / Android / iOS) -->
+                <div class="p-8 rounded-3xl bg-night-900 dark:bg-night-900 bg-slate-900 border border-slate-800 flex flex-col items-center text-center shadow-lg">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">Ícone do App no Smartphone</span>
+                    
+                    <div class="flex items-center gap-8 my-auto">
+                        <!-- iOS Squircle -->
+                        <div>
+                            <div class="w-24 h-24 rounded-[22px] bg-gradient-to-b from-[#0F172A] to-[#070B14] p-3 shadow-2xl border border-liturge-500/30 flex items-center justify-center glow-amber">
+                                <img src="${svgData.symbol}" alt="Liturge App" class="w-16 h-16">
+                            </div>
+                            <span class="text-xs font-medium text-slate-300 mt-2 block">iOS (Squircle)</span>
+                        </div>
+
+                        <!-- Android Round -->
+                        <div>
+                            <div class="w-24 h-24 rounded-full bg-gradient-to-b from-[#0F172A] to-[#070B14] p-3 shadow-2xl border border-liturge-500/30 flex items-center justify-center glow-amber">
+                                <img src="${svgData.symbol}" alt="Liturge App" class="w-15 h-15">
+                            </div>
+                            <span class="text-xs font-medium text-slate-300 mt-2 block">Android (Round)</span>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-slate-400 mt-6">Design icônico que se destaca em qualquer gaveta de aplicativos ou tela de início.</p>
+                </div>
+
+                <!-- Mockup da Splash Screen -->
+                <div class="p-8 rounded-3xl bg-night-900 dark:bg-night-900 bg-slate-900 border border-slate-800 flex flex-col items-center text-center shadow-lg">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">Nova Splash Screen do Liturge</span>
+
+                    <div class="w-64 h-80 rounded-2xl bg-night-950 border border-slate-800 p-6 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-b from-liturge-500/5 to-transparent pointer-events-none"></div>
+                        
+                        <div class="relative w-20 h-20 mb-4 flex items-center justify-center">
+                            <div class="absolute inset-0 rounded-full bg-liturge-500/20 blur-xl animate-pulse"></div>
+                            <div class="absolute -inset-1 rounded-full border border-liturge-500/20 border-t-liturge-400 animate-spin"></div>
+                            <img src="${svgData.symbol}" alt="Liturge" class="w-12 h-12 relative z-10 glow-node">
+                        </div>
+
+                        <span class="font-black text-base text-white tracking-[0.25em]">LITURGE</span>
+                        <span class="text-[9px] uppercase tracking-[0.2em] text-liturge-400 font-semibold mt-1">Carregando ministérios...</span>
+                    </div>
+
+                    <p class="text-xs text-slate-400 mt-6">Substitui o antigo emoji 🎵 por uma experiência solene, polida e moderna.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="border-t border-slate-800 dark:border-slate-800 border-slate-200 py-8 text-center text-xs text-slate-500">
+        Plataforma Liturge &copy; 2026 — Todos os direitos reservados. Identidade visual criada para uso oficial.
+    </footer>
+
+    <!-- ================= MODAL DE EXPORTAÇÃO & COMPARTILHAMENTO ================= -->
+    <div id="modal-exportar" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in no-print">
+        <div class="bg-night-900 dark:bg-night-900 bg-white border border-slate-800 dark:border-slate-800 border-slate-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 relative text-slate-100 dark:text-slate-100 text-slate-900">
+            <!-- Botão Fechar -->
+            <button onclick="fecharModalExportar()" class="absolute top-5 right-5 text-slate-400 hover:text-white dark:hover:text-white text-slate-500 hover:text-slate-800 p-2 rounded-full hover:bg-slate-800 dark:hover:bg-slate-800 hover:bg-slate-100 transition cursor-pointer">
+                ✕
+            </button>
+
+            <!-- Cabeçalho do Modal -->
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">📤</span>
+                    <h3 class="text-xl font-bold">Exportar Brandbook</h3>
+                </div>
+                <p class="text-xs text-slate-400 dark:text-slate-400 text-slate-500">
+                    Compartilhe este manual de marca configurado com o modo visual ativo:
+                </p>
+                <div class="pt-1">
+                    <span id="modal-theme-badge" class="text-xs font-bold px-2.5 py-1 rounded bg-liturge-500/20 text-liturge-400 border border-liturge-500/30">
+                        Modo Escuro (Noite Profunda)
+                    </span>
+                </div>
+            </div>
+
+            <!-- Opções de Exportação -->
+            <div class="space-y-3">
+                <!-- Opção 1: Salvar como PDF -->
+                <button onclick="exportarPDF()" class="w-full p-4 rounded-2xl bg-slate-800/80 dark:bg-slate-800/80 bg-slate-50 border border-slate-700 dark:border-slate-700 border-slate-200 hover:border-liturge-500 transition text-left flex items-center justify-between group cursor-pointer">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center text-lg font-bold border border-red-500/20">
+                            PDF
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold text-white dark:text-white text-slate-900 group-hover:text-liturge-400 transition">
+                                Salvar como PDF Oficial
+                            </div>
+                            <div class="text-[11px] text-slate-400 dark:text-slate-400 text-slate-500">
+                                Imprime ou gera PDF diagramado mantendo o fundo e o tema escolhido
+                            </div>
+                        </div>
+                    </div>
+                    <span class="text-slate-400 group-hover:translate-x-1 transition">➔</span>
+                </button>
+
+                <!-- Opção 2: Baixar HTML Autônomo -->
+                <button onclick="baixarHTMLAutonomo()" class="w-full p-4 rounded-2xl bg-slate-800/80 dark:bg-slate-800/80 bg-slate-50 border border-slate-700 dark:border-slate-700 border-slate-200 hover:border-liturge-500 transition text-left flex items-center justify-between group cursor-pointer">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-liturge-500/10 text-liturge-400 flex items-center justify-center text-lg font-bold border border-liturge-500/20">
+                            HTML
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold text-white dark:text-white text-slate-900 group-hover:text-liturge-400 transition">
+                                Baixar Arquivo HTML Autônomo
+                            </div>
+                            <div class="text-[11px] text-slate-400 dark:text-slate-400 text-slate-500">
+                                Arquivo único com o tema travado e todos os SVGs embutidos (envio por WhatsApp)
+                            </div>
+                        </div>
+                    </div>
+                    <span class="text-slate-400 group-hover:translate-x-1 transition">⬇️</span>
+                </button>
+
+                <!-- Opção 3: Copiar Link Direto -->
+                <button onclick="copiarLinkComTema()" class="w-full p-4 rounded-2xl bg-slate-800/80 dark:bg-slate-800/80 bg-slate-50 border border-slate-700 dark:border-slate-700 border-slate-200 hover:border-liturge-500 transition text-left flex items-center justify-between group cursor-pointer">
+                    <div class="flex items-center gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-lg font-bold border border-blue-500/20">
+                            🔗
+                        </div>
+                        <div>
+                            <div class="text-sm font-bold text-white dark:text-white text-slate-900 group-hover:text-liturge-400 transition" id="btn-copy-link-title">
+                                Copiar Link com Modo Atual
+                            </div>
+                            <div class="text-[11px] text-slate-400 dark:text-slate-400 text-slate-500" id="btn-copy-link-subtitle">
+                                Link compartilhável que abre diretamente no modo selecionado (?theme=...)
+                            </div>
+                        </div>
+                    </div>
+                    <span class="text-xs font-semibold text-slate-400 group-hover:text-liturge-400" id="btn-copy-link-badge">Copiar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT DE TEMA E EXPORTAÇÃO ================= -->
+    <script>
+        function aplicarTema(modo) {
+            const html = document.documentElement;
+            const isDark = (modo === 'dark');
+            const themeIcon = document.getElementById('theme-icon');
+            const themeText = document.getElementById('theme-text');
+            const modalBadge = document.getElementById('modal-theme-badge');
+
+            if (isDark) {
+                html.classList.add('dark');
+                document.body.classList.remove('bg-slate-50', 'text-slate-900');
+                document.body.classList.add('bg-night-950', 'text-slate-100');
+                document.documentElement.style.setProperty('--print-bg', '#070B14');
+                document.documentElement.style.setProperty('--print-color', '#F8FAFC');
+                if (themeIcon) themeIcon.textContent = '☀️';
+                if (themeText) themeText.textContent = 'Modo Claro';
+                if (modalBadge) {
+                    modalBadge.textContent = 'Modo Escuro (Noite Profunda)';
+                    modalBadge.className = 'text-xs font-bold px-2.5 py-1 rounded bg-liturge-500/20 text-liturge-400 border border-liturge-500/30';
+                }
+            } else {
+                html.classList.remove('dark');
+                document.body.classList.remove('bg-night-950', 'text-slate-100');
+                document.body.classList.add('bg-slate-50', 'text-slate-900');
+                document.documentElement.style.setProperty('--print-bg', '#FFFFFF');
+                document.documentElement.style.setProperty('--print-color', '#0F172A');
+                if (themeIcon) themeIcon.textContent = '🌙';
+                if (themeText) themeText.textContent = 'Modo Escuro';
+                if (modalBadge) {
+                    modalBadge.textContent = 'Modo Claro (Diurno / Bronze)';
+                    modalBadge.className = 'text-xs font-bold px-2.5 py-1 rounded bg-liturge-100 text-liturge-900 border border-liturge-300';
+                }
+            }
+            try {
+                localStorage.setItem('liturge_brandbook_theme', modo);
+            } catch(e) {}
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            aplicarTema(isDark ? 'light' : 'dark');
+        }
+
+        function abrirModalExportar() {
+            const modal = document.getElementById('modal-exportar');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function fecharModalExportar() {
+            const modal = document.getElementById('modal-exportar');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function exportarPDF() {
+            fecharModalExportar();
+            // Pequeno delay para fechar a animação do modal antes de abrir o diálogo nativo de impressão
+            setTimeout(() => {
+                window.print();
+            }, 200);
+        }
+
+        function baixarHTMLAutonomo() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const modoNome = isDark ? 'Escuro' : 'Claro';
+            
+            // Clona o documento
+            const clone = document.documentElement.cloneNode(true);
+            
+            // Remove o modal e scripts desnecessários no arquivo exportado estático
+            const modalNoClone = clone.querySelector('#modal-exportar');
+            if (modalNoClone) modalNoClone.remove();
+
+            // Assegura que a classe fixa do tema permaneça
+            clone.className = isDark ? 'dark' : '';
+            
+            const bodyNoClone = clone.querySelector('body');
+            if (bodyNoClone) {
+                if (isDark) {
+                    bodyNoClone.className = 'bg-night-950 text-slate-100 font-sans antialiased';
+                } else {
+                    bodyNoClone.className = 'bg-slate-50 text-slate-900 font-sans antialiased';
+                }
+            }
+
+            const htmlOutput = '<!DOCTYPE html>\\n' + clone.outerHTML;
+            const blob = new Blob([htmlOutput], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Liturge_Brandbook_Modo_' + modoNome + '.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            fecharModalExportar();
+        }
+
+        function copiarLinkComTema() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const theme = isDark ? 'dark' : 'light';
+            let url;
+            try {
+                url = new URL(window.location.href);
+                url.searchParams.set('theme', theme);
+            } catch(e) {
+                url = window.location.pathname + '?theme=' + theme;
+            }
+            
+            const fullUrl = url.toString();
+            navigator.clipboard.writeText(fullUrl).then(() => {
+                const badge = document.getElementById('btn-copy-link-badge');
+                if (badge) {
+                    badge.textContent = 'Copiado! ✓';
+                    badge.className = 'text-xs font-bold text-emerald-400';
+                    setTimeout(() => {
+                        badge.textContent = 'Copiar';
+                        badge.className = 'text-xs font-semibold text-slate-400 group-hover:text-liturge-400';
+                    }, 2500);
+                }
+            });
+        }
+
+        function copiarTokensCSS() {
+            const cssTokens = '/* TOKENS OFICIAIS LITURGE */\\n' +
+':root {\\n' +
+'  --liturge-gold-50: #FFFBEB;\\n' +
+'  --liturge-gold-100: #FEF3C7;\\n' +
+'  --liturge-gold-200: #FDE68A;\\n' +
+'  --liturge-gold-300: #FCD34D;\\n' +
+'  --liturge-gold-400: #FBBF24;\\n' +
+'  --liturge-gold-500: #F59E0B;\\n' +
+'  --liturge-gold-600: #D97706;\\n' +
+'  --liturge-gold-700: #B45309;\\n' +
+'  --liturge-gold-800: #92400E;\\n' +
+'  --liturge-gold-900: #78350F;\\n' +
+'  --liturge-gold-950: #451A03;\\n\\n' +
+'  --liturge-night-800: #111827;\\n' +
+'  --liturge-night-850: #0D1526;\\n' +
+'  --liturge-night-900: #0B111E;\\n' +
+'  --liturge-night-950: #070B14;\\n' +
+'}';
+            navigator.clipboard.writeText(cssTokens).then(() => {
+                const label = document.getElementById('copy-btn-label');
+                if (label) {
+                    label.textContent = 'Copiado com Sucesso!';
+                    setTimeout(() => label.textContent = 'Copiar Tokens CSS', 2500);
+                }
+            });
+        }
+
+        // Inicialização com suporte a URL param: ?theme=light ou ?theme=dark
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const themeParam = urlParams.get('theme');
+            let savedTheme = null;
+            try {
+                savedTheme = localStorage.getItem('liturge_brandbook_theme');
+            } catch(e) {}
+
+            if (themeParam === 'light' || themeParam === 'dark') {
+                aplicarTema(themeParam);
+            } else if (savedTheme === 'light' || savedTheme === 'dark') {
+                aplicarTema(savedTheme);
+            } else {
+                aplicarTema('dark'); // Padrão Noite Profunda
+            }
+        });
+    </script>
+</body>
+</html>
+`;
+
+fs.writeFileSync(path.join(__dirname, '../docs/branding/brandbook.html'), htmlContent, 'utf8');
+console.log('Brandbook successfully generated with embedded SVGs and export functionality!');

@@ -1,12 +1,18 @@
 {
-  "name": "Liturge — Gestão de Louvor & Cultos",
+  "name": "Liturge — Gestão de Escalas e Repertório",
   "short_name": "Liturge",
-  "description": "Plataforma de Gestão Eclesiástica, Repertório, Cifras e Escalas",
+  "description": "Plataforma inteligente de gestão de escalas, voluntários, repertório e produção de culto",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#070B14",
+  "theme_color": "#0B111E",
   "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "icon-192.png",
       "sizes": "192x192",

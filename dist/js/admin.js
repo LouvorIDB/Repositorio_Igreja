@@ -5275,7 +5275,7 @@ async function renderizarAdminListaIgrejas() {
                 : `<span class="text-xs text-slate-500 italic">A combinar</span>`;
 
             card.innerHTML = `
-                <!-- Linha Superior: Cabeçalho com Nome, Slug, Status e Ações -->
+                <!-- Linha Superior: Cabeçalho com Nome, TAG, Status e Ações -->
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800/80">
                     <div class="flex items-center gap-3 min-w-0">
                         <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-lg shrink-0 shadow-inner">
@@ -5284,7 +5284,7 @@ async function renderizarAdminListaIgrejas() {
                         <div class="min-w-0">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <h4 class="font-bold text-white text-base leading-tight truncate">${church.name}</h4>
-                                <span class="px-2 py-0.5 rounded-md bg-slate-950 text-cyan-400 font-mono text-[11px] border border-slate-800 shrink-0">${church.slug}</span>
+                                <span class="px-2 py-0.5 rounded-md bg-night-950 text-liturge-400 font-mono text-[11px] border border-slate-800 shrink-0" title="TAG da Igreja">TAG: ${church.slug}</span>
                             </div>
                             <div class="text-[10px] text-slate-500 font-mono truncate">ID: ${church.id || '-'}</div>
                         </div>
