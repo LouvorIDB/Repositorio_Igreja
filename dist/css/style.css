@@ -245,6 +245,35 @@ html.theme-light .text-white:not(.btn-liturge-primary):not([class*="bg-amber-"])
     color: #0f172a;
 }
 
+/* Inversão forçada e contraste estrito para classes text-slate no tema claro */
+html.theme-light .text-slate-950,
+html.theme-light .text-slate-900,
+html.theme-light [class*="text-slate-900"],
+html.theme-light [class*="text-slate-950"] {
+    color: #0f172a !important;
+}
+
+html.theme-light .text-slate-850,
+html.theme-light .text-slate-800,
+html.theme-light [class*="text-slate-800"] {
+    color: #1e293b !important;
+}
+
+html.theme-light .text-slate-700,
+html.theme-light [class*="text-slate-700"] {
+    color: #334155 !important;
+}
+
+html.theme-light .text-slate-600,
+html.theme-light [class*="text-slate-600"] {
+    color: #475569 !important;
+}
+
+html.theme-light .text-slate-500,
+html.theme-light [class*="text-slate-500"] {
+    color: #64748b !important;
+}
+
 html.theme-light .text-slate-100,
 html.theme-light .text-slate-200 {
     color: #1e293b;

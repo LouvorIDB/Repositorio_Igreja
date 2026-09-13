@@ -1292,23 +1292,27 @@ function aplicarFiltroCultosRender(tipo) {
 
         cultosDoMes.forEach(culto => {
             const destaqueEscalado = culto.userIsEscalado
-                ? 'ring-2 ring-brand-500/50 dark:ring-brand-500/40 shadow-md shadow-brand-500/10 bg-gradient-to-br from-brand-50/50 to-white dark:from-brand-950/20 dark:to-night-900/90'
+                ? 'ring-2 ring-brand-500/60 dark:ring-brand-500/40 shadow-md shadow-brand-500/10 bg-white dark:bg-night-900/90'
                 : 'bg-white dark:bg-night-900/90';
 
             htmlMeses += `
                 <div onclick="abrirDetalhesCulto(${culto.index})" 
-                     class="group relative ${destaqueEscalado} border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md hover:border-brand-500/50 dark:hover:border-brand-500/50 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 overflow-hidden ${culto.tipoInfo.stripeClass}">
+                     class="group relative ${destaqueEscalado} border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md hover:border-brand-500/50 dark:hover:border-brand-500/50 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 overflow-hidden ${culto.tipoInfo.stripeClass}">
                     
                     <!-- Topo: Data, dia da semana e status -->
                     <div class="flex items-center justify-between gap-2">
-                        <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                            <span class="font-bold text-slate-900 dark:text-white uppercase tracking-wider">${culto.dataStr || 'Culto'}</span>
-                            ${culto.diaSemana ? `<span>•</span><span class="capitalize">${culto.diaSemana}</span>` : ''}
-                            ${culto.horario ? `<span>•</span><span>${culto.horario}</span>` : ''}
+                        <div class="flex items-center gap-1.5 text-xs font-semibold">
+                            ${culto.dataStr ? `
+                                <span class="font-black text-slate-900 dark:text-white uppercase tracking-wider text-xs">${culto.dataStr}</span>
+                                ${culto.diaSemana ? `<span class="text-slate-400 dark:text-slate-500">•</span><span class="capitalize text-slate-600 dark:text-slate-300 text-xs font-semibold">${culto.diaSemana}</span>` : ''}
+                            ` : `
+                                <span class="font-black text-slate-900 dark:text-white uppercase tracking-wider text-xs">${culto.diaSemana || 'Culto Especial'}</span>
+                            `}
+                            ${culto.horario ? `<span class="text-slate-400 dark:text-slate-500">•</span><span class="text-slate-500 dark:text-slate-400 text-xs font-mono font-medium">${culto.horario}</span>` : ''}
                         </div>
                         ${culto.emMontagem ? `
-                            <span class="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-sm">
-                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                            <span class="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 shadow-xs">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400 animate-pulse"></span>
                                 Em Montagem
                             </span>
                         ` : ''}
@@ -1324,18 +1328,28 @@ function aplicarFiltroCultosRender(tipo) {
                     <!-- Rodapé do Card: Destaque de Escalado + Contadores -->
                     <div class="pt-2 border-t border-slate-100 dark:border-slate-800/70 flex items-center justify-between gap-2 flex-wrap text-xs">
                         ${culto.userIsEscalado ? `
-                            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-brand-500/15 text-brand-700 dark:text-brand-300 border border-brand-500/30">
-                                <span>${culto.iconeFuncao}</span>
+                            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-500/15 dark:bg-brand-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/40 dark:border-brand-500/40 shadow-xs">
+                                <span>${culto.iconeFuncao || '🎯'}</span>
                                 <span>Escalado: ${culto.userRole}</span>
                             </span>
                         ` : `
-                            <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">${culto.tipoInfo.label}</span>
+                            <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                                <span class="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-600"></span>
+                                <span>${culto.tipoInfo.label || 'Programação'}</span>
+                            </span>
                         `}
 
-                        <div class="flex items-center gap-2 text-slate-400 text-[11px] font-medium ml-auto">
-                            <span>🎵 ${culto.songs.length}</span>
-                            ${culto.midias.length > 0 ? `<span>📁 ${culto.midias.length}</span>` : ''}
-                            <span class="text-brand-500 font-bold group-hover:translate-x-0.5 transition inline-block">›</span>
+                        <div class="flex items-center gap-1.5 ml-auto">
+                            <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/60 shadow-xs" title="${culto.songs.length} músicas">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-brand-500"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                                <span>${culto.songs.length}</span>
+                            </span>
+                            ${culto.midias.length > 0 ? `
+                            <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700/60 shadow-xs" title="${culto.midias.length} mídias">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-amber-500"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>
+                                <span>${culto.midias.length}</span>
+                            </span>` : ''}
+                            <span class="text-brand-500 font-bold text-sm group-hover:translate-x-0.5 transition inline-block">›</span>
                         </div>
                     </div>
                 </div>

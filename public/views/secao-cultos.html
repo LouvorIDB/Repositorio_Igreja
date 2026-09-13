@@ -9,28 +9,28 @@
         <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-200/80 dark:border-slate-800/80">
             <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1">
                 <button type="button" id="filtro-cultos-todos" onclick="filtrarCultos('todos')"
-                    class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-brand-500 text-night-950 shadow-sm shadow-brand-500/20">
+                    class="px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 cursor-pointer bg-brand-500 text-slate-950 shadow-sm shadow-brand-500/25">
                     <span>Todos os Cultos</span>
-                    <span id="badge-count-todos" class="text-[10px] px-1.5 py-0.2 rounded-full bg-night-950/20 font-mono font-bold">0</span>
+                    <span id="badge-count-todos" class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-950/20 text-slate-950 font-mono font-bold">0</span>
                 </button>
 
                 <button type="button" id="filtro-cultos-escalado" onclick="filtrarCultos('escalado')"
-                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer bg-slate-100 dark:bg-slate-800/70 text-slate-600 dark:text-slate-300 hover:text-white border border-slate-200 dark:border-slate-700/60">
+                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer bg-slate-100 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white border border-slate-200 dark:border-slate-700/60">
                     <span>🎯 Onde estou escalado</span>
-                    <span id="badge-count-escalado" class="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-300 font-mono font-bold">0</span>
+                    <span id="badge-count-escalado" class="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/15 dark:bg-amber-500/25 text-amber-800 dark:text-amber-300 font-mono font-bold">0</span>
                 </button>
 
                 <button type="button" id="filtro-cultos-montagem" onclick="filtrarCultos('montagem')"
-                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer bg-slate-100 dark:bg-slate-800/70 text-slate-600 dark:text-slate-300 hover:text-white border border-slate-200 dark:border-slate-700/60">
+                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer bg-slate-100 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white border border-slate-200 dark:border-slate-700/60">
                     <span>🚧 Em Montagem</span>
-                    <span id="badge-count-montagem" class="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-300 font-mono font-bold">0</span>
+                    <span id="badge-count-montagem" class="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/15 dark:bg-amber-500/25 text-amber-800 dark:text-amber-300 font-mono font-bold">0</span>
                 </button>
             </div>
 
             <!-- Botão Admin de Criar Culto (se tiver permissão) -->
             <div id="acoes-admin-cultos-header" class="hidden">
                 <button type="button" onclick="abrirModalCriarCulto()"
-                    class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-brand-400 border border-brand-500/30 hover:border-brand-500/60 transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+                    class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-amber-400 dark:text-brand-300 border border-amber-500/30 hover:border-amber-500/60 transition flex items-center gap-1.5 cursor-pointer shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     <span>Novo Culto</span>
                 </button>
