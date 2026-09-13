@@ -16,6 +16,11 @@ public class MediaBridgeInterface {
 
     @JavascriptInterface
     public void updateMedia(String title, String artist, String album, double durationSec, double positionSec, boolean isPlaying) {
+        updateMedia(title, artist, album, durationSec, positionSec, isPlaying, null);
+    }
+
+    @JavascriptInterface
+    public void updateMedia(String title, String artist, String album, double durationSec, double positionSec, boolean isPlaying, String artworkUrl) {
         try {
             android.content.Context ctx = (activity != null) ? activity.getApplicationContext() : null;
             if (ctx == null) return;
@@ -28,6 +33,29 @@ public class MediaBridgeInterface {
             intent.putExtra(MediaNotificationService.EXTRA_DURATION, (long) (durationSec * 1000));
             intent.putExtra(MediaNotificationService.EXTRA_POSITION, (long) (positionSec * 1000));
             intent.putExtra(MediaNotificationService.EXTRA_IS_PLAYING, isPlaying);
+            if (artworkUrl != null && !artworkUrl.trim().isEmpty()) {
+                intent.putExtra(MediaNotificationService.EXTRA_ARTWORK_URL, artworkUrl.trim());
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                ctx.startForegroundService(intent);
+            } else {
+                ctx.startService(intent);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @JavascriptInterface
+    public void updateArtwork(String artworkUrl) {
+        try {
+            android.content.Context ctx = (activity != null) ? activity.getApplicationContext() : null;
+            if (ctx == null || artworkUrl == null || artworkUrl.trim().isEmpty()) return;
+
+            Intent intent = new Intent(ctx, MediaNotificationService.class);
+            intent.setAction(MediaNotificationService.ACTION_UPDATE_ARTWORK);
+            intent.putExtra(MediaNotificationService.EXTRA_ARTWORK_URL, artworkUrl.trim());
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 ctx.startForegroundService(intent);

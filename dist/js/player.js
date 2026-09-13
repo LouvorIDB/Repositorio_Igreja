@@ -24,16 +24,105 @@ window.LiturgePlayer = (function () {
         return el;
     }
 
-    function syncNativeAndroidMedia(info, isPlaying) {
+    const artworkCache = new Map();
+
+    async function fetchTrackArtwork(title, artist) {
+        if (!title) return null;
+
+        // Limpeza de termos para matching na loja Apple (remover tags comuns como VS, Ao Vivo, Playback, etc.)
+        const cleanTitle = title
+            .replace(/\s*[\(\[](ao\s*vivo|live|playback|vs|multitrack|oficial|single)[\)\]]/gi, '')
+            .replace(/[-–—]\s*(ao\s*vivo|live|playback|vs|single)/gi, '')
+            .trim();
+
+        const cleanArtist = (artist && !artist.includes('Liturge'))
+            ? artist.replace(/\s*[\(\[](ao\s*vivo|live)[\)\]]/gi, '').trim()
+            : '';
+
+        const cacheKey = `liturge_art_${(cleanArtist + '_' + cleanTitle).toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+
+        // 1. Checa memória
+        if (artworkCache.has(cacheKey)) {
+            return artworkCache.get(cacheKey);
+        }
+
+        // 2. Checa localStorage
+        try {
+            const cached = localStorage.getItem(cacheKey);
+            if (cached) {
+                artworkCache.set(cacheKey, cached);
+                return cached;
+            }
+        } catch (e) {}
+
+        // 3. Consulta API do iTunes / Apple Music (pública, sem chave, CORS liberado)
+        try {
+            const query = cleanArtist ? `${cleanTitle} ${cleanArtist}` : cleanTitle;
+            const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=1`, {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.results && data.results.length > 0 && data.results[0].artworkUrl100) {
+                    const hiResArt = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
+                    try {
+                        localStorage.setItem(cacheKey, hiResArt);
+                    } catch (e) {}
+                    artworkCache.set(cacheKey, hiResArt);
+                    return hiResArt;
+                }
+            }
+        } catch (err) {
+            console.warn('[LiturgePlayer] Não foi possível consultar capa online:', err);
+        }
+
+        return null;
+    }
+
+    function atualizarThumbnailPlayerBar(artworkUrl) {
+        const imgEl = document.getElementById('nowPlayingArtwork');
+        const fallbackEl = document.getElementById('nowPlayingArtworkFallback');
+        if (imgEl && fallbackEl) {
+            if (artworkUrl) {
+                imgEl.src = artworkUrl;
+                imgEl.classList.remove('hidden');
+                fallbackEl.classList.add('hidden');
+            } else {
+                imgEl.src = '';
+                imgEl.classList.add('hidden');
+                fallbackEl.classList.remove('hidden');
+            }
+        }
+    }
+
+    async function carregarEAtualizarCapa(trackInfo) {
+        if (!trackInfo || !trackInfo.title) return;
+        const art = await fetchTrackArtwork(trackInfo.title, trackInfo.artist);
+        if (art && currentTrackInfo && currentTrackInfo.title === trackInfo.title) {
+            currentTrackInfo.artworkUrl = art;
+            setupMediaSession(currentTrackInfo);
+            atualizarThumbnailPlayerBar(art);
+
+            if (window.AndroidMedia && typeof window.AndroidMedia.updateArtwork === 'function') {
+                window.AndroidMedia.updateArtwork(art);
+            } else {
+                syncNativeAndroidMedia(currentTrackInfo, !currentAudio.paused, art);
+            }
+        }
+    }
+
+    function syncNativeAndroidMedia(info, isPlaying, artworkUrl) {
         if (window.AndroidMedia && typeof window.AndroidMedia.updateMedia === 'function') {
             try {
                 const track = info || currentTrackInfo || {};
                 const title = track.title || 'Música Liturge';
                 const artist = track.artist || 'Liturge • Louvor';
                 const album = track.album || 'Repertório Liturge';
+                const art = artworkUrl || (track && track.artworkUrl) || '';
                 const duration = (currentAudio && !isNaN(currentAudio.duration) && isFinite(currentAudio.duration)) ? currentAudio.duration : 0;
                 const position = (currentAudio && !isNaN(currentAudio.currentTime) && isFinite(currentAudio.currentTime)) ? currentAudio.currentTime : 0;
-                window.AndroidMedia.updateMedia(title, artist, album, duration, position, !!isPlaying);
+                window.AndroidMedia.updateMedia(title, artist, album, duration, position, !!isPlaying, art);
             } catch (e) {
                 console.warn('[LiturgePlayer] Erro ao sincronizar com AndroidMedia:', e);
             }
@@ -168,7 +257,10 @@ window.LiturgePlayer = (function () {
         if (!('mediaSession' in navigator)) return;
 
         const origin = window.location.origin;
-        const artwork = [
+        const artwork = (info && info.artworkUrl) ? [
+            { src: info.artworkUrl, sizes: '600x600', type: 'image/jpeg' },
+            { src: `${origin}/icon-512.png`, sizes: '512x512', type: 'image/png' }
+        ] : [
             { src: `${origin}/icon-192.png`, sizes: '192x192', type: 'image/png' },
             { src: `${origin}/icon-512.png`, sizes: '512x512', type: 'image/png' }
         ];
@@ -421,11 +513,15 @@ window.LiturgePlayer = (function () {
             }
         }
 
-        currentTrackInfo = { title, artist, album, url: strUrl };
+        currentTrackInfo = { title, artist, album, url: strUrl, artworkUrl: null };
+        atualizarThumbnailPlayerBar(null);
 
         // Dispara imediatamente o controle nativo do Android para aparecer na hora do clique
         setupMediaSession(currentTrackInfo);
         syncNativeAndroidMedia(currentTrackInfo, true);
+
+        // Dispara busca assíncrona da capa oficial em segundo plano
+        carregarEAtualizarCapa(currentTrackInfo);
 
         let streamUrl = null;
 
@@ -520,6 +616,8 @@ window.LiturgePlayer = (function () {
 
         const subEl = document.getElementById('nowPlayingSubtitle');
         if (subEl) subEl.textContent = 'Player Oficial Liturge';
+
+        atualizarThumbnailPlayerBar(null);
 
         const pc = document.getElementById('playerContainer');
         if (!pc) return;

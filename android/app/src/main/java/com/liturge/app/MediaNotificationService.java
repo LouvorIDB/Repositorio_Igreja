@@ -14,8 +14,15 @@ import android.media.MediaMetadata;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.webkit.WebView;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MediaNotificationService extends Service {
     public static final String CHANNEL_ID = "liturge_media_playback_v3";
@@ -23,6 +30,7 @@ public class MediaNotificationService extends Service {
 
     public static final String ACTION_START_OR_UPDATE = "com.liturge.app.ACTION_START_OR_UPDATE";
     public static final String ACTION_UPDATE_POSITION = "com.liturge.app.ACTION_UPDATE_POSITION";
+    public static final String ACTION_UPDATE_ARTWORK = "com.liturge.app.ACTION_UPDATE_ARTWORK";
     public static final String ACTION_STOP = "com.liturge.app.ACTION_STOP";
 
     public static final String ACTION_PLAY_PAUSE = "com.liturge.app.ACTION_PLAY_PAUSE";
@@ -35,6 +43,7 @@ public class MediaNotificationService extends Service {
     public static final String EXTRA_DURATION = "extra_duration";
     public static final String EXTRA_POSITION = "extra_position";
     public static final String EXTRA_IS_PLAYING = "extra_is_playing";
+    public static final String EXTRA_ARTWORK_URL = "extra_artwork_url";
 
     private static MediaNotificationService instance = null;
     private static WebView activeWebView = null;
@@ -48,7 +57,12 @@ public class MediaNotificationService extends Service {
     private long currentDurationMs = 0;
     private long currentPositionMs = 0;
     private boolean isPlaying = false;
-    private Bitmap appIconBitmap = null;
+    private Bitmap defaultArtworkBitmap = null;
+    private Bitmap currentArtworkBitmap = null;
+    private String currentArtworkUrl = null;
+
+    private final ExecutorService imageExecutor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public static void setWebView(WebView webView) {
         activeWebView = webView;
@@ -67,9 +81,15 @@ public class MediaNotificationService extends Service {
         initMediaSession();
 
         try {
-            appIconBitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
-        } catch (Exception e) {
-            e.printStackTrace();
+            defaultArtworkBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.liturge_cover);
+        } catch (Exception ignored) {}
+
+        if (defaultArtworkBitmap == null) {
+            try {
+                defaultArtworkBitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -157,9 +177,19 @@ public class MediaNotificationService extends Service {
             currentPositionMs = intent.getLongExtra(EXTRA_POSITION, 0);
             isPlaying = intent.getBooleanExtra(EXTRA_IS_PLAYING, true);
 
+            String newArtworkUrl = intent.getStringExtra(EXTRA_ARTWORK_URL);
+            if (newArtworkUrl != null && !newArtworkUrl.trim().isEmpty()) {
+                loadArtworkAsync(newArtworkUrl.trim());
+            }
+
             updateMediaSessionMetadata();
             updatePlaybackState();
             showOrUpdateNotification();
+        } else if (ACTION_UPDATE_ARTWORK.equals(action)) {
+            String newArtworkUrl = intent.getStringExtra(EXTRA_ARTWORK_URL);
+            if (newArtworkUrl != null && !newArtworkUrl.trim().isEmpty()) {
+                loadArtworkAsync(newArtworkUrl.trim());
+            }
         } else if (ACTION_UPDATE_POSITION.equals(action)) {
             currentPositionMs = intent.getLongExtra(EXTRA_POSITION, currentPositionMs);
             isPlaying = intent.getBooleanExtra(EXTRA_IS_PLAYING, isPlaying);
@@ -177,6 +207,58 @@ public class MediaNotificationService extends Service {
         return START_NOT_STICKY;
     }
 
+    private void loadArtworkAsync(String urlStr) {
+        if (urlStr == null || urlStr.trim().isEmpty()) return;
+        if (urlStr.equals(currentArtworkUrl) && currentArtworkBitmap != null) {
+            return;
+        }
+
+        imageExecutor.execute(() -> {
+            HttpURLConnection conn = null;
+            InputStream in = null;
+            try {
+                URL url = new URL(urlStr);
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(6000);
+                conn.setReadTimeout(6000);
+                conn.setInstanceFollowRedirects(true);
+                conn.connect();
+
+                if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    in = conn.getInputStream();
+                    Bitmap decoded = BitmapFactory.decodeStream(in);
+                    if (decoded != null) {
+                        int maxDim = 720;
+                        if (decoded.getWidth() > maxDim || decoded.getHeight() > maxDim) {
+                            float scale = Math.min((float) maxDim / decoded.getWidth(), (float) maxDim / decoded.getHeight());
+                            int newW = Math.round(decoded.getWidth() * scale);
+                            int newH = Math.round(decoded.getHeight() * scale);
+                            decoded = Bitmap.createScaledBitmap(decoded, newW, newH, true);
+                        }
+
+                        final Bitmap finalBitmap = decoded;
+                        currentArtworkBitmap = finalBitmap;
+                        currentArtworkUrl = urlStr;
+
+                        mainHandler.post(() -> {
+                            updateMediaSessionMetadata();
+                            showOrUpdateNotification();
+                        });
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (in != null) {
+                    try { in.close(); } catch (Exception ignored) {}
+                }
+                if (conn != null) {
+                    conn.disconnect();
+                }
+            }
+        });
+    }
+
     private void updateMediaSessionMetadata() {
         if (mediaSession == null) return;
 
@@ -186,9 +268,10 @@ public class MediaNotificationService extends Service {
             .putString(MediaMetadata.METADATA_KEY_ALBUM, currentAlbum)
             .putLong(MediaMetadata.METADATA_KEY_DURATION, currentDurationMs);
 
-        if (appIconBitmap != null) {
-            builder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, appIconBitmap);
-            builder.putBitmap(MediaMetadata.METADATA_KEY_ART, appIconBitmap);
+        Bitmap artToUse = (currentArtworkBitmap != null) ? currentArtworkBitmap : defaultArtworkBitmap;
+        if (artToUse != null) {
+            builder.putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, artToUse);
+            builder.putBitmap(MediaMetadata.METADATA_KEY_ART, artToUse);
         }
 
         mediaSession.setMetadata(builder.build());
@@ -257,8 +340,9 @@ public class MediaNotificationService extends Service {
             builder.setPriority(Notification.PRIORITY_HIGH);
         }
 
-        if (appIconBitmap != null) {
-            builder.setLargeIcon(appIconBitmap);
+        Bitmap artToUse = (currentArtworkBitmap != null) ? currentArtworkBitmap : defaultArtworkBitmap;
+        if (artToUse != null) {
+            builder.setLargeIcon(artToUse);
         }
 
         builder.addAction(new Notification.Action.Builder(
@@ -301,6 +385,8 @@ public class MediaNotificationService extends Service {
     }
 
     private void stopPlaybackAndService() {
+        currentArtworkBitmap = null;
+        currentArtworkUrl = null;
         if (mediaSession != null) {
             mediaSession.setActive(false);
         }

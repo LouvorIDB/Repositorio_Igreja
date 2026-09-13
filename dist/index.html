@@ -740,8 +740,9 @@
         <div class="container mx-auto max-w-4xl flex flex-col md:flex-row items-center justify-between gap-2 sm:gap-4">
             <div class="w-full md:w-1/3 flex items-center justify-between gap-3">
                 <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                    <div class="w-8 h-8 rounded-lg bg-liturge-500/10 border border-liturge-500/20 flex items-center justify-center text-liturge-400 shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <div class="w-9 h-9 rounded-lg bg-liturge-500/10 border border-liturge-500/20 flex items-center justify-center text-liturge-400 shrink-0 overflow-hidden relative shadow-sm">
+                        <img id="nowPlayingArtwork" src="" alt="Capa do Louvor" class="w-full h-full object-cover hidden" />
+                        <svg id="nowPlayingArtworkFallback" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                     </div>
                     <div class="min-w-0 flex-1">
                         <span id="nowPlayingTitle" class="text-xs sm:text-sm font-bold text-white block truncate">Nenhuma música selecionada</span>
@@ -764,7 +765,7 @@
     <script src="js/db.js?v=1.0"></script>
     <script src="js/router.js?v=1.0"></script>
     <script src="js/utils.js?v=4.28"></script>
-    <script src="js/player.js?v=5.4"></script>
+    <script src="js/player.js?v=5.5"></script>
     <script src="js/admin.js?v=4.53"></script>
     <script src="js/culto-editor.js?v=5.2"></script>
     <script src="js/holyrics-exporter.js?v=1.5"></script>
