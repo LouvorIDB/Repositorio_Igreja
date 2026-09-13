@@ -314,15 +314,18 @@ html.theme-light .btn-liturge-secondary:hover {
 }
 
 /* 7. Menus, Sidebar e Barras de Navegação */
-html.theme-light #sidebar-menu {
-    background-color: #ffffff;
-    border-color: #e2e8f0;
+html.theme-light #sidebar-menu,
+html.theme-light #admin-sidebar-menu {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
 }
 
-@media (min-width: 768px) {
-    html.theme-light #sidebar-menu {
-        background-color: transparent;
-    }
+html.theme-light #fixed-player-bar {
+    background-color: rgba(255, 255, 255, 0.96) !important;
+    border-color: #e2e8f0 !important;
+}
+html.theme-light #fixed-player-bar #nowPlayingTitle {
+    color: #0f172a !important;
 }
 
 html.theme-light #user-session-bar {

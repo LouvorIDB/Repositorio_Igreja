@@ -1,4 +1,4 @@
-const CACHE_NAME = 'liturge-v33';
+const CACHE_NAME = 'liturge-v34';
 
 const ASSETS_TO_CACHE = [
     './',

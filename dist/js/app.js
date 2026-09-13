@@ -671,12 +671,12 @@ function toggleSidebarMenu(menuId = 'sidebar-menu') {
 
     if (isHidden) {
         menu.classList.remove('hidden');
+        menu.classList.add('flex');
         if (backdrop) backdrop.classList.remove('hidden');
-        if (window.innerWidth < 768) {
-            document.body.classList.add('overflow-hidden');
-        }
+        document.body.classList.add('overflow-hidden');
     } else {
         menu.classList.add('hidden');
+        menu.classList.remove('flex');
         if (backdrop) backdrop.classList.add('hidden');
         document.body.classList.remove('overflow-hidden');
     }
@@ -687,10 +687,21 @@ function fecharSidebarMenu(menuId = 'sidebar-menu') {
     const backdropId = menuId === 'admin-sidebar-menu' ? 'admin-sidebar-backdrop' : 'sidebar-backdrop';
     const backdrop = document.getElementById(backdropId);
 
-    if (menu) menu.classList.add('hidden');
+    if (menu) {
+        menu.classList.add('hidden');
+        menu.classList.remove('flex');
+    }
     if (backdrop) backdrop.classList.add('hidden');
     document.body.classList.remove('overflow-hidden');
 }
+
+// Fechar menu com a tecla ESC no computador
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        fecharSidebarMenu('sidebar-menu');
+        fecharSidebarMenu('admin-sidebar-menu');
+    }
+});
 
 window.toggleSidebarMenu = toggleSidebarMenu;
 window.fecharSidebarMenu = fecharSidebarMenu;
