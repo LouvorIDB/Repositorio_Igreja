@@ -1916,9 +1916,50 @@ window.ajustarFonteCifra = ajustarFonteCifra;
 window.ajustarFonteLetra = ajustarFonteLetra;
 window.copiarCifraAtual = copiarCifraAtual;
 window.copiarLetraAtual = copiarLetraAtual;
-window.enviarSugestaoCultoAtual = enviarSugestaoCultoAtual;
 window.toggleCultoBloco = function() {}; // Mantido para compatibilidade residual
 
+// Gerenciador nativo do botão/gesto "Voltar" do Android (Galaxy S24 / One UI)
+window.tratarBotaoVoltarNativo = function() {
+    // 1. Se estiver na tela de Detalhes da Música, volta para os Detalhes do Culto
+    const vMusica = document.getElementById('visao-musica-detalhe');
+    if (vMusica && !vMusica.classList.contains('hidden')) {
+        voltarParaCultoDetalhe();
+        return 'HANDLED';
+    }
+
+    // 2. Se estiver na tela de Detalhes do Culto, volta para a lista de cultos
+    const vCulto = document.getElementById('visao-culto-detalhe');
+    if (vCulto && !vCulto.classList.contains('hidden')) {
+        voltarParaCultos();
+        return 'HANDLED';
+    }
+
+    // 3. Se a barra lateral estiver aberta, fecha a barra lateral
+    const sidebar = document.getElementById('sidebar-menu');
+    if (sidebar && !sidebar.classList.contains('hidden')) {
+        if (typeof fecharSidebarMenu === 'function') fecharSidebarMenu('sidebar-menu');
+        return 'HANDLED';
+    }
+
+    // 4. Se houver algum modal aberto na tela, fecha o modal
+    const modaisVisiveis = document.querySelectorAll('.modal-container:not(.hidden), [id^="modal-"]:not(.hidden)');
+    for (const m of modaisVisiveis) {
+        if (m.id && m.id !== 'app-splash-screen' && !m.classList.contains('hidden') && m.style.display !== 'none') {
+            m.classList.add('hidden');
+            return 'HANDLED';
+        }
+    }
+
+    // 5. Se estiver em outra aba principal (ex: agenda, repertorio, novas), volta para a aba principal de cultos
+    const secCultos = document.getElementById('secao-cultos');
+    if (secCultos && secCultos.classList.contains('hidden')) {
+        if (typeof mudarAba === 'function') mudarAba('cultos');
+        return 'HANDLED';
+    }
+
+    // 6. Já está na tela inicial principal de cultos: permite a saída/minimização padrão do Android
+    return 'EXIT';
+};
 
 function gerarHtmlCardMusica(musicaObj, prefix) {
     const isAdminMode = typeof isAdmin !== 'undefined' && isAdmin;

@@ -1,6 +1,7 @@
 package com.liturge.app;
 
 import android.os.Bundle;
+import androidx.activity.OnBackPressedCallback;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -25,6 +26,9 @@ public class MainActivity extends BridgeActivity {
             return windowInsets;
         });
 
+        // Configura a interceptação nativa do botão e gesto "Voltar" (Android 14 / One UI / Galaxy S24)
+        configurarBotaoVoltarNativo();
+
         // Solicita permissão de notificação nativa no Android 13+ (One UI / Galaxy S24)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -34,6 +38,36 @@ public class MainActivity extends BridgeActivity {
 
         // Interfaces nativas (Calendário e Controle Multimídia em 2º plano)
         registrarInterfacesNativas();
+    }
+
+    private void configurarBotaoVoltarNativo() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (getBridge() != null && getBridge().getWebView() != null) {
+                    android.webkit.WebView webView = getBridge().getWebView();
+                    webView.evaluateJavascript(
+                        "(function() {" +
+                        "  if (typeof window.tratarBotaoVoltarNativo === 'function') {" +
+                        "    return window.tratarBotaoVoltarNativo();" +
+                        "  }" +
+                        "  return 'DEFAULT';" +
+                        "})();",
+                        value -> {
+                            if ("\"EXIT\"".equals(value) || "\"DEFAULT\"".equals(value) || value == null) {
+                                setEnabled(false);
+                                getOnBackPressedDispatcher().onBackPressed();
+                                setEnabled(true);
+                            }
+                        }
+                    );
+                } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                    setEnabled(true);
+                }
+            }
+        });
     }
 
     @Override
