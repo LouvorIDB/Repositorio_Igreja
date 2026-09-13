@@ -1831,6 +1831,26 @@
                     class="w-full bg-night-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-liturge-500 transition"></textarea>
             </div>
 
+            <!-- Seção: Preferência de Tema Pessoal -->
+            <div class="bg-night-950/80 rounded-2xl p-3.5 border border-slate-800 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                        <span>🌓</span> Tema de Visualização Pessoal
+                    </span>
+                    <span class="text-[10px] text-slate-400 font-medium">Sua preferência individual</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="btn-perfil-tema-dark" onclick="selecionarModoTemaMinhaConta('dark')"
+                        class="p-2.5 rounded-xl border border-liturge-500 bg-liturge-500/20 text-liturge-400 flex items-center justify-center gap-2 text-xs font-bold shadow-sm cursor-pointer">
+                        <span>🌙</span> Tema Escuro
+                    </button>
+                    <button type="button" id="btn-perfil-tema-light" onclick="selecionarModoTemaMinhaConta('light')"
+                        class="p-2.5 rounded-xl border border-slate-800 bg-night-950/60 text-slate-400 hover:text-slate-200 hover:border-slate-700 flex items-center justify-center gap-2 text-xs font-semibold transition cursor-pointer">
+                        <span>☀️</span> Tema Claro
+                    </button>
+                </div>
+            </div>
+
             <!-- Seção: Ministérios & Funções do Integrante -->
             <div class="bg-night-950/80 rounded-2xl p-3.5 border border-slate-800 space-y-2.5">
                 <div class="flex items-center justify-between">

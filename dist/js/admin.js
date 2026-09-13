@@ -458,6 +458,9 @@ function carregarConfiguracoesGlobaisAdmin() {
     if (selectCor && dadosGlobais.church && dadosGlobais.church.theme_color_secondary) {
         selectCor.value = dadosGlobais.church.theme_color_secondary;
     }
+    if (typeof atualizarIndicadoresModoTema === 'function') {
+        atualizarIndicadoresModoTema(typeof obterModoTemaAtual === 'function' ? obterModoTemaAtual() : 'dark');
+    }
     carregarPermissoesPublicas();
 }
 

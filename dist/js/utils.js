@@ -699,6 +699,160 @@ const COMPLETE_PALETTES = {
 };
 window.COMPLETE_PALETTES = COMPLETE_PALETTES;
 
+function obterModoTemaAtual() {
+    try {
+        const saved = localStorage.getItem('liturge_theme_mode');
+        if (saved === 'light' || saved === 'dark') return saved;
+    } catch(e) {}
+    if (document.documentElement.classList.contains('theme-light')) return 'light';
+    return 'dark'; // Liturge padrão dark
+}
+window.obterModoTemaAtual = obterModoTemaAtual;
+
+function atualizarIndicadoresModoTema(modo) {
+    // Header Toggle Button
+    const headerIcon = document.getElementById('header-theme-icon');
+    const headerText = document.getElementById('header-theme-text');
+    if (headerIcon) {
+        headerIcon.textContent = modo === 'light' ? '🌙' : '☀️';
+    }
+    if (headerText) {
+        headerText.textContent = modo === 'light' ? 'Escuro' : 'Claro';
+    }
+
+    // Sidebar Toggle Button
+    const sidebarIcon = document.getElementById('sidebar-theme-icon');
+    const sidebarLabel = document.getElementById('sidebar-theme-label');
+    const sidebarBadge = document.getElementById('sidebar-theme-badge');
+    if (sidebarIcon) {
+        sidebarIcon.textContent = modo === 'light' ? '🌙' : '☀️';
+    }
+    if (sidebarLabel) {
+        sidebarLabel.textContent = modo === 'light' ? 'Modo Escuro' : 'Modo Claro';
+    }
+    if (sidebarBadge) {
+        sidebarBadge.textContent = modo === 'light' ? 'Ativar Noite' : 'Ativar Dia';
+    }
+
+    // Modal Minha Conta
+    const btnPerfilDark = document.getElementById('btn-perfil-tema-dark');
+    const btnPerfilLight = document.getElementById('btn-perfil-tema-light');
+    if (btnPerfilDark && btnPerfilLight) {
+        if (modo === 'dark') {
+            btnPerfilDark.className = 'p-2.5 rounded-xl border border-liturge-500 bg-liturge-500/20 text-liturge-400 flex items-center justify-center gap-2 text-xs font-bold shadow-sm cursor-pointer';
+            btnPerfilLight.className = 'p-2.5 rounded-xl border border-slate-800 bg-night-950/60 text-slate-400 hover:text-slate-200 hover:border-slate-700 flex items-center justify-center gap-2 text-xs font-semibold transition cursor-pointer';
+        } else {
+            btnPerfilDark.className = 'p-2.5 rounded-xl border border-slate-200 bg-slate-100 text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2 text-xs font-semibold transition cursor-pointer';
+            btnPerfilLight.className = 'p-2.5 rounded-xl border border-amber-500 bg-amber-50 text-amber-700 font-bold shadow-sm flex items-center justify-center gap-2 text-xs cursor-pointer';
+        }
+    }
+
+    // Admin Panel Preview Buttons
+    const btnAdminDark = document.getElementById('admin-btn-tema-dark');
+    const btnAdminLight = document.getElementById('admin-btn-tema-light');
+    if (btnAdminDark && btnAdminLight) {
+        if (modo === 'dark') {
+            btnAdminDark.className = 'px-3 py-1.5 rounded-lg border border-liturge-500 bg-liturge-500/20 text-liturge-400 font-bold text-xs flex items-center gap-1.5 cursor-pointer';
+            btnAdminLight.className = 'px-3 py-1.5 rounded-lg border border-slate-700/60 bg-night-950/60 text-slate-400 hover:text-white text-xs flex items-center gap-1.5 transition cursor-pointer';
+        } else {
+            btnAdminDark.className = 'px-3 py-1.5 rounded-lg border border-slate-300 bg-slate-100 text-slate-600 hover:text-black text-xs flex items-center gap-1.5 transition cursor-pointer';
+            btnAdminLight.className = 'px-3 py-1.5 rounded-lg border border-amber-500 bg-amber-100 text-amber-900 font-bold text-xs flex items-center gap-1.5 cursor-pointer';
+        }
+    }
+}
+window.atualizarIndicadoresModoTema = atualizarIndicadoresModoTema;
+
+function definirModoTema(modo, salvar = true) {
+    if (modo !== 'light' && modo !== 'dark') modo = 'dark';
+    const root = document.documentElement;
+
+    if (modo === 'light') {
+        root.classList.add('theme-light');
+        root.classList.remove('dark');
+        root.setAttribute('data-theme', 'light');
+
+        root.style.setProperty('--theme-night-800-rgb', '226 232 240');
+        root.style.setProperty('--theme-night-850-rgb', '241 245 249');
+        root.style.setProperty('--theme-night-900-rgb', '255 255 255');
+        root.style.setProperty('--theme-night-950-rgb', '248 250 252');
+
+        root.style.setProperty('--theme-slate-700-rgb', '203 213 225');
+        root.style.setProperty('--theme-slate-800-rgb', '226 232 240');
+        root.style.setProperty('--theme-slate-850-rgb', '241 245 249');
+        root.style.setProperty('--theme-slate-900-rgb', '255 255 255');
+        root.style.setProperty('--theme-slate-950-rgb', '248 250 252');
+
+        document.body.style.backgroundColor = '#f8fafc';
+
+        const metaTheme = document.querySelector('meta[name="theme-color"]');
+        if (metaTheme) metaTheme.setAttribute('content', '#f8fafc');
+    } else {
+        root.classList.remove('theme-light');
+        root.classList.add('dark');
+        root.setAttribute('data-theme', 'dark');
+
+        root.style.setProperty('--theme-night-800-rgb', '17 24 39');
+        root.style.setProperty('--theme-night-850-rgb', '13 21 38');
+        root.style.setProperty('--theme-night-900-rgb', '11 17 30');
+        root.style.setProperty('--theme-night-950-rgb', '7 11 20');
+
+        const corAtiva = localStorage.getItem('cached_theme_color') || 'amber';
+        const p = COMPLETE_PALETTES[corAtiva] || COMPLETE_PALETTES.amber;
+        if (p && p.surfaces) {
+            Object.keys(p.surfaces).forEach(weight => {
+                root.style.setProperty(`--theme-slate-${weight}-rgb`, p.surfaces[weight]);
+            });
+            if (p.surfaces['950']) {
+                document.body.style.backgroundColor = `rgb(${p.surfaces['950']})`;
+                const metaTheme = document.querySelector('meta[name="theme-color"]');
+                if (metaTheme) metaTheme.setAttribute('content', `rgb(${p.surfaces['950']})`);
+            }
+        } else {
+            root.style.setProperty('--theme-slate-700-rgb', '51 65 85');
+            root.style.setProperty('--theme-slate-800-rgb', '17 24 39');
+            root.style.setProperty('--theme-slate-850-rgb', '13 21 38');
+            root.style.setProperty('--theme-slate-900-rgb', '11 17 30');
+            root.style.setProperty('--theme-slate-950-rgb', '7 11 20');
+            document.body.style.backgroundColor = '#070b14';
+            const metaTheme = document.querySelector('meta[name="theme-color"]');
+            if (metaTheme) metaTheme.setAttribute('content', '#070b14');
+        }
+    }
+
+    atualizarIndicadoresModoTema(modo);
+
+    if (salvar) {
+        try {
+            localStorage.setItem('liturge_theme_mode', modo);
+        } catch(e) {}
+
+        try {
+            if (typeof supabaseClient !== 'undefined' && supabaseClient && typeof usuarioLogado !== 'undefined' && usuarioLogado && usuarioLogado.id) {
+                supabaseClient.from('profiles').update({ theme_mode: modo }).eq('id', usuarioLogado.id).then(() => {});
+            }
+        } catch(e) {}
+    }
+}
+window.definirModoTema = definirModoTema;
+
+function toggleTemaClaroEscuro() {
+    const atual = obterModoTemaAtual();
+    const novo = atual === 'light' ? 'dark' : 'light';
+    definirModoTema(novo, true);
+    if (typeof mostrarToast === 'function') {
+        mostrarToast(novo === 'light' ? '☀️ Tema Claro ativado' : '🌙 Tema Escuro ativado', 'sucesso');
+    }
+}
+window.toggleTemaClaroEscuro = toggleTemaClaroEscuro;
+
+function selecionarModoTemaMinhaConta(modo) {
+    definirModoTema(modo, true);
+    if (typeof mostrarToast === 'function') {
+        mostrarToast(modo === 'light' ? '☀️ Tema Claro selecionado' : '🌙 Tema Escuro selecionado', 'sucesso');
+    }
+}
+window.selecionarModoTemaMinhaConta = selecionarModoTemaMinhaConta;
+
 function aplicarTemaColor(corNome) {
     if (!corNome) corNome = 'amber';
     const chave = corNome.toLowerCase().trim();
@@ -706,28 +860,36 @@ function aplicarTemaColor(corNome) {
     if (!p) return;
 
     const root = document.documentElement;
+    const modoAtual = obterModoTemaAtual();
 
     // 1. Aplicar escala de destaque (Brand)
     Object.keys(p.brand).forEach(weight => {
         root.style.setProperty(`--brand-${weight}`, p.brand[weight]);
     });
 
-    // 2. Aplicar superfícies, fundos e bordas temáticas (Surfaces / Slate)
-    if (p.surfaces) {
-        Object.keys(p.surfaces).forEach(weight => {
-            root.style.setProperty(`--theme-slate-${weight}-rgb`, p.surfaces[weight]);
-        });
-    }
+    // 2. Aplicar superfícies, fundos e bordas temáticas apenas se estiver no Modo Escuro
+    if (modoAtual !== 'light') {
+        if (p.surfaces) {
+            Object.keys(p.surfaces).forEach(weight => {
+                root.style.setProperty(`--theme-slate-${weight}-rgb`, p.surfaces[weight]);
+            });
+        }
 
-    // 3. Atualizar background do body
-    if (p.surfaces && p.surfaces['950']) {
-        const rgb950 = p.surfaces['950'];
-        document.body.style.backgroundColor = `rgb(${rgb950})`;
-        
-        // Atualiza meta theme-color para navegadores mobile (Android / Galaxy S24)
+        // 3. Atualizar background do body
+        if (p.surfaces && p.surfaces['950']) {
+            const rgb950 = p.surfaces['950'];
+            document.body.style.backgroundColor = `rgb(${rgb950})`;
+            
+            let metaTheme = document.querySelector('meta[name="theme-color"]');
+            if (metaTheme) {
+                metaTheme.setAttribute('content', `rgb(${rgb950})`);
+            }
+        }
+    } else {
+        document.body.style.backgroundColor = '#f8fafc';
         let metaTheme = document.querySelector('meta[name="theme-color"]');
         if (metaTheme) {
-            metaTheme.setAttribute('content', `rgb(${rgb950})`);
+            metaTheme.setAttribute('content', '#f8fafc');
         }
     }
 
@@ -737,6 +899,17 @@ function aplicarTemaColor(corNome) {
     } catch(e) {}
 }
 window.aplicarTemaColor = aplicarTemaColor;
+
+// Inicializa os indicadores de tema quando a página carregar
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            atualizarIndicadoresModoTema(obterModoTemaAtual());
+        });
+    } else {
+        atualizarIndicadoresModoTema(obterModoTemaAtual());
+    }
+}
 
 function getMinistryForUser(user) {
     if (!user || !dadosGlobais.ministries || dadosGlobais.ministries.length === 0) return null;

@@ -1947,6 +1947,11 @@ async function abrirMinhaConta() {
         }
     }
 
+    if (typeof atualizarIndicadoresModoTema === 'function') {
+        const modoAtual = (profile && profile.theme_mode) || (typeof obterModoTemaAtual === 'function' ? obterModoTemaAtual() : 'dark');
+        atualizarIndicadoresModoTema(modoAtual);
+    }
+
     modal.classList.remove('hidden');
 }
 
@@ -1978,11 +1983,13 @@ async function salvarMinhaConta(e) {
     try {
         if (!supabaseClient) throw new Error("Cliente Supabase não inicializado.");
 
+        const modoTema = typeof obterModoTemaAtual === 'function' ? obterModoTemaAtual() : 'dark';
         const updatePayload = {
             name: nome,
             phone: telefone,
             birthdate: birthdate ? birthdate : null,
-            address: address
+            address: address,
+            theme_mode: modoTema
         };
 
         const { error } = await supabaseClient
@@ -2206,6 +2213,17 @@ function atualizarTemaGlobal() {
     try {
         localStorage.setItem('cached_theme_color', corTema);
     } catch(e){}
+
+    // 2. Respeitar a preferência individual de Tema Claro / Escuro do usuário
+    let modoUsuario = 'dark';
+    if (usuarioLogado && usuarioLogado.theme_mode) {
+        modoUsuario = usuarioLogado.theme_mode;
+    } else if (typeof obterModoTemaAtual === 'function') {
+        modoUsuario = obterModoTemaAtual();
+    }
+    if (typeof definirModoTema === 'function') {
+        definirModoTema(modoUsuario, false);
+    }
 }
 window.atualizarTemaGlobal = atualizarTemaGlobal;
 

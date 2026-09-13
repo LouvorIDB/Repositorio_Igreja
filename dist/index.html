@@ -52,10 +52,10 @@
                             950: '#451A03'
                         },
                         night: {
-                            800: '#111827',
-                            850: '#0D1526',
-                            900: '#0B111E',
-                            950: '#070B14'
+                            800: 'rgb(var(--theme-night-800-rgb, 17 24 39) / <alpha-value>)',
+                            850: 'rgb(var(--theme-night-850-rgb, 13 21 38) / <alpha-value>)',
+                            900: 'rgb(var(--theme-night-900-rgb, 11 17 30) / <alpha-value>)',
+                            950: 'rgb(var(--theme-night-950-rgb, 7 11 20) / <alpha-value>)'
                         },
                         brand: {
                             50: 'var(--brand-50, #FFFBEB)',
@@ -103,6 +103,16 @@
             --brand-900: #78350F;
             --brand-950: #451A03;
 
+            /* Superfícies padrão Liturge Dark */
+            --theme-night-800: #111827;
+            --theme-night-800-rgb: 17 24 39;
+            --theme-night-850: #0d1526;
+            --theme-night-850-rgb: 13 21 38;
+            --theme-night-900: #0b111e;
+            --theme-night-900-rgb: 11 17 30;
+            --theme-night-950: #070b14;
+            --theme-night-950-rgb: 7 11 20;
+
             --theme-slate-700: #334155;
             --theme-slate-700-rgb: 51 65 85;
             --theme-slate-800: #111827;
@@ -116,7 +126,7 @@
         }
 
         body {
-            background-color: rgb(var(--theme-slate-950-rgb, 7 11 20));
+            background-color: rgb(var(--theme-night-950-rgb, 7 11 20));
             transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s ease;
         }
 
@@ -143,6 +153,27 @@
     <script>
         // Recupera e aplica o tema salvo e dados essenciais no localStorage imediatamente antes da renderização para evitar piscadas
         try {
+            // Passo 1: Modo de Tema (Claro vs Escuro)
+            var savedThemeMode = localStorage.getItem('liturge_theme_mode');
+            if (savedThemeMode === 'light') {
+                document.documentElement.classList.add('theme-light');
+                document.documentElement.classList.remove('dark');
+                document.documentElement.setAttribute('data-theme', 'light');
+                document.documentElement.style.setProperty('--theme-night-800-rgb', '226 232 240');
+                document.documentElement.style.setProperty('--theme-night-850-rgb', '241 245 249');
+                document.documentElement.style.setProperty('--theme-night-900-rgb', '255 255 255');
+                document.documentElement.style.setProperty('--theme-night-950-rgb', '248 250 252');
+                document.documentElement.style.setProperty('--theme-slate-700-rgb', '203 213 225');
+                document.documentElement.style.setProperty('--theme-slate-800-rgb', '226 232 240');
+                document.documentElement.style.setProperty('--theme-slate-850-rgb', '241 245 249');
+                document.documentElement.style.setProperty('--theme-slate-900-rgb', '255 255 255');
+                document.documentElement.style.setProperty('--theme-slate-950-rgb', '248 250 252');
+            } else {
+                document.documentElement.classList.remove('theme-light');
+                document.documentElement.classList.add('dark');
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+
             // Passo 2: Pré-carregar dados de cache da igreja e do perfil
             const cachedChurchStr = localStorage.getItem('cached_church_data');
             const cachedUserStr = localStorage.getItem('cached_user_profile');
@@ -181,9 +212,17 @@
                         brand: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e', 950: '#082f49' },
                         surfaces: { 700: '24 72 122', 800: '15 47 82', 850: '11 36 64', 900: '7 26 48', 950: '3 14 27' }
                     },
+                    sky: {
+                        brand: { 50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc', 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1', 800: '#075985', 900: '#0c4a6e', 950: '#082f49' },
+                        surfaces: { 700: '14 116 144', 800: '21 94 117', 850: '19 78 98', 900: '22 78 99', 950: '8 51 68' }
+                    },
                     rose: {
                         brand: { 50: '#fff1f2', 100: '#ffe4e6', 200: '#fecdd3', 300: '#fda4af', 400: '#fb7185', 500: '#f43f5e', 600: '#e11d48', 700: '#be123c', 800: '#9f1239', 900: '#881337', 950: '#4c0519' },
                         surfaces: { 700: '84 32 52', 800: '56 19 33', 850: '44 13 24', 900: '32 9 17', 950: '19 4 9' }
+                    },
+                    red: {
+                        brand: { 50: '#fef2f2', 100: '#fee2e2', 200: '#fecaca', 300: '#fca5a5', 400: '#f87171', 500: '#ef4444', 600: '#dc2626', 700: '#b91c1c', 800: '#991b1b', 900: '#7f1d1d', 950: '#450a0a' },
+                        surfaces: { 700: '153 27 27', 800: '127 29 29', 850: '100 20 20', 900: '69 10 10', 950: '40 5 5' }
                     },
                     slate: {
                         brand: { 50: '#f0fdfa', 100: '#ccfbf1', 200: '#99f6e4', 300: '#5eead4', 400: '#2dd4bf', 500: '#14b8a6', 600: '#0d9488', 700: '#0f766e', 800: '#115e59', 900: '#134e4a', 950: '#042f2e' },
@@ -198,7 +237,7 @@
                 if (p) {
                     const root = document.documentElement;
                     Object.keys(p.brand).forEach(w => root.style.setProperty(`--brand-${w}`, p.brand[w]));
-                    if (p.surfaces) {
+                    if (p.surfaces && savedThemeMode !== 'light') {
                         Object.keys(p.surfaces).forEach(w => root.style.setProperty(`--theme-slate-${w}-rgb`, p.surfaces[w]));
                     }
                 }
@@ -206,7 +245,7 @@
         } catch(e) {}
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=2.0">
 </head>
 
 <body class="bg-night-950 text-slate-100 min-h-screen flex flex-col justify-between font-sans selection:bg-liturge-500 selection:text-night-950">
@@ -290,6 +329,14 @@
 
             <!-- Canto Superior Direito: Auth / Sessão do Usuário -->
             <div id="auth-header-container" class="flex justify-end items-center gap-2 ml-auto">
+                <!-- Botão Rápido Alternar Tema Claro / Escuro -->
+                <button id="btn-toggle-theme" onclick="toggleTemaClaroEscuro()" 
+                    class="h-8 px-2.5 rounded-xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5 transition text-xs font-semibold cursor-pointer shadow-sm"
+                    title="Alternar entre Tema Claro e Escuro" aria-label="Alternar Tema Claro / Escuro">
+                    <span id="header-theme-icon">☀️</span>
+                    <span id="header-theme-text" class="hidden sm:inline text-[11px]">Tema</span>
+                </button>
+
                 <button id="btn-login-header" onclick="abrirModalLoginUsuario()" class="hidden text-xs font-semibold text-liturge-400 hover:text-white transition px-3.5 py-1.5 border border-liturge-500/30 rounded-lg bg-liturge-500/10 hover:bg-liturge-500/20 flex items-center gap-1.5 cursor-pointer">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 2l-2 2m-1.5 1.5L16 7l-2-2 1.5-1.5L21 2z"></path>
@@ -611,8 +658,16 @@
                     </div>
 
                     <div id="sidebar-minha-conta-container">
-                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2 pt-2 border-t border-slate-700/50">Minha Conta</h3>
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2 pt-2 border-t border-slate-700/50">Preferências & Conta</h3>
                         <div class="flex flex-col gap-1">
+                            <button onclick="toggleTemaClaroEscuro()" id="btn-toggle-theme-sidebar"
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center justify-between cursor-pointer">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-base" id="sidebar-theme-icon">☀️</span>
+                                    <span id="sidebar-theme-label">Tema Claro</span>
+                                </div>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700" id="sidebar-theme-badge">Alternar</span>
+                            </button>
                             <button onclick="abrirMinhaConta(); fecharSidebarMenu('sidebar-menu');" id="btn-minha-conta-sidebar"
                                 class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-slate-400">
@@ -708,9 +763,9 @@
     <script src="js/store.js?v=1.1"></script>
     <script src="js/db.js?v=1.0"></script>
     <script src="js/router.js?v=1.0"></script>
-    <script src="js/utils.js?v=4.27"></script>
-    <script src="js/player.js?v=5.2"></script>
-    <script src="js/admin.js?v=4.52"></script>
+    <script src="js/utils.js?v=4.28"></script>
+    <script src="js/player.js?v=5.3"></script>
+    <script src="js/admin.js?v=4.53"></script>
     <script src="js/culto-editor.js?v=5.2"></script>
     <script src="js/holyrics-exporter.js?v=1.5"></script>
     <script src="js/almoxarifado.js?v=1.0"></script>
@@ -718,7 +773,7 @@
     <script src="js/agenda.js?v=1.3"></script>
     <script src="js/disponibilidade.js?v=1.0"></script>
     <script src="js/whatsapp-dispatcher.js?v=1.0"></script>
-    <script src="js/app.js?v=6.4"></script>
+    <script src="js/app.js?v=6.5"></script>
 </body>
 
 </html>

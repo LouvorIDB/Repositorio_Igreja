@@ -24,6 +24,22 @@ window.LiturgePlayer = (function () {
         return el;
     }
 
+    function syncNativeAndroidMedia(info, isPlaying) {
+        if (window.AndroidMedia && typeof window.AndroidMedia.updateMedia === 'function') {
+            try {
+                const track = info || currentTrackInfo || {};
+                const title = track.title || 'Música Liturge';
+                const artist = track.artist || 'Liturge • Louvor';
+                const album = track.album || 'Repertório Liturge';
+                const duration = (currentAudio && !isNaN(currentAudio.duration) && isFinite(currentAudio.duration)) ? currentAudio.duration : 0;
+                const position = (currentAudio && !isNaN(currentAudio.currentTime) && isFinite(currentAudio.currentTime)) ? currentAudio.currentTime : 0;
+                window.AndroidMedia.updateMedia(title, artist, album, duration, position, !!isPlaying);
+            } catch (e) {
+                console.warn('[LiturgePlayer] Erro ao sincronizar com AndroidMedia:', e);
+            }
+        }
+    }
+
     function initAudioListeners() {
         if (!currentAudio) {
             currentAudio = getOrCreateAudioElement();
@@ -35,6 +51,7 @@ window.LiturgePlayer = (function () {
             }
             atualizarIconePlayPause(true);
             syncPositionState();
+            syncNativeAndroidMedia(currentTrackInfo, true);
         };
 
         currentAudio.onpause = () => {
@@ -43,6 +60,7 @@ window.LiturgePlayer = (function () {
             }
             atualizarIconePlayPause(false);
             syncPositionState();
+            syncNativeAndroidMedia(currentTrackInfo, false);
         };
 
         currentAudio.ontimeupdate = () => {
@@ -64,6 +82,7 @@ window.LiturgePlayer = (function () {
             const durEl = document.getElementById('liturgePlayerDurTime');
             if (durEl) durEl.textContent = formatarTempo(dur);
             syncPositionState();
+            syncNativeAndroidMedia(currentTrackInfo, !currentAudio.paused);
         };
 
         currentAudio.onended = () => {
@@ -73,6 +92,9 @@ window.LiturgePlayer = (function () {
             } else {
                 if ('mediaSession' in navigator) {
                     navigator.mediaSession.playbackState = 'paused';
+                }
+                if (window.AndroidMedia && typeof window.AndroidMedia.stopMedia === 'function') {
+                    try { window.AndroidMedia.stopMedia(); } catch (e) {}
                 }
                 atualizarIconePlayPause(false);
                 const scrubber = document.getElementById('liturgePlayerScrubber');
@@ -273,6 +295,11 @@ window.LiturgePlayer = (function () {
                 if (currentAudio && currentAudio.duration) {
                     currentAudio.currentTime = (scrubber.value / 100) * currentAudio.duration;
                     syncPositionState();
+                    if (window.AndroidMedia && typeof window.AndroidMedia.updatePosition === 'function') {
+                        try {
+                            window.AndroidMedia.updatePosition(currentAudio.currentTime, !currentAudio.paused);
+                        } catch (e) {}
+                    }
                 }
                 isUserSeeking = false;
             };
@@ -331,12 +358,25 @@ window.LiturgePlayer = (function () {
         }
     }
 
-    function togglePlayPause() {
+    function togglePlayPause(forceState) {
         if (!currentAudio) return;
-        if (currentAudio.paused) {
+        const shouldPlay = typeof forceState === 'boolean' ? forceState : currentAudio.paused;
+        if (shouldPlay) {
             currentAudio.play().catch(console.warn);
         } else {
             currentAudio.pause();
+        }
+    }
+
+    function seekTo(segundos) {
+        if (!currentAudio) return;
+        const target = Math.max(0, Math.min(currentAudio.duration || Infinity, segundos));
+        currentAudio.currentTime = target;
+        syncPositionState();
+        if (window.AndroidMedia && typeof window.AndroidMedia.updatePosition === 'function') {
+            try {
+                window.AndroidMedia.updatePosition(target, !currentAudio.paused);
+            } catch (e) {}
         }
     }
 
@@ -435,10 +475,18 @@ window.LiturgePlayer = (function () {
                 atualizarIconePlayPause(false);
             });
         }
+        if (window.AndroidMedia && typeof window.AndroidMedia.requestNotificationPermission === 'function') {
+            try { window.AndroidMedia.requestNotificationPermission(); } catch (e) {}
+        }
         setupMediaSession(currentTrackInfo);
+        syncNativeAndroidMedia(currentTrackInfo, true);
     }
 
     function fechar() {
+        if (window.AndroidMedia && typeof window.AndroidMedia.stopMedia === 'function') {
+            try { window.AndroidMedia.stopMedia(); } catch (e) {}
+        }
+
         if (currentAudio) {
             currentAudio.pause();
             currentAudio.removeAttribute('src');
@@ -496,6 +544,7 @@ window.LiturgePlayer = (function () {
         tocarProxima,
         tocarAnterior,
         togglePlayPause,
+        seekTo,
         fechar,
         tentarStreamDireto: () => {
             if (lastDriveId && currentTrackInfo) {
