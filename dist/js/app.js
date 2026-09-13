@@ -874,6 +874,7 @@ function alterarModoSimulacaoPerfil(valorKey) {
     if (typeof renderizarMusicasNovas === 'function') renderizarMusicasNovas(dadosGlobais.novas || []);
     if (typeof carregarAlmoxarifado === 'function') carregarAlmoxarifado();
     if (typeof renderizarAdminMinisterios === 'function') renderizarAdminMinisterios();
+    if (typeof carregarAgenda === 'function') carregarAgenda();
 
     if (typeof mostrarToast === 'function') mostrarToast(`Modo de simulação alterado: ${modoSimulacaoPerfil ? modoSimulacaoPerfil.label : 'Visão Admin'}`, 'sucesso');
 }

@@ -96,6 +96,267 @@ function navegarMesAgenda(delta) {
 }
 
 /**
+ * Verifica se um nome corresponde ao usuário (considerando acentos e variações de nome)
+ */
+function usuarioCorrespondeNome(nomeCandidato, nomeUsuario) {
+    if (!nomeCandidato || !nomeUsuario) return false;
+    const n1 = (typeof removerAcentos === 'function' ? removerAcentos(nomeCandidato) : String(nomeCandidato).toLowerCase()).trim();
+    const n2 = (typeof removerAcentos === 'function' ? removerAcentos(nomeUsuario) : String(nomeUsuario).toLowerCase()).trim();
+    if (!n1 || !n2) return false;
+    if (n1 === n2) return true;
+
+    const partes1 = n1.split(/\s+/).filter(Boolean);
+    const partes2 = n2.split(/\s+/).filter(Boolean);
+
+    // Se ambos têm primeiro e segundo nome coincidentes (ex: "João Marcos")
+    if (partes1.length >= 2 && partes2.length >= 2) {
+        if (partes1[0] === partes2[0] && partes1[1] === partes2[1]) {
+            return true;
+        }
+    }
+
+    // Se um é prefixo do outro por palavra completa (ex: "João Marcos" e "João Marcos Silva")
+    if (n1.startsWith(n2 + ' ') || n2.startsWith(n1 + ' ')) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Normaliza e formata o nome do instrumento / função para exibição
+ */
+function formatarNomeFuncaoEscala(raw) {
+    if (!raw) return 'Escala';
+    const norm = (typeof removerAcentos === 'function' ? removerAcentos(raw) : String(raw).toLowerCase()).trim();
+    if (norm === 'bateria') return 'Bateria';
+    if (norm === 'violao' || norm === 'violao 1' || norm === 'violao 2') return 'Violão';
+    if (norm === 'baixo') return 'Baixo';
+    if (norm === 'teclado') return 'Teclado';
+    if (norm === 'guitarra' || norm === 'guitarra 1' || norm === 'guitarra 2') return 'Guitarra';
+    if (norm.includes('vocal') || norm.includes('cantor') || norm.includes('voz')) return 'Vocal';
+    if (norm.includes('som') || norm.includes('audio')) return 'Som';
+    if (norm.includes('midia') || norm.includes('projecao') || norm.includes('slide')) return 'Mídia';
+    if (norm.includes('iluminacao') || norm.includes('luz')) return 'Luz';
+    if (norm.includes('transmissao') || norm.includes('live')) return 'Transmissão';
+    if (norm.includes('recepcao')) return 'Recepção';
+    return String(raw).charAt(0).toUpperCase() + String(raw).slice(1);
+}
+
+/**
+ * Verifica se um usuário está escalado em um culto específico e retorna suas funções
+ */
+function verificarEscalaUsuarioNoCulto(service, userParam = null) {
+    const resultado = {
+        escalado: false,
+        roles: []
+    };
+
+    if (!service) return resultado;
+
+    // Se estiver simulando membro geral (sem escalas)
+    if (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil && modoSimulacaoPerfil.key === 'membro') {
+        return resultado;
+    }
+
+    const user = userParam || (
+        (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil && (modoSimulacaoPerfil.id || modoSimulacaoPerfil.name))
+            ? modoSimulacaoPerfil
+            : (window.usuarioLogado || (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null))
+    );
+
+    if (!user) return resultado;
+
+    const userId = user.id || null;
+    const userName = user.name || (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil?.label ? modoSimulacaoPerfil.label.replace(/^Voluntário - |^Líder - /, '') : '');
+
+    const rolesSet = new Set();
+
+    // 1. service_scales (relacional Supabase)
+    if (Array.isArray(service.service_scales)) {
+        service.service_scales.forEach(sc => {
+            const scProfileId = sc.profile_id || sc.user_id || sc.profiles?.id;
+            const scName = sc.profile_name || sc.profiles?.name;
+            const matchId = userId && scProfileId && (scProfileId === userId);
+            const matchName = userName && scName && usuarioCorrespondeNome(scName, userName);
+
+            if (matchId || matchName) {
+                const rName = sc.ministry_roles?.name || sc.role_name || sc.role || 'Ministério';
+                rolesSet.add(formatarNomeFuncaoEscala(rName));
+            }
+        });
+    }
+
+    // 2. notes (JSON com escala de instrumentos e cantores)
+    if (service.notes) {
+        try {
+            const pn = typeof service.notes === 'string' ? JSON.parse(service.notes) : service.notes;
+            if (pn && typeof pn === 'object') {
+                if (pn.escala && typeof pn.escala === 'object') {
+                    Object.entries(pn.escala).forEach(([instKey, instVol]) => {
+                        if (!instVol) return;
+                        const matchId = userId && (instVol === userId);
+                        const matchName = userName && usuarioCorrespondeNome(instVol, userName);
+                        if (matchId || matchName) {
+                            rolesSet.add(formatarNomeFuncaoEscala(instKey));
+                        }
+                    });
+                }
+                if (Array.isArray(pn.cantores)) {
+                    pn.cantores.forEach(c => {
+                        if (!c) return;
+                        const matchId = userId && (c === userId);
+                        const matchName = userName && usuarioCorrespondeNome(c, userName);
+                        if (matchId || matchName) {
+                            rolesSet.add('Vocal');
+                        }
+                    });
+                }
+            }
+        } catch(e){}
+    }
+
+    // 3. singers_list / singers direto no service
+    const directSingers = service.singers_list || service.singers || '';
+    if (directSingers && userName) {
+        const list = directSingers.split(',').map(x => x.trim()).filter(Boolean);
+        if (list.some(c => usuarioCorrespondeNome(c, userName))) {
+            rolesSet.add('Vocal');
+        }
+    }
+
+    // 4. service_songs
+    if (Array.isArray(service.service_songs) && userName) {
+        service.service_songs.forEach(ss => {
+            const ssSingers = ss.singers_list || ss.singers || '';
+            if (ssSingers) {
+                const list = ssSingers.split(',').map(x => x.trim()).filter(Boolean);
+                if (list.some(c => usuarioCorrespondeNome(c, userName))) {
+                    rolesSet.add('Vocal');
+                }
+            }
+        });
+    }
+
+    // 5. Fallback da matriz dadosGlobais.cultos
+    if (rolesSet.size === 0 && window.dadosGlobais?.cultos) {
+        const row = window.dadosGlobais.cultos.find(r => Array.isArray(r) && (r[8] === service.id || (service.title && r[0] === service.title)));
+        if (row) {
+            if (row[5]) {
+                try {
+                    const esc = typeof row[5] === 'string' ? JSON.parse(row[5]) : row[5];
+                    if (esc && typeof esc === 'object') {
+                        Object.entries(esc).forEach(([instKey, instVol]) => {
+                            if (!instVol) return;
+                            const matchId = userId && (instVol === userId);
+                            const matchName = userName && usuarioCorrespondeNome(instVol, userName);
+                            if (matchId || matchName) {
+                                rolesSet.add(formatarNomeFuncaoEscala(instKey));
+                            }
+                        });
+                    }
+                } catch(e){}
+            }
+            if (row[6] && userName) {
+                const list = String(row[6]).split(',').map(x => x.trim()).filter(Boolean);
+                if (list.some(c => usuarioCorrespondeNome(c, userName))) {
+                    rolesSet.add('Vocal');
+                }
+            }
+        }
+    }
+
+    if (rolesSet.size > 0) {
+        resultado.escalado = true;
+        resultado.roles = Array.from(rolesSet);
+    }
+
+    return resultado;
+}
+
+/**
+ * Obtém se o usuário logado/simulado está escalado para um dia específico (YYYY-MM-DD)
+ */
+function obterEscalaUsuarioNoDia(dataStr) {
+    const resultado = {
+        escalado: false,
+        funcoes: [],
+        funcaoResumo: '',
+        detalhesCultos: []
+    };
+
+    if (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil && modoSimulacaoPerfil.key === 'membro') {
+        return resultado;
+    }
+
+    const user = (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil && (modoSimulacaoPerfil.id || modoSimulacaoPerfil.name))
+        ? modoSimulacaoPerfil
+        : (window.usuarioLogado || (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null));
+
+    if (!user) return resultado;
+
+    const cultosArray = window.dadosGlobais?.servicesDataList || window.dadosGlobais?.services || [];
+    const cultosDoDia = cultosArray.filter(c => c.date && c.date.startsWith(dataStr));
+    const cultosExaminados = new Set();
+
+    cultosDoDia.forEach(s => {
+        cultosExaminados.add(s.id);
+        const check = verificarEscalaUsuarioNoCulto(s, user);
+        if (check.escalado) {
+            resultado.detalhesCultos.push({
+                serviceId: s.id,
+                serviceTitle: s.title || 'Culto',
+                funcoes: check.roles
+            });
+            check.roles.forEach(f => {
+                if (!resultado.funcoes.includes(f)) resultado.funcoes.push(f);
+            });
+        }
+    });
+
+    // Fallback matriz dadosGlobais.cultos caso o culto não esteja em services
+    if (window.dadosGlobais?.cultos) {
+        window.dadosGlobais.cultos.forEach(row => {
+            if (!Array.isArray(row) || !row[0]) return;
+            const match = String(row[0]).match(/^(\d{2})\/(\d{2})/);
+            if (match) {
+                const diaC = match[1];
+                const mesC = match[2];
+                const parts = dataStr.split('-');
+                if (parts.length === 3 && parts[1] === mesC && parts[2] === diaC) {
+                    const rowId = row[8] || 'culto-row';
+                    if (!cultosExaminados.has(rowId)) {
+                        const fakeService = { id: rowId, title: row[0], date: dataStr };
+                        const check = verificarEscalaUsuarioNoCulto(fakeService, user);
+                        if (check.escalado) {
+                            resultado.detalhesCultos.push({
+                                serviceId: rowId,
+                                serviceTitle: row[0],
+                                funcoes: check.roles
+                            });
+                            check.roles.forEach(f => {
+                                if (!resultado.funcoes.includes(f)) resultado.funcoes.push(f);
+                            });
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    if (resultado.funcoes.length > 0) {
+        resultado.escalado = true;
+        if (resultado.funcoes.length === 1) {
+            resultado.funcaoResumo = resultado.funcoes[0];
+        } else {
+            resultado.funcaoResumo = `${resultado.funcoes[0]} +${resultado.funcoes.length - 1}`;
+        }
+    }
+
+    return resultado;
+}
+
+/**
  * Renderiza a grade do calendário mensal
  */
 function renderizarCalendario() {
@@ -113,7 +374,7 @@ function renderizarCalendario() {
     }
 
     const eventos = obterEventosIgreja();
-    const cultosArray = window.dadosGlobais?.servicesDataList || window.dadosGlobais?.cultos || [];
+    const cultosArray = window.dadosGlobais?.servicesDataList || window.dadosGlobais?.services || window.dadosGlobais?.cultos || [];
 
     // Primeiro dia do mês e total de dias
     const primeiroDia = new Date(anoAtualAgenda, mesAtualAgenda, 1).getDay();
@@ -129,7 +390,7 @@ function renderizarCalendario() {
     for (let i = primeiroDia - 1; i >= 0; i--) {
         const diaNum = totalDiasMesAnterior - i;
         html += `
-            <div class="bg-slate-950/40 p-2 border border-slate-800/40 min-h-[85px] opacity-40 select-none">
+            <div class="bg-slate-950/40 p-2 border border-slate-800/40 min-h-[88px] opacity-40 select-none">
                 <span class="text-xs font-semibold text-slate-600">${diaNum}</span>
             </div>
         `;
@@ -155,19 +416,47 @@ function renderizarCalendario() {
             return false;
         });
 
-        const temItens = evtsDoDia.length > 0 || cultosDoDia.length > 0;
+        // Escala do usuário para este dia
+        const escalaInfo = obterEscalaUsuarioNoDia(dataStr);
+        const estaEscalado = escalaInfo.escalado;
 
-        let bordaHoje = ehHoje ? 'border-2 border-brand-500 bg-brand-950/20' : 'border border-slate-800/80 bg-slate-900/60 hover:bg-slate-800/80';
+        const temItens = evtsDoDia.length > 0 || cultosDoDia.length > 0 || estaEscalado;
+
+        // Estilização da borda e fundo do card do dia
+        let bordaDia = 'border border-slate-800/80 bg-slate-900/60 hover:bg-slate-800/80';
+        if (ehHoje && estaEscalado) {
+            bordaDia = 'border-2 border-emerald-500 ring-2 ring-brand-500/80 bg-emerald-950/40 shadow-md shadow-emerald-950/40';
+        } else if (estaEscalado) {
+            bordaDia = 'border-2 border-emerald-500/90 bg-emerald-950/30 hover:bg-emerald-900/40 shadow-sm shadow-emerald-950/50';
+        } else if (ehHoje) {
+            bordaDia = 'border-2 border-brand-500 bg-brand-950/20';
+        }
 
         html += `
-            <div onclick="abrirModalDetalhesDia('${dataStr}')" class="p-2 ${bordaHoje} min-h-[85px] rounded-xl transition cursor-pointer flex flex-col justify-between group">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold ${ehHoje ? 'text-brand-400 bg-brand-900/60 px-1.5 py-0.5 rounded-md' : 'text-slate-300'}">${dia}</span>
-                    ${temItens ? `<span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>` : ''}
+            <div onclick="abrirModalDetalhesDia('${dataStr}')" class="p-2 ${bordaDia} min-h-[88px] rounded-xl transition cursor-pointer flex flex-col justify-between group relative overflow-hidden">
+                <div class="flex items-center justify-between gap-1">
+                    <span class="text-xs font-bold ${
+                        estaEscalado 
+                            ? 'text-emerald-300 bg-emerald-950/90 border border-emerald-500/50 px-1.5 py-0.5 rounded-md shadow-sm' 
+                            : (ehHoje ? 'text-brand-400 bg-brand-900/60 px-1.5 py-0.5 rounded-md' : 'text-slate-300')
+                    }">${dia}</span>
+
+                    ${estaEscalado ? `
+                        <span class="inline-flex items-center gap-0.5 text-[8.5px] font-black text-emerald-300 bg-emerald-900/90 border border-emerald-400/60 px-1 py-0.5 rounded tracking-tighter shadow-sm animate-pulse" title="Você está escalado neste dia!">
+                            ⭐ ESCALA
+                        </span>
+                    ` : (temItens ? `<span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>` : '')}
                 </div>
 
                 <div class="space-y-1 mt-1">
-                    ${cultosDoDia.slice(0, 1).map(c => `
+                    ${estaEscalado ? `
+                        <div class="text-[9.5px] bg-emerald-950 text-emerald-200 border border-emerald-500/70 px-1.5 py-0.5 rounded truncate font-bold flex items-center gap-1 shadow-sm" title="Sua função: ${escalaInfo.funcoes.join(', ')}">
+                            <span>⭐</span>
+                            <span class="truncate">${escalaInfo.funcaoResumo}</span>
+                        </div>
+                    ` : ''}
+
+                    ${cultosDoDia.slice(0, estaEscalado ? 0 : 1).map(c => `
                         <div class="text-[10px] bg-cyan-950/80 text-cyan-300 border border-cyan-800/60 px-1.5 py-0.5 rounded truncate font-medium">
                             ⛪ Culto
                         </div>
@@ -179,8 +468,8 @@ function renderizarCalendario() {
                         </div>
                     `).join('')}
 
-                    ${(evtsDoDia.length + cultosDoDia.length) > 2 ? `
-                        <span class="text-[9px] text-slate-400 font-semibold block text-right">+${(evtsDoDia.length + cultosDoDia.length) - 2} mais</span>
+                    ${(evtsDoDia.length + (estaEscalado ? 0 : cultosDoDia.length)) > (estaEscalado ? 1 : 2) ? `
+                        <span class="text-[9px] text-slate-400 font-semibold block text-right">+${(evtsDoDia.length + cultosDoDia.length) - (estaEscalado ? 1 : 2)} mais</span>
                     ` : ''}
                 </div>
             </div>
@@ -192,7 +481,7 @@ function renderizarCalendario() {
     const quadradosRestantes = (7 - (totalQuadradosAtuais % 7)) % 7;
     for (let i = 1; i <= quadradosRestantes; i++) {
         html += `
-            <div class="bg-slate-950/40 p-2 border border-slate-800/40 min-h-[85px] opacity-40 select-none">
+            <div class="bg-slate-950/40 p-2 border border-slate-800/40 min-h-[88px] opacity-40 select-none">
                 <span class="text-xs font-semibold text-slate-600">${i}</span>
             </div>
         `;
@@ -208,17 +497,24 @@ function renderizarListaEventosProximos() {
     const container = document.getElementById('lista-eventos-proximos');
     if (!container) return;
 
+    const userToEvaluate = (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null) || (window.usuarioLogado || null);
+    const roleUsuario = userToEvaluate ? (userToEvaluate.system_role || userToEvaluate.role || 'membro') : 'visitante';
+    const podeEditar = (roleUsuario === 'admin' || roleUsuario === 'lider');
+
     // 1. Eventos locais / cadastrados
     const eventos = [...obterEventosIgreja()];
 
-    // 2. Cultos marcados para aparecer em "Próximos Eventos"
-    const rawServices = window.dadosGlobais?.services || [];
+    // 2. Cultos marcados para aparecer em "Próximos Eventos" OU em que o usuário está escalado
+    const rawServices = window.dadosGlobais?.servicesDataList || window.dadosGlobais?.services || [];
     rawServices.forEach(s => {
         let pn = {};
         if (s.notes) {
             try { pn = typeof s.notes === 'string' ? JSON.parse(s.notes) : s.notes; } catch(e){}
         }
-        if (pn.destaque_evento || pn.exibir_em_eventos) {
+
+        const escalaCulto = verificarEscalaUsuarioNoCulto(s, userToEvaluate);
+
+        if (pn.destaque_evento || pn.exibir_em_eventos || escalaCulto.escalado) {
             const dStr = s.date ? s.date.split('T')[0] : '';
             let tStr = '';
             if (s.date && s.date.includes('T')) {
@@ -227,11 +523,13 @@ function renderizarListaEventosProximos() {
             eventos.push({
                 id: s.id,
                 is_service: true,
-                title: s.title,
+                title: s.title || 'Culto de Adoração',
                 date: dStr,
                 time: tStr,
-                location: pn.location || 'Templo Principal',
-                description: pn.description || s.description || ''
+                location: pn.location || s.location || 'Templo Principal',
+                description: pn.description || s.description || '',
+                user_escalado: escalaCulto.escalado,
+                user_roles: escalaCulto.roles
             });
         }
     });
@@ -251,10 +549,6 @@ function renderizarListaEventosProximos() {
         return;
     }
 
-    const userToEvaluate = (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null) || (window.usuarioLogado || null);
-    const roleUsuario = userToEvaluate ? (userToEvaluate.system_role || userToEvaluate.role || 'membro') : 'visitante';
-    const podeEditar = (roleUsuario === 'admin' || roleUsuario === 'lider');
-
     container.innerHTML = proximos.map(evt => {
         const parts = evt.date.split('-');
         const dataFmt = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : evt.date;
@@ -272,8 +566,16 @@ function renderizarListaEventosProximos() {
             `
         ) : '';
 
+        const isEscalado = !!evt.user_escalado;
+        let cardBorda = 'border-slate-800 bg-slate-900';
+        if (isEscalado) {
+            cardBorda = 'border-emerald-500/60 bg-gradient-to-br from-emerald-950/20 via-slate-900 to-slate-900 shadow-md shadow-emerald-950/30';
+        } else if (evt.is_service) {
+            cardBorda = 'border-amber-500/40 bg-slate-900/90 shadow-sm';
+        }
+
         return `
-            <div class="bg-slate-900 border ${evt.is_service ? 'border-amber-500/40 bg-slate-900/90 shadow-sm' : 'border-slate-800'} p-3.5 rounded-xl space-y-2.5 hover:border-slate-700 transition">
+            <div class="border ${cardBorda} p-3.5 rounded-xl space-y-2.5 hover:border-slate-700 transition">
                 ${evt.image_url ? `
                     <div class="rounded-lg overflow-hidden border border-slate-800 bg-slate-950">
                         <img src="${evt.image_url}" alt="${evt.title}" class="w-full max-h-36 object-cover hover:scale-105 transition duration-300">
@@ -282,7 +584,11 @@ function renderizarListaEventosProximos() {
                 <div class="flex items-start justify-between gap-2">
                     <div>
                         <div class="flex items-center gap-1.5 flex-wrap">
-                            ${evt.is_service ? '<span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">🌟 CULTO</span>' : ''}
+                            ${isEscalado ? `
+                                <span class="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 px-2 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-1">
+                                    ⭐ SUA ESCALA: ${(evt.user_roles || []).join(', ')}
+                                </span>
+                            ` : (evt.is_service ? '<span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">🌟 CULTO</span>' : '')}
                             <h4 class="text-sm font-bold text-white">${evt.title}</h4>
                         </div>
                         <p class="text-xs text-brand-400 font-medium mt-0.5">📅 ${dataFmt} ${evt.time ? `às ${evt.time}` : ''}</p>
@@ -417,12 +723,36 @@ function abrirModalDetalhesDia(dataStr) {
                 } catch(e) {}
             }
 
+            // Verifica se o usuário logado/simulado está escalado neste culto
+            const escalaCulto = verificarEscalaUsuarioNoCulto(s, userToEvaluate);
+            const userEstaEscaladoNeste = escalaCulto.escalado;
+
+            const cardBorda = userEstaEscaladoNeste
+                ? 'border-2 border-emerald-500/80 bg-gradient-to-br from-emerald-950/30 via-slate-900 to-slate-900 shadow-md shadow-emerald-950/30'
+                : 'border border-slate-700/80 hover:border-brand-500/80 bg-slate-900';
+
             html += `
-                <div class="bg-slate-900 border border-slate-700/80 hover:border-brand-500/80 p-3.5 rounded-xl flex flex-col gap-3 transition shadow-sm">
+                <div class="${cardBorda} p-3.5 rounded-xl flex flex-col gap-3 transition shadow-sm">
+                    ${userEstaEscaladoNeste ? `
+                        <div class="bg-emerald-500/15 border border-emerald-500/40 rounded-xl p-2.5 flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xl">⭐</span>
+                                <div>
+                                    <h5 class="text-xs font-bold text-emerald-300">Você está escalado neste culto!</h5>
+                                    <p class="text-[11px] text-emerald-400 font-medium">Sua função: <strong class="text-emerald-200 uppercase font-bold">${escalaCulto.roles.join(', ')}</strong></p>
+                                </div>
+                            </div>
+                            <span class="text-[10px] bg-emerald-500/30 text-emerald-200 border border-emerald-400/60 font-black px-2 py-0.5 rounded-full uppercase tracking-wider">Confirmado</span>
+                        </div>
+                    ` : ''}
+
                     <!-- Informações do Culto (Parte Superior - 100% visíveis) -->
                     <div class="space-y-1.5 min-w-0">
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="text-[10px] bg-brand-950 text-brand-400 border border-brand-800/80 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">⛪ Culto</span>
+                            ${userEstaEscaladoNeste ? `
+                                <span class="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-700/80 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider">⭐ Sua Escala: ${escalaCulto.roles.join(', ')}</span>
+                            ` : ''}
                             ${timeStr ? `<span class="text-xs text-slate-300 font-semibold flex items-center gap-1"><span>⏰</span> <span>${timeStr}</span></span>` : ''}
                         </div>
                         <p class="text-sm font-bold text-white break-words leading-snug">${s.title || 'Culto de Adoração'}</p>
@@ -1516,13 +1846,24 @@ function renderizarItensModalExportacao() {
         const badgeCor = isCulto ? 'bg-cyan-950 text-cyan-300 border-cyan-800/80' : 'bg-purple-950 text-purple-300 border-purple-800/80';
         const badgeTexto = isCulto ? '⛪ Culto' : '🎉 Evento';
 
+        let badgeEscala = '';
+        if (isCulto) {
+            const rawServices = window.dadosGlobais?.servicesDataList || window.dadosGlobais?.services || [];
+            const targetService = rawServices.find(s => s.id === item.id) || { id: item.id, title: item.title, date: item.dateIso };
+            const checkEsc = verificarEscalaUsuarioNoCulto(targetService);
+            if (checkEsc.escalado) {
+                badgeEscala = `<span class="text-[9px] px-1.5 py-0.5 rounded font-bold border bg-emerald-950 text-emerald-300 border-emerald-500/60">⭐ SUA ESCALA (${checkEsc.roles.join(', ')})</span>`;
+            }
+        }
+
         return `
-            <label class="flex items-start gap-3 p-2.5 rounded-xl border border-slate-800 bg-slate-900 hover:border-slate-700 transition cursor-pointer select-none">
+            <label class="flex items-start gap-3 p-2.5 rounded-xl border ${badgeEscala ? 'border-emerald-500/50 bg-slate-900 shadow-sm' : 'border-slate-800 bg-slate-900'} hover:border-slate-700 transition cursor-pointer select-none">
                 <input type="checkbox" value="${item.id}" ${isChecked ? 'checked' : ''} onchange="atualizarContadorSelecaoExportacao()"
                     class="check-item-export mt-1 w-4 h-4 rounded text-indigo-600 bg-slate-950 border-slate-700 focus:ring-indigo-500">
                 <div class="min-w-0 flex-1 space-y-1">
                     <div class="flex items-center gap-2 flex-wrap">
                         <span class="text-[9px] px-1.5 py-0.5 rounded font-bold border ${badgeCor}">${badgeTexto}</span>
+                        ${badgeEscala}
                         <span class="text-xs font-bold text-white truncate">${item.title}</span>
                     </div>
                     <div class="flex items-center gap-2 text-[11px] text-slate-400">
@@ -1853,3 +2194,5 @@ window.alternarSelecaoTodosExportacao = alternarSelecaoTodosExportacao;
 window.atualizarContadorSelecaoExportacao = atualizarContadorSelecaoExportacao;
 window.executarExportacaoCalendario = executarExportacaoCalendario;
 window.abrirNoGoogleAgendaWeb = abrirNoGoogleAgendaWeb;
+window.obterEscalaUsuarioNoDia = obterEscalaUsuarioNoDia;
+window.verificarEscalaUsuarioNoCulto = verificarEscalaUsuarioNoCulto;

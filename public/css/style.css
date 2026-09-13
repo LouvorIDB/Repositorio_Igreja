@@ -398,4 +398,48 @@ html.theme-light span.flatpickr-weekday {
     color: #0f172a !important;
 }
 
+/* Adaptações do Modo Claro para Destaques de Escala e Agenda */
+html.theme-light .text-emerald-300,
+html.theme-light .text-emerald-200,
+html.theme-light .text-emerald-400 {
+    color: #047857 !important;
+}
+html.theme-light .bg-emerald-950,
+html.theme-light .bg-emerald-950\/80,
+html.theme-light .bg-emerald-950\/90,
+html.theme-light .bg-emerald-950\/40,
+html.theme-light .bg-emerald-950\/30,
+html.theme-light .bg-emerald-950\/20 {
+    background-color: #ecfdf5 !important;
+}
+html.theme-light .border-emerald-800,
+html.theme-light .border-emerald-800\/60,
+html.theme-light .border-emerald-700\/80,
+html.theme-light .border-emerald-500\/50,
+html.theme-light .border-emerald-500\/60,
+html.theme-light .border-emerald-500\/70 {
+    border-color: #10b981 !important;
+}
+html.theme-light .bg-cyan-950,
+html.theme-light .bg-cyan-950\/80 {
+    background-color: #e0f2fe !important;
+}
+html.theme-light .text-cyan-300 {
+    color: #0369a1 !important;
+}
+html.theme-light .border-cyan-800\/60 {
+    border-color: #7dd3fc !important;
+}
+html.theme-light .bg-purple-950,
+html.theme-light .bg-purple-950\/80 {
+    background-color: #f3e8ff !important;
+}
+html.theme-light .text-purple-300 {
+    color: #7e22ce !important;
+}
+html.theme-light .border-purple-800\/60 {
+    border-color: #d8b4fe !important;
+}
+
+
 
