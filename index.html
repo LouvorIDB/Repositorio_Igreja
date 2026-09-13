@@ -245,7 +245,7 @@
         } catch(e) {}
     </script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="css/style.css?v=2.0">
+    <link rel="stylesheet" href="css/style.css?v=2.1">
 </head>
 
 <body class="bg-night-950 text-slate-100 min-h-screen flex flex-col justify-between font-sans selection:bg-liturge-500 selection:text-night-950">
@@ -308,36 +308,35 @@
         <!-- ===================== TOP HEADER BAR ===================== -->
         <header id="main-header-bar" class="flex items-center justify-between w-full mb-4 sm:mb-6 min-h-[36px]">
             <!-- Canto Superior Esquerdo: Brandmark Oficial Liturge + Menu Mobile -->
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
                 <button id="btn-menu-mobile" onclick="toggleSidebarMenu('sidebar-menu')" 
-                    class="md:hidden p-2 -ml-1 text-slate-300 hover:text-white transition focus:outline-none active:scale-95 cursor-pointer" 
+                    class="md:hidden p-1.5 sm:p-2 -ml-1 text-slate-300 hover:text-white transition focus:outline-none active:scale-95 cursor-pointer shrink-0" 
                     aria-label="Abrir Menu">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="3" y1="6" x2="21" y2="6"></line>
                         <line x1="3" y1="12" x2="21" y2="12"></line>
                         <line x1="3" y1="18" x2="21" y2="18"></line>
                     </svg>
                 </button>
-                <div class="flex items-center gap-2.5 select-none cursor-pointer" onclick="mudarAba('cultos')" title="Página Inicial">
-                    <img src="assets/liturge-symbol.svg" alt="Liturge" class="w-8 h-8 glow-node">
-                    <div class="flex flex-col">
-                        <span class="font-black tracking-[0.25em] text-white text-sm sm:text-base leading-tight">LITURGE</span>
+                <div class="flex items-center gap-2 select-none cursor-pointer shrink-0" onclick="mudarAba('cultos')" title="Página Inicial">
+                    <img src="assets/liturge-symbol.svg" alt="Liturge" class="w-7 h-7 sm:w-8 sm:h-8 glow-node shrink-0">
+                    <div class="flex flex-col shrink-0">
+                        <span class="font-black tracking-[0.18em] sm:tracking-[0.25em] text-white text-sm sm:text-base leading-tight">LITURGE</span>
                         <span class="text-[9px] uppercase tracking-[0.2em] text-liturge-400 font-bold leading-tight hidden sm:block">Gestão de Escalas & Repertório</span>
                     </div>
                 </div>
             </div>
 
             <!-- Canto Superior Direito: Auth / Sessão do Usuário -->
-            <div id="auth-header-container" class="flex justify-end items-center gap-2 ml-auto">
-                <!-- Botão Rápido Alternar Tema Claro / Escuro -->
+            <div id="auth-header-container" class="flex justify-end items-center gap-1.5 sm:gap-2 ml-auto shrink-0">
+                <!-- Botão Rápido Alternar Tema Claro / Escuro (Ícone Circular Compacto) -->
                 <button id="btn-toggle-theme" onclick="toggleTemaClaroEscuro()" 
-                    class="h-8 px-2.5 rounded-xl border border-slate-700/80 bg-slate-800/60 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5 transition text-xs font-semibold cursor-pointer shadow-sm"
+                    class="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-slate-700/80 bg-slate-800/60 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition cursor-pointer shadow-sm shrink-0"
                     title="Alternar entre Tema Claro e Escuro" aria-label="Alternar Tema Claro / Escuro">
-                    <span id="header-theme-icon">☀️</span>
-                    <span id="header-theme-text" class="hidden sm:inline text-[11px]">Tema</span>
+                    <span id="header-theme-icon" class="text-xs sm:text-sm select-none">☀️</span>
                 </button>
 
-                <button id="btn-login-header" onclick="abrirModalLoginUsuario()" class="hidden text-xs font-semibold text-liturge-400 hover:text-white transition px-3.5 py-1.5 border border-liturge-500/30 rounded-lg bg-liturge-500/10 hover:bg-liturge-500/20 flex items-center gap-1.5 cursor-pointer">
+                <button id="btn-login-header" onclick="abrirModalLoginUsuario()" class="hidden text-xs font-semibold text-liturge-400 hover:text-white transition px-2.5 sm:px-3.5 py-1.5 border border-liturge-500/30 rounded-lg bg-liturge-500/10 hover:bg-liturge-500/20 flex items-center gap-1.5 cursor-pointer shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 2l-2 2m-1.5 1.5L16 7l-2-2 1.5-1.5L21 2z"></path>
                         <path d="M15.5 5.5L7 14v4h4l8.5-8.5"></path>
@@ -345,7 +344,7 @@
                     </svg>
                     <span>Entrar</span>
                 </button>
-                <button id="btn-signup-header" onclick="abrirModalCadastroUsuario()" class="hidden text-xs font-medium text-slate-300 hover:text-white transition px-3 py-1.5 border border-slate-700 rounded-lg bg-slate-800/80 hover:bg-slate-700 flex items-center gap-1.5 cursor-pointer">
+                <button id="btn-signup-header" onclick="abrirModalCadastroUsuario()" class="hidden text-xs font-medium text-slate-300 hover:text-white transition px-2.5 sm:px-3 py-1.5 border border-slate-700 rounded-lg bg-slate-800/80 hover:bg-slate-700 flex items-center gap-1.5 cursor-pointer shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                         <circle cx="9" cy="7" r="4"></circle>
@@ -354,7 +353,7 @@
                     </svg>
                     <span>Criar Conta</span>
                 </button>
-                <button id="btn-onboarding-header" onclick="abrirModalCadastroIgreja()" class="hidden text-xs font-bold text-night-950 bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 transition px-3.5 py-1.5 rounded-lg shadow-sm shadow-liturge-500/20 flex items-center gap-1.5 cursor-pointer">
+                <button id="btn-onboarding-header" onclick="abrirModalCadastroIgreja()" class="hidden text-xs font-bold text-night-950 bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 transition px-3 sm:px-3.5 py-1.5 rounded-lg shadow-sm shadow-liturge-500/20 flex items-center gap-1.5 cursor-pointer shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14"></path>
                         <path d="M2 20h20"></path>
@@ -366,27 +365,27 @@
                     <span>Cadastrar Minha Igreja</span>
                 </button>
                 
-                <div id="user-session-bar" class="hidden flex items-center gap-3 bg-night-900/90 border border-slate-800 rounded-full px-4 py-1.5 shadow-sm">
-                    <button onclick="abrirMinhaConta()" class="flex flex-col items-end text-right group cursor-pointer" title="Minha Conta">
+                <div id="user-session-bar" class="hidden flex items-center gap-1.5 sm:gap-3 bg-night-900/90 border border-slate-800 rounded-full px-2 sm:px-4 py-1 sm:py-1.5 shadow-sm shrink-0">
+                    <button onclick="abrirMinhaConta()" class="hidden sm:flex flex-col items-end text-right group cursor-pointer shrink-0" title="Minha Conta">
                         <span id="user-session-name" class="text-[11px] font-bold text-white leading-tight group-hover:text-liturge-400 transition">Usuário</span>
                         <span id="user-session-role" class="text-[9px] text-liturge-400 font-medium leading-tight tracking-wider uppercase">Voluntário</span>
                     </button>
-                    <button onclick="abrirMinhaConta()" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition cursor-pointer" title="Minha Conta">
+                    <button onclick="abrirMinhaConta()" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition cursor-pointer shrink-0" title="Minha Conta">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
                         </svg>
                     </button>
                     <!-- Botão Admin -->
-                    <button id="btn-admin-panel" onclick="abrirPainelAdmin()" class="hidden ml-2 text-liturge-400 hover:text-liturge-300 transition" title="Acessar Painel de Administração">
+                    <button id="btn-admin-panel" onclick="abrirPainelAdmin()" class="hidden ml-0.5 sm:ml-2 text-liturge-400 hover:text-liturge-300 transition shrink-0" title="Acessar Painel de Administração">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                         </svg>
                     </button>
-                    <div class="h-4 w-px bg-slate-700 ml-1"></div>
+                    <div class="h-3.5 sm:h-4 w-px bg-slate-700 ml-0.5 sm:ml-1 shrink-0"></div>
                     <!-- Botão Sair -->
-                    <button onclick="realizarLogoutUsuario()" class="ml-1 text-slate-400 hover:text-red-400 transition" title="Sair da Conta">
+                    <button onclick="realizarLogoutUsuario()" class="ml-0.5 sm:ml-1 text-slate-400 hover:text-red-400 transition shrink-0" title="Sair da Conta">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                     </button>
                 </div>

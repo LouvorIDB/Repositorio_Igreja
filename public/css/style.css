@@ -332,12 +332,13 @@ html.theme-light #user-session-bar {
 }
 
 html.theme-light #btn-toggle-theme {
-    background-color: #f1f5f9;
-    border-color: #cbd5e1;
+    background-color: #ffffff;
+    border-color: #e2e8f0;
     color: #334155;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 html.theme-light #btn-toggle-theme:hover {
-    background-color: #e2e8f0;
+    background-color: #f1f5f9;
     color: #0f172a;
 }
 
