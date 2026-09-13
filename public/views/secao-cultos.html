@@ -1,3 +1,411 @@
-<div id="secao-cultos" class="space-y-6">
-    <div class="text-center text-slate-500 py-10">Carregando playlists de cultos...</div>
+<div id="secao-cultos" class="w-full space-y-6">
+
+    <!-- ========================================================================= -->
+    <!-- VISÃO 1: LISTA & GRADE DE CULTOS (TELA PRINCIPAL)                         -->
+    <!-- ========================================================================= -->
+    <div id="visao-cultos-lista" class="space-y-6 animate-fade-in">
+        
+        <!-- Barra Superior de Filtros Rápidos -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-200/80 dark:border-slate-800/80">
+            <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1">
+                <button type="button" id="filtro-cultos-todos" onclick="filtrarCultos('todos')"
+                    class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-brand-500 text-night-950 shadow-sm shadow-brand-500/20">
+                    <span>Todos os Cultos</span>
+                    <span id="badge-count-todos" class="text-[10px] px-1.5 py-0.2 rounded-full bg-night-950/20 font-mono font-bold">0</span>
+                </button>
+
+                <button type="button" id="filtro-cultos-escalado" onclick="filtrarCultos('escalado')"
+                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer bg-slate-100 dark:bg-slate-800/70 text-slate-600 dark:text-slate-300 hover:text-white border border-slate-200 dark:border-slate-700/60">
+                    <span>🎯 Onde estou escalado</span>
+                    <span id="badge-count-escalado" class="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-300 font-mono font-bold">0</span>
+                </button>
+
+                <button type="button" id="filtro-cultos-montagem" onclick="filtrarCultos('montagem')"
+                    class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer bg-slate-100 dark:bg-slate-800/70 text-slate-600 dark:text-slate-300 hover:text-white border border-slate-200 dark:border-slate-700/60">
+                    <span>🚧 Em Montagem</span>
+                    <span id="badge-count-montagem" class="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-300 font-mono font-bold">0</span>
+                </button>
+            </div>
+
+            <!-- Botão Admin de Criar Culto (se tiver permissão) -->
+            <div id="acoes-admin-cultos-header" class="hidden">
+                <button type="button" onclick="abrirModalCriarCulto()"
+                    class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-brand-400 border border-brand-500/30 hover:border-brand-500/60 transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Novo Culto</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Contêiner dinâmico dos Cultos agrupados por Mês -->
+        <div id="cultos-meses-container" class="space-y-8">
+            <div class="text-center text-slate-400 dark:text-slate-500 py-16 flex flex-col items-center justify-center gap-3">
+                <div class="w-8 h-8 rounded-full border-2 border-brand-500/30 border-t-brand-500 animate-spin"></div>
+                <span class="text-xs sm:text-sm font-medium">Carregando programação de cultos...</span>
+            </div>
+        </div>
+
+        <!-- Mensagem de lista vazia após filtro -->
+        <div id="cultos-vazio-msg" class="hidden text-center py-16 px-4 bg-white dark:bg-night-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/80 space-y-3">
+            <div class="text-3xl">🔍</div>
+            <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Nenhum culto encontrado</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">Não encontramos cultos correspondentes ao filtro selecionado.</p>
+            <button type="button" onclick="filtrarCultos('todos')" class="text-xs text-brand-500 hover:underline font-semibold cursor-pointer">Ver todos os cultos</button>
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- VISÃO 2: DETALHES DEDICADOS DO CULTO (PÁGINA CHEIA)                       -->
+    <!-- ========================================================================= -->
+    <div id="visao-culto-detalhe" class="hidden space-y-5 animate-fade-in">
+        
+        <!-- Barra de Navegação e Ações Rápidas do Culto -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+            <!-- Botão Voltar -->
+            <button type="button" onclick="voltarParaCultos()"
+                class="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand-500 dark:hover:text-brand-400 transition cursor-pointer self-start group">
+                <span class="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 group-hover:bg-brand-500/10 border border-slate-200 dark:border-slate-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                </span>
+                <span>Voltar para Programação</span>
+            </button>
+
+            <!-- Ações Rápidas Selecionadas no Grill-Me -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <!-- 1. Ouvir Playlist Completa -->
+                <button type="button" id="btn-ouvir-playlist-culto" onclick="executarPlaylistCultoAtual()"
+                    class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-brand-500 hover:bg-brand-400 text-night-950 transition flex items-center gap-2 cursor-pointer shadow-sm shadow-brand-500/20 active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <span>Ouvir Playlist</span>
+                </button>
+
+                <!-- 2. Compartilhar / Copiar para WhatsApp -->
+                <button type="button" id="btn-copiar-whatsapp-culto" onclick="copiarCultoAtualWhatsApp()"
+                    class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600/15 hover:bg-emerald-600/25 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                    title="Copiar programação e escala para enviar no WhatsApp">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    <span>Copiar WhatsApp</span>
+                </button>
+
+                <!-- 3. Exportar HPLS (Disponível se tiver permissão) -->
+                <button type="button" id="btn-exportar-hpls-culto" onclick="exportarHplsCultoAtual()"
+                    class="hidden px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-white border border-slate-200 dark:border-slate-700 transition items-center gap-1.5 cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span>.hpls</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Banner de Identificação do Culto -->
+        <div id="culto-detalhe-hero" class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm relative overflow-hidden">
+            <div id="culto-detalhe-faixa-topo" class="absolute top-0 left-0 right-0 h-1.5 bg-brand-500"></div>
+            
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2 flex-wrap text-xs text-slate-500 dark:text-slate-400">
+                        <span id="culto-detalhe-data-badge" class="font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wide">13/09 • Domingo</span>
+                        <span>•</span>
+                        <span id="culto-detalhe-horario-badge">19:00</span>
+                        <span id="culto-detalhe-status-badge" class="hidden text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-amber-500/15 text-amber-500 border border-amber-500/30">Em Montagem</span>
+                    </div>
+                    <h1 id="culto-detalhe-titulo" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                        Culto de Domingo - Santa Ceia
+                    </h1>
+                </div>
+
+                <!-- Aviso do Usuário Escalado (se aplicável) -->
+                <div id="culto-detalhe-aviso-escalado" class="hidden self-start md:self-auto">
+                    <div class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-brand-500/10 dark:bg-brand-500/15 border border-brand-500/30 text-brand-700 dark:text-brand-300 text-xs font-bold shadow-sm">
+                        <span class="text-base" id="culto-detalhe-icone-funcao">🎯</span>
+                        <div>
+                            <span class="block text-[10px] uppercase tracking-wider text-brand-600 dark:text-brand-400 font-semibold">Sua Escala</span>
+                            <span id="culto-detalhe-texto-funcao">Você toca: Bateria</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de Abas Internas do Culto (Estilo Brandbook Oficial) -->
+        <div class="border-b border-slate-200 dark:border-slate-800">
+            <nav class="flex space-x-2 sm:space-x-4 overflow-x-auto no-scrollbar" aria-label="Abas do Culto">
+                <button type="button" id="tab-btn-repertorio" onclick="mudarSubAbaCulto('repertorio')"
+                    class="py-3 px-3 sm:px-4 border-b-2 font-bold text-xs sm:text-sm transition flex items-center gap-2 border-brand-500 text-brand-600 dark:text-brand-400 cursor-pointer">
+                    <span>🎵 Repertório</span>
+                    <span id="culto-badge-count-musicas" class="text-[10px] px-1.5 py-0.2 rounded-full bg-brand-500/20 text-brand-600 dark:text-brand-400 font-mono">0</span>
+                </button>
+
+                <button type="button" id="tab-btn-escala" onclick="mudarSubAbaCulto('escala')"
+                    class="py-3 px-3 sm:px-4 border-b-2 font-semibold text-xs sm:text-sm transition flex items-center gap-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 cursor-pointer">
+                    <span>👥 Escala da Equipe</span>
+                </button>
+
+                <button type="button" id="tab-btn-midias" onclick="mudarSubAbaCulto('midias')"
+                    class="py-3 px-3 sm:px-4 border-b-2 font-semibold text-xs sm:text-sm transition flex items-center gap-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 cursor-pointer">
+                    <span>📁 Mídias & Arquivos</span>
+                    <span id="culto-badge-count-midias" class="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono">0</span>
+                </button>
+
+                <button type="button" id="tab-btn-avisos" onclick="mudarSubAbaCulto('avisos')"
+                    class="py-3 px-3 sm:px-4 border-b-2 font-semibold text-xs sm:text-sm transition flex items-center gap-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 cursor-pointer">
+                    <span>💬 Avisos & Sugestões</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Conteúdos das Abas do Culto -->
+        <div id="culto-conteudo-abas" class="pt-2">
+            
+            <!-- ABA 1: REPERTÓRIO (LISTA DE MÚSICAS) -->
+            <div id="culto-aba-repertorio" class="space-y-3">
+                <div id="culto-lista-musicas" class="space-y-2.5">
+                    <!-- Cards de música injetados dinamicamente -->
+                </div>
+            </div>
+
+            <!-- ABA 2: ESCALA DA EQUIPE -->
+            <div id="culto-aba-escala" class="hidden space-y-4">
+                <div id="culto-conteudo-escala" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                    <!-- Ministérios e voluntários injetados dinamicamente -->
+                </div>
+            </div>
+
+            <!-- ABA 3: MÍDIAS & ARQUIVOS -->
+            <div id="culto-aba-midias" class="hidden space-y-4">
+                <div id="culto-conteudo-midias" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <!-- Arquivos e mídias anexadas -->
+                </div>
+            </div>
+
+            <!-- ABA 4: AVISOS & SUGESTÕES -->
+            <div id="culto-aba-avisos" class="hidden space-y-4">
+                <div id="culto-conteudo-avisos" class="bg-white dark:bg-night-900/70 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
+                    <!-- Formulário de sugestão de louvor ou avisos gerais -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- VISÃO 3: DETALHES DEDICADOS DA MÚSICA (PÁGINA CHEIA)                      -->
+    <!-- ========================================================================= -->
+    <div id="visao-musica-detalhe" class="hidden space-y-5 animate-fade-in">
+        
+        <!-- Barra de Navegação Superior da Música -->
+        <div class="flex items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+            <button type="button" onclick="voltarParaCultoDetalhe()"
+                class="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand-500 dark:hover:text-brand-400 transition cursor-pointer group">
+                <span class="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 group-hover:bg-brand-500/10 border border-slate-200 dark:border-slate-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                </span>
+                <span id="musica-btn-voltar-texto">Voltar para o Culto</span>
+            </button>
+        </div>
+
+        <!-- Hero da Música: Foto / Artwork, Título e Artista -->
+        <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+            <!-- Capa / Foto da Música -->
+            <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 shadow-md shrink-0 flex items-center justify-center group">
+                <img id="musica-detalhe-foto" src="" alt="Capa da Música" class="w-full h-full object-cover hidden" />
+                <div id="musica-detalhe-foto-fallback" class="w-full h-full flex flex-col items-center justify-center text-brand-500 bg-gradient-to-br from-brand-500/10 to-brand-500/25">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                </div>
+            </div>
+
+            <!-- Identificação Principal -->
+            <div class="flex-1 text-center sm:text-left space-y-2 min-w-0">
+                <div class="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                    <span id="musica-detalhe-ordem-badge" class="text-[11px] font-mono font-bold px-2 py-0.5 rounded-md bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 uppercase">Faixa 1</span>
+                    <span id="musica-detalhe-tom-badge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">Tom: G</span>
+                </div>
+                <h1 id="musica-detalhe-titulo" class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
+                    Nome da Música
+                </h1>
+                <p id="musica-detalhe-artista" class="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">
+                    Artista / Ministério
+                </p>
+                <div id="musica-detalhe-cantor-bloco" class="hidden pt-1">
+                    <span class="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                        <span class="text-brand-500">🎤</span> Ministro: <strong id="musica-detalhe-cantor-nome" class="font-semibold text-slate-900 dark:text-white"></strong>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Abas Internas da Música (Info & Links | Cifra | Letra) -->
+        <div class="border-b border-slate-200 dark:border-slate-800">
+            <nav class="flex space-x-2 sm:space-x-4 overflow-x-auto no-scrollbar" aria-label="Abas da Música">
+                <button type="button" id="tab-btn-musica-info" onclick="mudarSubAbaMusica('info')"
+                    class="py-3 px-3 sm:px-4 border-b-2 font-bold text-xs sm:text-sm transition flex items-center gap-2 border-brand-500 text-brand-600 dark:text-brand-400 cursor-pointer">
+                    <span>ℹ️ Info & Links</span>
+                </button>
+
+                <button type="button" id="tab-btn-musica-cifra" onclick="mudarSubAbaMusica('cifra')"
+                    class="py-3 px-3 sm:px-4 border-b-2 font-semibold text-xs sm:text-sm transition flex items-center gap-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 cursor-pointer">
+                    <span>🎸 Cifra Completa</span>
+                </button>
+
+                <button type="button" id="tab-btn-musica-letra" onclick="mudarSubAbaMusica('letra')"
+                    class="py-3 px-3 sm:px-4 border-b-2 font-semibold text-xs sm:text-sm transition flex items-center gap-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 cursor-pointer">
+                    <span>📄 Letra do Louvor</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Conteúdos das Abas da Música -->
+        <div id="musica-conteudo-abas" class="pt-2">
+
+            <!-- ABA 1: INFO & LINKS -->
+            <div id="musica-aba-info" class="space-y-6">
+                <!-- Seção 1: Metadados da Música -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="p-3.5 rounded-xl bg-white dark:bg-night-900/80 border border-slate-200 dark:border-slate-800 text-center space-y-1">
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Tom</span>
+                        <div id="musica-meta-tom" class="text-base font-extrabold text-brand-600 dark:text-brand-400">—</div>
+                    </div>
+                    <div class="p-3.5 rounded-xl bg-white dark:bg-night-900/80 border border-slate-200 dark:border-slate-800 text-center space-y-1">
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">BPM</span>
+                        <div id="musica-meta-bpm" class="text-base font-extrabold text-slate-700 dark:text-slate-200">—</div>
+                    </div>
+                    <div class="p-3.5 rounded-xl bg-white dark:bg-night-900/80 border border-slate-200 dark:border-slate-800 text-center space-y-1">
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Duração</span>
+                        <div id="musica-meta-duracao" class="text-base font-extrabold text-slate-700 dark:text-slate-200">—</div>
+                    </div>
+                    <div class="p-3.5 rounded-xl bg-white dark:bg-night-900/80 border border-slate-200 dark:border-slate-800 text-center space-y-1">
+                        <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Arranjo / Versão</span>
+                        <div id="musica-meta-versao" class="text-base font-extrabold text-slate-700 dark:text-slate-200 truncate">Original</div>
+                    </div>
+                </div>
+
+                <!-- Seção 2: Links e Ferramentas -->
+                <div class="space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 px-1">Links e Ferramentas</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- Ouvir VS no Player Oficial Liturge -->
+                        <button type="button" id="btn-musica-ouvir-vs" onclick="tocarVsMusicaAtual()"
+                            class="p-4 rounded-xl bg-gradient-to-r from-brand-500/15 to-brand-600/10 hover:from-brand-500/25 hover:to-brand-600/20 border border-brand-500/30 text-slate-900 dark:text-white flex items-center justify-between transition cursor-pointer group shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-brand-500 text-night-950 flex items-center justify-center font-bold shadow-md shadow-brand-500/20 group-hover:scale-105 transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                </div>
+                                <div class="text-left">
+                                    <span class="block text-sm font-bold">Ouvir Multitrack / VS</span>
+                                    <span class="text-[11px] text-brand-600 dark:text-brand-400 font-medium">Player Oficial Liturge</span>
+                                </div>
+                            </div>
+                            <span class="text-xs font-bold text-brand-600 dark:text-brand-400">▶ Tocar</span>
+                        </button>
+
+                        <!-- Abrir no YouTube -->
+                        <a id="btn-musica-link-youtube" href="#" target="_blank"
+                            class="p-4 rounded-xl bg-white dark:bg-night-900/80 hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white flex items-center justify-between transition group shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-rose-600/15 text-rose-500 border border-rose-500/30 flex items-center justify-center group-hover:scale-105 transition">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" fill="#fff"></polygon></svg>
+                                </div>
+                                <div class="text-left">
+                                    <span class="block text-sm font-bold">Assistir no YouTube</span>
+                                    <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Clipe ou referência oficial</span>
+                                </div>
+                            </div>
+                            <span class="text-slate-400 group-hover:translate-x-0.5 transition">↗</span>
+                        </a>
+
+                        <!-- Spotify (Preparado) -->
+                        <div class="p-4 rounded-xl bg-slate-50 dark:bg-night-900/40 border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 flex items-center justify-between opacity-70 select-none">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-emerald-600/10 text-emerald-500 flex items-center justify-center font-bold">
+                                    🎧
+                                </div>
+                                <div class="text-left">
+                                    <span class="block text-sm font-semibold">Spotify</span>
+                                    <span class="text-[11px] text-slate-400">Em breve</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500">Futuro</span>
+                        </div>
+
+                        <!-- Letras.mus (Preparado) -->
+                        <div class="p-4 rounded-xl bg-slate-50 dark:bg-night-900/40 border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 flex items-center justify-between opacity-70 select-none">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-indigo-600/10 text-indigo-500 flex items-center justify-center font-bold">
+                                    📝
+                                </div>
+                                <div class="text-left">
+                                    <span class="block text-sm font-semibold">Letras.mus.br</span>
+                                    <span class="text-[11px] text-slate-400">Em breve</span>
+                                </div>
+                            </div>
+                            <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-500">Futuro</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA 2: CIFRA COMPLETA COM TRANSPOSIÇÃO -->
+            <div id="musica-aba-cifra" class="hidden space-y-4">
+                <!-- Barra de Ferramentas de Cifra -->
+                <div class="bg-white dark:bg-night-900/80 border border-slate-200 dark:border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tom:</span>
+                        <div class="flex items-center gap-1">
+                            <button type="button" onclick="transporCifraMusicaAtual(-1)" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-brand-500 hover:text-night-950 font-bold text-sm transition flex items-center justify-center cursor-pointer" title="Descer meio tom">-</button>
+                            <span id="cifra-tom-atual-display" class="px-3 py-1 rounded-lg bg-brand-500/15 border border-brand-500/30 text-brand-600 dark:text-brand-400 font-extrabold text-sm min-w-[40px] text-center">G</span>
+                            <button type="button" onclick="transporCifraMusicaAtual(1)" class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-brand-500 hover:text-night-950 font-bold text-sm transition flex items-center justify-center cursor-pointer" title="Subir meio tom">+</button>
+                            <button type="button" onclick="resetarTomCifraMusicaAtual()" class="text-[11px] text-slate-500 hover:text-brand-500 font-semibold ml-1 cursor-pointer underline">Original</button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <!-- Ajuste de Tamanho da Fonte -->
+                        <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                            <button type="button" onclick="ajustarFonteCifra(-1)" class="px-2 py-0.5 rounded text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 cursor-pointer" title="Diminuir texto">A-</button>
+                            <button type="button" onclick="ajustarFonteCifra(1)" class="px-2 py-0.5 rounded text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 cursor-pointer" title="Aumentar texto">A+</button>
+                        </div>
+
+                        <!-- Copiar Cifra -->
+                        <button type="button" onclick="copiarCifraAtual()" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer flex items-center gap-1.5">
+                            <span>📋 Copiar</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Folha de Cifra -->
+                <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm overflow-x-auto">
+                    <pre id="musica-cifra-texto" class="font-mono text-xs sm:text-sm leading-relaxed whitespace-pre text-slate-800 dark:text-slate-200 select-text">
+Carregando acordes e cifra...
+                    </pre>
+                </div>
+            </div>
+
+            <!-- ABA 3: LETRA DO LOUVOR -->
+            <div id="musica-aba-letra" class="hidden space-y-4">
+                <!-- Barra de Ferramentas de Letra -->
+                <div class="bg-white dark:bg-night-900/80 border border-slate-200 dark:border-slate-800 rounded-xl p-3 flex items-center justify-between gap-3 shadow-sm">
+                    <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Visualização de Letra</span>
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                            <button type="button" onclick="ajustarFonteLetra(-1)" class="px-2 py-0.5 rounded text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 cursor-pointer" title="Diminuir texto">A-</button>
+                            <button type="button" onclick="ajustarFonteLetra(1)" class="px-2 py-0.5 rounded text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 cursor-pointer" title="Aumentar texto">A+</button>
+                        </div>
+                        <button type="button" onclick="copiarLetraAtual()" class="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition cursor-pointer flex items-center gap-1.5">
+                            <span>📋 Copiar</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Folha de Letra -->
+                <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-sm">
+                    <div id="musica-letra-texto" class="font-sans text-sm sm:text-base leading-relaxed whitespace-pre-line text-slate-800 dark:text-slate-200 select-text max-w-2xl mx-auto">
+Carregando letra do louvor...
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
 </div>

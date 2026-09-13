@@ -444,5 +444,11 @@ html.theme-light .border-purple-800\/60 {
     border-color: #d8b4fe !important;
 }
 
-
-
+/* Utilitários para navegação fluida de abas e cards */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

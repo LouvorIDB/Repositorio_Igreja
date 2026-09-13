@@ -897,87 +897,200 @@ function resetarModoSimulacaoPerfil() {
 window.alterarModoSimulacaoPerfil = alterarModoSimulacaoPerfil;
 window.resetarModoSimulacaoPerfil = resetarModoSimulacaoPerfil;
 
-function renderizarCultos(rows) {
-    const container = document.getElementById('secao-cultos');
-    if (!container) return;
-    container.innerHTML = '';
+// =========================================================================
+// ARQUITETURA MODULAR DE CULTOS (ESTILO LITURGE BRANDBOOK)
+// =========================================================================
 
-    let blocoAtual = null;
-    let idPlaylistAtual = '';
-    let blocoEmMontagem = false;
-    let blocoOculto = false;
-    let htmlCultos = '';
-    let contadorCard = 0;
-    let contadorBloco = 0;
+window.cultosProcessados = [];
+window.cultoAtualIndex = 0;
+window.musicaAtualDetalhe = null;
+window.filtroCultosAtual = 'todos';
+window.tomMusicaAtualOriginal = 'C';
+window.tomMusicaAtualCorrente = 'C';
+
+let tamanhoFonteCifra = 13;
+let tamanhoFonteLetra = 15;
+
+const NOMES_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const DIAS_SEMANA = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+
+function identificarTipoCulto(nomeCulto) {
+    const nomeUp = (nomeCulto || '').toUpperCase();
+    if (nomeUp.includes('SANTA CEIA') || nomeUp.includes('CEIA')) {
+        return {
+            label: 'Santa Ceia',
+            stripeClass: 'border-l-4 border-rose-600 dark:border-l-rose-500',
+            badgeClass: 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30',
+            corFundo: 'bg-rose-600',
+            icone: '🍷'
+        };
+    }
+    if (nomeUp.includes('JOVENS') || nomeUp.includes('TEENS') || nomeUp.includes('JUVENTUDE')) {
+        return {
+            label: 'Culto de Jovens',
+            stripeClass: 'border-l-4 border-purple-600 dark:border-l-purple-500',
+            badgeClass: 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30',
+            corFundo: 'bg-purple-600',
+            icone: '⚡'
+        };
+    }
+    if (nomeUp.includes('QUARTA')) {
+        return {
+            label: 'Quarta-feira',
+            stripeClass: 'border-l-4 border-indigo-600 dark:border-l-indigo-500',
+            badgeClass: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30',
+            corFundo: 'bg-indigo-600',
+            icone: '📖'
+        };
+    }
+    if (nomeUp.includes('DOMINGO')) {
+        return {
+            label: 'Culto de Domingo',
+            stripeClass: 'border-l-4 border-amber-500',
+            badgeClass: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30',
+            corFundo: 'bg-amber-500',
+            icone: '☀️'
+        };
+    }
+    return {
+        label: 'Culto Especial',
+        stripeClass: 'border-l-4 border-emerald-600 dark:border-l-emerald-500',
+        badgeClass: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30',
+        corFundo: 'bg-emerald-600',
+        icone: '✨'
+    };
+}
+
+function extrairIconeFuncao(roleStr) {
+    const r = (roleStr || '').toLowerCase();
+    if (r.includes('bateria')) return '🥁';
+    if (r.includes('violao') || r.includes('violão') || r.includes('guitarra')) return '🎸';
+    if (r.includes('baixo')) return '🎸';
+    if (r.includes('teclado') || r.includes('piano')) return '🎹';
+    if (r.includes('vocal') || r.includes('cantor') || r.includes('voz')) return '🎤';
+    if (r.includes('midia') || r.includes('mídia') || r.includes('projec') || r.includes('slide')) return '💻';
+    if (r.includes('som') || r.includes('audio') || r.includes('áudio') || r.includes('mesa')) return '🎛️';
+    if (r.includes('pastor') || r.includes('pregad') || r.includes('bispo')) return '✝️';
+    return '🎯';
+}
+
+function processarMatrizCultos(rows) {
+    const cultos = [];
+    let cultoAtual = null;
+    let contadorCulto = 0;
+    window.liturgeCultosPlaylists = window.liturgeCultosPlaylists || {};
+
+    const userToEval = (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil) || usuarioLogado || window.__CACHED_USER__;
+    const nomeUsuarioNorm = userToEval ? (userToEval.name || userToEval.full_name || userToEval.nome || '').trim().toLowerCase() : '';
 
     for (let i = 0; i < rows.length; i++) {
         const linha = rows[i];
-        const textoPrimeiraColuna = linha[0] ? linha[0].toString() : '';
+        const col0 = linha[0] ? linha[0].toString().trim() : '';
 
-        if (textoPrimeiraColuna.includes("CULTO DE")) {
-            if (blocoAtual && !blocoOculto) htmlCultos += `</div></div>`;
+        const ehCabecalhoCulto = col0.includes("CULTO DE") || col0.includes("CULTO ") || (linha[5] && !linha[1] && col0 !== '');
 
-            contadorBloco++;
-            idPlaylistAtual = `playlist-culto-${contadorBloco}`;
-            const idPlaylist = idPlaylistAtual;
-            const idSeta = `seta-culto-${contadorBloco}`;
-            window.liturgeCultosPlaylists = window.liturgeCultosPlaylists || {};
-            window.liturgeCultosPlaylists[idPlaylistAtual] = [];
-            blocoAtual = textoPrimeiraColuna;
-            blocoEmMontagem = blocoAtual.toUpperCase().includes('EM MONTAGEM');
-            blocoOculto = blocoAtual.toUpperCase().includes('OCULTO');
+        if (ehCabecalhoCulto) {
+            contadorCulto++;
+            const playlistId = `playlist-culto-${contadorCulto}`;
+            window.liturgeCultosPlaylists[playlistId] = [];
 
-            // Filtragem por Mês Ativo (SaaS)
-            if (!blocoOculto && window.dadosGlobais?.church?.active_month) {
-                const mesAtivoTarget = window.dadosGlobais.church.active_month.split('-')[1]; // ex: '08'
-                const partesTitulo = blocoAtual.split(' - ');
+            const rawTitle = col0;
+            const emMontagem = rawTitle.toUpperCase().includes('EM MONTAGEM');
+            const oculto = rawTitle.toUpperCase().includes('OCULTO');
+
+            // Filtragem por Mês Ativo (SaaS) se configurado na igreja
+            if (!oculto && window.dadosGlobais?.church?.active_month) {
+                const mesAtivoTarget = window.dadosGlobais.church.active_month.split('-')[1];
+                const partesTitulo = rawTitle.split(' - ');
                 if (partesTitulo.length > 0 && partesTitulo[0].includes('/')) {
                     const dataPartes = partesTitulo[0].trim().split('/');
-                    if (dataPartes.length >= 2) {
-                        const mesDoCulto = dataPartes[1];
-                        if (mesDoCulto !== mesAtivoTarget) {
-                            blocoOculto = true;
-                        }
+                    if (dataPartes.length >= 2 && dataPartes[1] !== mesAtivoTarget) {
+                        continue;
                     }
                 }
             }
 
-            // Lê instrumentos (col F = JSON), cantores do culto (col G), e mídias (col H)
+            if (oculto) continue;
+
+            // Extração de data e título limpo
+            let dataStr = '';
+            let diaSemana = '';
+            let mesAno = 'Programação Geral';
+            let nomeLimpo = rawTitle.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim();
+
+            const matchData = nomeLimpo.match(/^(\d{1,2}\/\d{1,2})(?:\/\d{2,4})?\s*[-–]\s*(.+)$/i);
+            if (matchData) {
+                dataStr = matchData[1];
+                nomeLimpo = matchData[2].trim();
+            }
+
+            const anoAtual = new Date().getFullYear();
+            if (dataStr && dataStr.includes('/')) {
+                const [dStr, mStr] = dataStr.split('/');
+                const diaNum = parseInt(dStr, 10);
+                const mesNum = parseInt(mStr, 10);
+                if (!isNaN(diaNum) && !isNaN(mesNum) && mesNum >= 1 && mesNum <= 12) {
+                    const dataObj = new Date(anoAtual, mesNum - 1, diaNum);
+                    diaSemana = DIAS_SEMANA[dataObj.getDay()] || '';
+                    mesAno = `${NOMES_MESES[mesNum - 1]} ${anoAtual}`;
+                }
+            } else {
+                if (nomeLimpo.toUpperCase().includes('DOMINGO')) diaSemana = 'Domingo';
+                else if (nomeLimpo.toUpperCase().includes('QUARTA')) diaSemana = 'Quarta-feira';
+                else if (nomeLimpo.toUpperCase().includes('SÁBADO') || nomeLimpo.toUpperCase().includes('SABADO')) diaSemana = 'Sábado';
+                const mesAtualIndex = new Date().getMonth();
+                mesAno = `${NOMES_MESES[mesAtualIndex]} ${anoAtual}`;
+            }
+
+            // Escala e cantores (Col F = JSON, Col G = cantores, Col H = mídias)
             let instrObj = {};
             try { instrObj = linha[5] ? JSON.parse(linha[5].toString()) : {}; } catch (e) { }
             const cantoresCulto = linha[6] ? linha[6].toString().trim() : '';
             let midiasCulto = [];
             try { midiasCulto = linha[7] ? JSON.parse(linha[7].toString()) : []; } catch (e) { }
 
-            if (blocoOculto) continue;
+            // Verifica se o usuário atual está escalado
+            let userIsEscalado = false;
+            let userRole = '';
+            let iconeFuncao = '🎯';
 
-            const corHeader = blocoEmMontagem
-                ? 'bg-amber-950/15 hover:bg-amber-950/30 border-b border-amber-900/30 text-white'
-                : 'bg-night-950/70 hover:bg-night-900 border-b border-slate-800/80 text-white';
-            const corTexto = 'text-white';
+            if (nomeUsuarioNorm) {
+                for (const [papel, nomeAlocado] of Object.entries(instrObj)) {
+                    if (nomeAlocado) {
+                        const nStr = nomeAlocado.toString().toLowerCase();
+                        if (nStr.includes(nomeUsuarioNorm) || nomeUsuarioNorm.includes(nStr)) {
+                            userIsEscalado = true;
+                            userRole = papel.charAt(0).toUpperCase() + papel.slice(1);
+                            iconeFuncao = extrairIconeFuncao(papel);
+                            break;
+                        }
+                    }
+                }
+                if (!userIsEscalado && cantoresCulto) {
+                    const cLow = cantoresCulto.toLowerCase();
+                    if (cLow.includes(nomeUsuarioNorm) || nomeUsuarioNorm.includes(cLow)) {
+                        userIsEscalado = true;
+                        userRole = 'Vocalista';
+                        iconeFuncao = '🎤';
+                    }
+                }
+            }
 
-            // Build a map of roleName -> ministry
+            // Mapeamento de ministérios da igreja para a aba de escala
+            const groupedEscala = {};
             const roleToMinistry = {};
             (dadosGlobais.ministries || []).forEach(min => {
                 (min.ministry_roles || []).forEach(r => {
                     const rName = typeof removerAcentos === 'function' ? removerAcentos(r.name.toLowerCase()) : r.name.toLowerCase();
-                    roleToMinistry[rName] = {
-                        name: min.name,
-                        color: min.color || 'emerald',
-                        icon: min.icon || '🏢'
-                    };
+                    roleToMinistry[rName] = { name: min.name, color: min.color || 'emerald', icon: min.icon || '🏢' };
                 });
             });
 
-            // Identifica o ministério de Louvor para integrar cantores/vocalistas na mesma linha
             const louvorMin = (dadosGlobais.ministries || []).find(m => {
                 const n = (m.name || '').toLowerCase();
                 return n.includes('louvor') || n.includes('musica') || n.includes('adora');
             }) || { name: 'Louvor', color: 'brand', icon: '⛪' };
 
-            const groupedEscala = {};
-            
-            // Unifica todos os cantores e vocalistas sem duplicações
             const vocaisList = [];
             if (cantoresCulto) {
                 cantoresCulto.split(',').map(s => s.trim()).filter(Boolean).forEach(c => {
@@ -988,106 +1101,56 @@ function renderizarCultos(rows) {
             Object.keys(instrObj).forEach(key => {
                 if (instrObj[key]) {
                     const keyLower = typeof removerAcentos === 'function' ? removerAcentos(key.toLowerCase()) : key.toLowerCase();
-                    
-                    // Se for vocalista ou cantor, funde na lista unificada de vocais do culto
                     if (keyLower.includes('vocal') || keyLower.includes('cantor')) {
                         const nomes = instrObj[key].toString().split(',').map(s => s.trim()).filter(Boolean);
-                        nomes.forEach(n => {
-                            if (!vocaisList.includes(n)) vocaisList.push(n);
-                        });
-                        return; // Evita exibir campo duplicado
+                        nomes.forEach(n => { if (!vocaisList.includes(n)) vocaisList.push(n); });
+                        return;
                     }
-
                     const nomeFormato = key.charAt(0).toUpperCase() + key.slice(1);
                     const minInfo = roleToMinistry[keyLower] || louvorMin;
-                    
                     if (!groupedEscala[minInfo.name]) {
-                        groupedEscala[minInfo.name] = { color: minInfo.color, icon: minInfo.icon, parts: [] };
+                        groupedEscala[minInfo.name] = { color: minInfo.color, icon: minInfo.icon, parts: [], cleanParts: [] };
                     }
-                    groupedEscala[minInfo.name].parts.push(`<span class="font-medium text-slate-400">${nomeFormato}:</span> <span class="text-white font-semibold">${instrObj[key]}</span>`);
+                    groupedEscala[minInfo.name].parts.push(`<span class="font-medium text-slate-500 dark:text-slate-400">${nomeFormato}:</span> <span class="font-bold text-slate-900 dark:text-white">${instrObj[key]}</span>`);
+                    groupedEscala[minInfo.name].cleanParts.push(`${nomeFormato}: ${instrObj[key]}`);
                 }
             });
 
-            // Insere os cantores/vocalistas diretamente na linha do ministério de Louvor
             if (vocaisList.length > 0) {
                 const minName = louvorMin.name || 'Louvor';
                 if (!groupedEscala[minName]) {
-                    groupedEscala[minName] = { color: louvorMin.color || 'brand', icon: louvorMin.icon || '⛪', parts: [] };
+                    groupedEscala[minName] = { color: louvorMin.color || 'brand', icon: louvorMin.icon || '⛪', parts: [], cleanParts: [] };
                 }
                 const labelVocal = vocaisList.length > 1 ? 'Vocalistas' : 'Vocalista';
-                groupedEscala[minName].parts.push(`<span class="font-medium text-slate-400">${labelVocal}:</span> <span class="text-white font-semibold">${vocaisList.join(', ')}</span>`);
+                groupedEscala[minName].parts.push(`<span class="font-medium text-slate-500 dark:text-slate-400">${labelVocal}:</span> <span class="font-bold text-slate-900 dark:text-white">${vocaisList.join(', ')}</span>`);
+                groupedEscala[minName].cleanParts.push(`${labelVocal}: ${vocaisList.join(', ')}`);
             }
 
-            let linhaInstrumentos = '';
-            let linhaMidias = '';
+            cultoAtual = {
+                id: `culto-${contadorCulto}`,
+                index: cultos.length,
+                playlistId: playlistId,
+                rawTitle: rawTitle,
+                nome: nomeLimpo,
+                dataStr: dataStr,
+                diaSemana: diaSemana,
+                horario: '19:00',
+                mesAno: mesAno,
+                emMontagem: emMontagem,
+                oculto: oculto,
+                tipoInfo: identificarTipoCulto(nomeLimpo),
+                userIsEscalado: userIsEscalado,
+                userRole: userRole,
+                iconeFuncao: iconeFuncao,
+                groupedEscala: groupedEscala,
+                midias: midiasCulto,
+                songs: []
+            };
 
-            if (usuarioLogado) {
-                const canVerEscala = hasPermission('ver_escala') || hasPermission('ver_cantor');
-                const canVerMidia = hasPermission('ver_midia');
+            cultos.push(cultoAtual);
 
-                if (canVerEscala && Object.keys(groupedEscala).length > 0) {
-                    linhaInstrumentos = Object.entries(groupedEscala).map(([minName, info]) => {
-                        return `<div class="px-4 py-2 text-xs text-slate-300 bg-night-950/50 border-b border-slate-800/60 flex flex-wrap items-center gap-2.5">
-                            <span class="inline-flex items-center gap-1 font-bold text-liturge-400 bg-liturge-500/10 border border-liturge-500/20 px-2 py-0.5 rounded-md text-[10px] tracking-wider uppercase">${minName}</span>
-                            ${info.parts.join('<span class="text-slate-600">|</span>')}
-                        </div>`;
-                    }).join('');
-                }
-
-                if (canVerMidia) {
-                    if (midiasCulto && midiasCulto.length > 0) {
-                        const linksHtml = midiasCulto.map(m => `<a href="${m.url}" target="_blank" class="text-slate-200 hover:text-white hover:border-slate-700 text-xs px-2.5 py-1 rounded-md bg-night-950/90 border border-slate-800 flex items-center gap-1.5 transition font-medium"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400 shrink-0"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg><span>${m.name}</span></a>`).join('');
-                        linhaMidias = `<div class="px-4 py-2 text-xs bg-night-950/40 border-b border-slate-800/60 flex flex-wrap gap-2 items-center">
-                            <span class="text-slate-400 font-medium flex items-center gap-1.5">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400 shrink-0"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-                                <span>Mídias Anexadas:</span>
-                            </span>
-                            ${linksHtml}
-                        </div>`;
-                    }
-                }
-            }
-
-            htmlCultos += `
-                <div class="bg-night-900/90 border border-slate-800/90 rounded-2xl overflow-hidden shadow-lg mb-3.5 hover:border-slate-700/80 transition">
-                    <button onclick="toggleCultoBloco('${idPlaylist}', '${idSeta}')" class="w-full flex items-center justify-between ${corHeader} px-4 py-3 transition text-left cursor-pointer">
-                        <div class="flex items-center gap-2.5 flex-wrap">
-                            <h2 class="font-extrabold ${corTexto} text-sm uppercase tracking-wider">${blocoAtual.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim()}</h2>
-                            ${blocoEmMontagem ? '<span class="text-[10px] bg-amber-500/15 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full font-bold tracking-wider uppercase shadow-sm flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span><span>Em Montagem</span></span>' : ''}
-                        </div>
-                        <span id="${idSeta}" class="text-liturge-400 text-xs transition-transform duration-200 inline-block">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="6 9 12 15 18 9"></polyline>
-                            </svg>
-                        </span>
-                    </button>
-                    ${linhaMidias}
-                    ${linhaInstrumentos}
-                    <div id="${idPlaylist}" class="hidden divide-y divide-slate-800/60">
-            `;
-
-            if (blocoEmMontagem) {
-                const canSugestaoCulto = hasPermission('enviar_sugestao_culto');
-                
-                if (canSugestaoCulto) {
-                    htmlCultos += `
-                        <div class="p-5 text-center space-y-3 bg-night-950/40 rounded-xl m-3 border border-slate-800/60">
-                            <p class="text-amber-400 text-sm font-semibold flex items-center justify-center gap-2"><span>🚧</span> Playlist em montagem</p>
-                            <p class="text-slate-400 text-xs">Envie sugestões de louvores para este culto:</p>
-                            <div class="flex flex-col sm:flex-row gap-2 max-w-md mx-auto">
-                                <input type="text" id="sugestao-autor-${contadorBloco}" placeholder="Seu nome" class="sm:w-1/3 bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-liturge-500 font-sans">
-                                <input type="text" id="sugestao-texto-${contadorBloco}" placeholder="Escreva sua sugestão de música" class="sm:w-2/3 bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-liturge-500 font-sans">
-                            </div>
-                            <div class="flex justify-center gap-2 mt-2">
-                                <button onclick="enviarComentario('${blocoAtual.replace(/'/g, "\\'")}','sugestao-autor-${contadorBloco}','sugestao-texto-${contadorBloco}','sugestao-status-${contadorBloco}','Sugestão para Culto')" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm shadow-md shadow-liturge-500/20 cursor-pointer transition">Enviar Sugestão</button>
-                            </div>
-                            <p id="sugestao-status-${contadorBloco}" class="text-xs text-liturge-400 hidden font-medium">Sugestão enviada com sucesso!</p>
-                        </div>
-                    `;
-                }
-            }
-        } else if (blocoAtual && !blocoOculto && textoPrimeiraColuna.trim() !== '' && !blocoEmMontagem) {
-            const musica = linha[0];
+        } else if (cultoAtual && col0 !== '' && !cultoAtual.emMontagem) {
+            const musica = linha[0] ? linha[0].toString().trim() : '';
             const tom = linha[1] || '';
             const variacao = linha[2] || '';
             const vsCelular = linha[3] || '';
@@ -1097,81 +1160,765 @@ function renderizarCultos(rows) {
             const chordsTexto = linha[8] ? linha[8].toString().trim() : '';
             const artistaMusica = linha[9] ? linha[9].toString().trim() : '';
 
-            const fileId = obterUrlAudioVs(vsCelular);
-            const linkYoutubeFinal = obterLinkYoutube(ytDado, musica);
-            
-            // Em vez de hardcodado, verificamos as permissões granulares:
-            const canVerLetra = hasPermission('ver_letra');
-            const canVerCifra = hasPermission('ver_cifra');
-            const canVerVs = hasPermission('ver_vs');
-            const canVerYoutube = hasPermission('ver_youtube');
-            const canVerCantor = hasPermission('ver_cantor');
-            const canPedirAjuste = hasPermission('enviar_solic_musica');
+            const fileId = typeof obterUrlAudioVs === 'function' ? obterUrlAudioVs(vsCelular) : vsCelular;
+            const linkYoutubeFinal = typeof obterLinkYoutube === 'function' ? obterLinkYoutube(ytDado, musica) : (ytDado ? `https://www.youtube.com/watch?v=${ytDado}` : '');
 
-            // Registra faixa na playlist do culto atual para controle contínuo em segundo plano e tela de bloqueio
-            let trackIndexCulto = -1;
-            const currentListId = idPlaylistAtual || `playlist-culto-${contadorBloco}`;
-            if (canVerVs && vsCelular) {
-                window.liturgeCultosPlaylists = window.liturgeCultosPlaylists || {};
-                window.liturgeCultosPlaylists[currentListId] = window.liturgeCultosPlaylists[currentListId] || [];
-                window.liturgeCultosPlaylists[currentListId].push({
-                    title: musica.toString().trim(),
+            let trackIndex = -1;
+            if (vsCelular && fileId) {
+                window.liturgeCultosPlaylists[cultoAtual.playlistId].push({
+                    title: musica,
                     fileIdOrUrl: fileId,
                     artist: artistaMusica || cantoresMusica || 'Liturge • Louvor',
-                    album: blocoAtual.replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim(),
-                    cultoId: currentListId
+                    album: cultoAtual.nome,
+                    cultoId: cultoAtual.playlistId
                 });
-                trackIndexCulto = window.liturgeCultosPlaylists[currentListId].length - 1;
+                trackIndex = window.liturgeCultosPlaylists[cultoAtual.playlistId].length - 1;
             }
 
-            const btnLetraCulto = (lyricsTexto && canVerLetra)
-                ? `<button onclick="abrirModalLetraPublica('${musica.toString().replace(/'/g, "\\'")}', 'Tom: ${tom}', '${encodeURIComponent(lyricsTexto)}')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 hover:border-liturge-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                    <span>Letra</span>
-                </button>`
-                : '';
-            const btnCifraCulto = (chordsTexto && canVerCifra)
-                ? `<button onclick="abrirModalCifraPublica('${musica.toString().replace(/'/g, "\\'")}', '${tom}', '${encodeURIComponent(chordsTexto)}')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700/80 hover:border-liturge-500/40 px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    <span>Cifra</span>
-                </button>`
-                : '';
-            contadorCard++;
-            
-            htmlCultos += `
-                <div class="p-4 flex flex-col gap-2 hover:bg-night-950/30 transition">
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                        <div>
-                            <h3 class="font-bold text-white text-base">${musica} ${artistaMusica ? `<span class="text-xs font-normal text-slate-400 ml-1.5">(${artistaMusica})</span>` : ''}</h3>
-                            <div class="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-slate-400">
-                                ${canVerCifra ? `<span class="bg-night-950 border border-slate-800 px-2.5 py-0.5 rounded-md text-[11px] font-mono"><span class="text-slate-400 font-normal">Tom:</span> <span class="text-slate-200 font-bold">${tom} ${variacao ? '(' + variacao + ')' : ''}</span></span>` : ''}
-                                ${(canVerCantor && cantoresMusica) ? `<span class="text-slate-400 text-xs flex items-center gap-1.5 font-medium"><span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Voz:</span> <span class="text-slate-200">${cantoresMusica}</span></span>` : ''}
-                            </div>
+            cultoAtual.songs.push({
+                index: cultoAtual.songs.length,
+                title: musica,
+                tom: tom,
+                variacao: variacao,
+                vs: vsCelular,
+                fileId: fileId,
+                trackIndex: trackIndex,
+                yt: ytDado,
+                linkYoutube: linkYoutubeFinal,
+                cantor: cantoresMusica,
+                lyrics: lyricsTexto,
+                chords: chordsTexto,
+                artist: artistaMusica,
+                cultoNome: cultoAtual.nome,
+                playlistId: cultoAtual.playlistId
+            });
+        }
+    }
+
+    return cultos;
+}
+
+function renderizarCultos(rows) {
+    const container = document.getElementById('secao-cultos');
+    if (!container) return;
+
+    const mesesContainer = document.getElementById('cultos-meses-container');
+    if (!mesesContainer) {
+        setTimeout(() => renderizarCultos(rows), 100);
+        return;
+    }
+
+    window.cultosProcessados = processarMatrizCultos(rows || []);
+    atualizarContadoresFiltro();
+    aplicarFiltroCultosRender(window.filtroCultosAtual || 'todos');
+
+    // Se usuário tiver permissão de criar cultos, exibe o botão
+    const btnNovoCulto = document.getElementById('acoes-admin-cultos-header');
+    if (btnNovoCulto) {
+        const canCriarCulto = hasPermission('criar_culto') || hasPermission('gerenciar_cultos');
+        btnNovoCulto.classList.toggle('hidden', !canCriarCulto);
+    }
+}
+
+function atualizarContadoresFiltro() {
+    const total = window.cultosProcessados.length;
+    const escalados = window.cultosProcessados.filter(c => c.userIsEscalado).length;
+    const montagem = window.cultosProcessados.filter(c => c.emMontagem).length;
+
+    const badgeTodos = document.getElementById('badge-count-todos');
+    const badgeEscalado = document.getElementById('badge-count-escalado');
+    const badgeMontagem = document.getElementById('badge-count-montagem');
+
+    if (badgeTodos) badgeTodos.textContent = total;
+    if (badgeEscalado) badgeEscalado.textContent = escalados;
+    if (badgeMontagem) badgeMontagem.textContent = montagem;
+}
+
+function filtrarCultos(tipo) {
+    window.filtroCultosAtual = tipo;
+
+    const btnTodos = document.getElementById('filtro-cultos-todos');
+    const btnEscalado = document.getElementById('filtro-cultos-escalado');
+    const btnMontagem = document.getElementById('filtro-cultos-montagem');
+
+    const estiloAtivo = "px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-brand-500 text-night-950 shadow-sm shadow-brand-500/20";
+    const estiloInativo = "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer bg-slate-100 dark:bg-slate-800/70 text-slate-600 dark:text-slate-300 hover:text-white border border-slate-200 dark:border-slate-700/60";
+
+    if (btnTodos) btnTodos.className = tipo === 'todos' ? estiloAtivo : estiloInativo;
+    if (btnEscalado) btnEscalado.className = tipo === 'escalado' ? estiloAtivo : estiloInativo;
+    if (btnMontagem) btnMontagem.className = tipo === 'montagem' ? estiloAtivo : estiloInativo;
+
+    aplicarFiltroCultosRender(tipo);
+}
+
+function aplicarFiltroCultosRender(tipo) {
+    const mesesContainer = document.getElementById('cultos-meses-container');
+    const msgVazio = document.getElementById('cultos-vazio-msg');
+    if (!mesesContainer) return;
+
+    let lista = [...window.cultosProcessados];
+    if (tipo === 'escalado') {
+        lista = lista.filter(c => c.userIsEscalado);
+    } else if (tipo === 'montagem') {
+        lista = lista.filter(c => c.emMontagem);
+    }
+
+    if (lista.length === 0) {
+        mesesContainer.innerHTML = '';
+        if (msgVazio) msgVazio.classList.remove('hidden');
+        return;
+    } else {
+        if (msgVazio) msgVazio.classList.add('hidden');
+    }
+
+    // Agrupa por Mês/Ano
+    const gruposMes = {};
+    lista.forEach(c => {
+        if (!gruposMes[c.mesAno]) gruposMes[c.mesAno] = [];
+        gruposMes[c.mesAno].push(c);
+    });
+
+    let htmlMeses = '';
+    Object.entries(gruposMes).forEach(([mesAno, cultosDoMes]) => {
+        htmlMeses += `
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">${mesAno}</h2>
+                    <div class="h-px flex-1 bg-slate-200 dark:bg-slate-800"></div>
+                    <span class="text-[11px] font-mono text-slate-400 dark:text-slate-500">${cultosDoMes.length} culto(s)</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+        `;
+
+        cultosDoMes.forEach(culto => {
+            const destaqueEscalado = culto.userIsEscalado
+                ? 'ring-2 ring-brand-500/50 dark:ring-brand-500/40 shadow-md shadow-brand-500/10 bg-gradient-to-br from-brand-50/50 to-white dark:from-brand-950/20 dark:to-night-900/90'
+                : 'bg-white dark:bg-night-900/90';
+
+            htmlMeses += `
+                <div onclick="abrirDetalhesCulto(${culto.index})" 
+                     class="group relative ${destaqueEscalado} border border-slate-200/90 dark:border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-md hover:border-brand-500/50 dark:hover:border-brand-500/50 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 overflow-hidden ${culto.tipoInfo.stripeClass}">
+                    
+                    <!-- Topo: Data, dia da semana e status -->
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                            <span class="font-bold text-slate-900 dark:text-white uppercase tracking-wider">${culto.dataStr || 'Culto'}</span>
+                            ${culto.diaSemana ? `<span>•</span><span class="capitalize">${culto.diaSemana}</span>` : ''}
+                            ${culto.horario ? `<span>•</span><span>${culto.horario}</span>` : ''}
                         </div>
-                        <div class="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
-                            ${(canVerVs && vsCelular) ? `<button onclick="LiturgePlayer.tocarDoCulto('${currentListId}', ${trackIndexCulto})" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-1.5 cursor-pointer"><span>▶</span> Ouvir VS</button>` : ''}
-                            ${btnLetraCulto}
-                            ${btnCifraCulto}
-                            ${(canVerYoutube && linkYoutubeFinal) ? `<button onclick="playYoutubeAudio('${musica.toString().replace(/'/g, "\\'")}', '${linkYoutubeFinal}')" class="bg-red-700/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1"><span>📺</span> YouTube</button>` : ''}
-                            ${canPedirAjuste ? `<button onclick="toggleComentario('culto-${contadorCard}')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700/80 px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center gap-1"><span>💬</span> Ajuste</button>` : ''}
+                        ${culto.emMontagem ? `
+                            <span class="inline-flex items-center gap-1.5 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-sm">
+                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                                Em Montagem
+                            </span>
+                        ` : ''}
+                    </div>
+
+                    <!-- Título do Culto -->
+                    <div class="space-y-1">
+                        <h3 class="text-sm sm:text-base font-black text-slate-900 dark:text-white uppercase tracking-tight group-hover:text-brand-600 dark:group-hover:text-brand-400 transition leading-snug line-clamp-2">
+                            ${culto.nome}
+                        </h3>
+                    </div>
+
+                    <!-- Rodapé do Card: Destaque de Escalado + Contadores -->
+                    <div class="pt-2 border-t border-slate-100 dark:border-slate-800/70 flex items-center justify-between gap-2 flex-wrap text-xs">
+                        ${culto.userIsEscalado ? `
+                            <span class="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-brand-500/15 text-brand-700 dark:text-brand-300 border border-brand-500/30">
+                                <span>${culto.iconeFuncao}</span>
+                                <span>Escalado: ${culto.userRole}</span>
+                            </span>
+                        ` : `
+                            <span class="text-[11px] text-slate-400 dark:text-slate-500 font-medium">${culto.tipoInfo.label}</span>
+                        `}
+
+                        <div class="flex items-center gap-2 text-slate-400 text-[11px] font-medium ml-auto">
+                            <span>🎵 ${culto.songs.length}</span>
+                            ${culto.midias.length > 0 ? `<span>📁 ${culto.midias.length}</span>` : ''}
+                            <span class="text-brand-500 font-bold group-hover:translate-x-0.5 transition inline-block">›</span>
                         </div>
                     </div>
                 </div>
-                <div id="culto-${contadorCard}" class="hidden p-4 bg-night-950/70 border-t border-slate-800/80 space-y-2">
-                    <div class="flex gap-2">
-                        <input type="text" id="autor-c-${contadorCard}" placeholder="Seu nome" class="w-1/3 bg-night-950 border border-slate-800 px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none focus:border-liturge-500 font-sans">
-                        <input type="text" id="comentario-c-${contadorCard}" placeholder="Ex: Mudar tom para C..." class="w-2/3 bg-night-950 border border-slate-800 px-3 py-1.5 rounded-lg text-xs text-white focus:outline-none focus:border-liturge-500 font-sans">
-                        <button onclick="enviarComentario('${musica.toString().replace(/'/g, "\\'")}','autor-c-${contadorCard}','comentario-c-${contadorCard}','status-c-${contadorCard}','Ajuste de Tom')" class="bg-liturge-500 hover:bg-liturge-400 text-night-950 font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer transition">Enviar</button>
+            `;
+        });
+
+        htmlMeses += `
+                </div>
+            </div>
+        `;
+    });
+
+    mesesContainer.innerHTML = htmlMeses;
+}
+
+// =========================================================================
+// VISÃO 2: TELA DEDICADA DE DETALHES DO CULTO
+// =========================================================================
+
+function abrirDetalhesCulto(cultoIndex, skipPushState = false) {
+    const culto = window.cultosProcessados[cultoIndex];
+    if (!culto) return;
+    window.cultoAtualIndex = cultoIndex;
+
+    const vLista = document.getElementById('visao-cultos-lista');
+    const vCulto = document.getElementById('visao-culto-detalhe');
+    const vMusica = document.getElementById('visao-musica-detalhe');
+
+    if (vLista) vLista.classList.add('hidden');
+    if (vMusica) vMusica.classList.add('hidden');
+    if (vCulto) vCulto.classList.remove('hidden');
+
+    if (!skipPushState && window.history && window.history.pushState) {
+        window.history.pushState({ view: 'culto-detalhe', cultoIndex: cultoIndex }, '', `#culto-${cultoIndex}`);
+    }
+
+    // Preenche Hero do Culto
+    const elTitulo = document.getElementById('culto-detalhe-titulo');
+    const elDataBadge = document.getElementById('culto-detalhe-data-badge');
+    const elHorarioBadge = document.getElementById('culto-detalhe-horario-badge');
+    const elStatusBadge = document.getElementById('culto-detalhe-status-badge');
+    const elFaixaTopo = document.getElementById('culto-detalhe-faixa-topo');
+
+    if (elTitulo) elTitulo.textContent = culto.nome;
+    if (elDataBadge) elDataBadge.textContent = `${culto.dataStr || 'Culto'} • ${culto.diaSemana || ''}`;
+    if (elHorarioBadge) elHorarioBadge.textContent = culto.horario || '19:00';
+    if (elStatusBadge) elStatusBadge.classList.toggle('hidden', !culto.emMontagem);
+    if (elFaixaTopo) elFaixaTopo.className = `absolute top-0 left-0 right-0 h-1.5 ${culto.tipoInfo.corFundo}`;
+
+    // Aviso se estiver escalado
+    const elAvisoEscalado = document.getElementById('culto-detalhe-aviso-escalado');
+    const elIconeFuncao = document.getElementById('culto-detalhe-icone-funcao');
+    const elTextoFuncao = document.getElementById('culto-detalhe-texto-funcao');
+    if (elAvisoEscalado) {
+        if (culto.userIsEscalado) {
+            elAvisoEscalado.classList.remove('hidden');
+            if (elIconeFuncao) elIconeFuncao.textContent = culto.iconeFuncao || '🎯';
+            if (elTextoFuncao) elTextoFuncao.textContent = `Você toca: ${culto.userRole}`;
+        } else {
+            elAvisoEscalado.classList.add('hidden');
+        }
+    }
+
+    // Atualiza contadores de abas
+    const badgeMusicas = document.getElementById('culto-badge-count-musicas');
+    const badgeMidias = document.getElementById('culto-badge-count-midias');
+    if (badgeMusicas) badgeMusicas.textContent = culto.songs.length;
+    if (badgeMidias) badgeMidias.textContent = culto.midias.length;
+
+    // Renderiza Lista de Músicas do Culto
+    const listaMusicasEl = document.getElementById('culto-lista-musicas');
+    if (listaMusicasEl) {
+        if (culto.songs.length === 0) {
+            listaMusicasEl.innerHTML = `
+                <div class="p-8 text-center bg-white dark:bg-night-900/40 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
+                    <div class="text-2xl">🎵</div>
+                    <p class="text-sm font-bold text-slate-700 dark:text-slate-300">${culto.emMontagem ? 'Playlist ainda em montagem' : 'Nenhuma música cadastrada'}</p>
+                    <p class="text-xs text-slate-400 max-w-sm mx-auto">Você pode conferir a escala ou sugerir novas músicas na aba de Avisos & Sugestões.</p>
+                </div>
+            `;
+        } else {
+            listaMusicasEl.innerHTML = culto.songs.map((song, idx) => {
+                return `
+                    <div onclick="abrirDetalhesMusica(${idx}, ${cultoIndex})"
+                         class="group p-3 sm:p-4 rounded-xl bg-white dark:bg-night-900/80 hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-slate-200 dark:border-slate-800 hover:border-brand-500/40 transition cursor-pointer flex items-center justify-between gap-3 shadow-sm">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="w-8 h-8 rounded-lg bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20 flex items-center justify-center font-bold text-xs shrink-0 font-mono">
+                                ${idx + 1}
+                            </span>
+                            <div class="min-w-0">
+                                <h4 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base group-hover:text-brand-600 dark:group-hover:text-brand-400 transition truncate leading-snug">
+                                    ${song.title}
+                                </h4>
+                                <div class="flex items-center gap-2 flex-wrap text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                    ${song.artist ? `<span>${song.artist}</span><span>•</span>` : ''}
+                                    ${song.tom ? `<span class="font-bold text-brand-600 dark:text-brand-400">Tom: ${song.tom}</span>` : ''}
+                                    ${song.cantor ? `<span>•</span><span class="text-slate-600 dark:text-slate-300">🎤 ${song.cantor}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2 shrink-0">
+                            ${song.vs ? `
+                                <button type="button" onclick="event.stopPropagation(); LiturgePlayer.tocarDoCulto('${culto.playlistId}', ${song.trackIndex})"
+                                        class="p-2 sm:px-3 sm:py-1.5 rounded-lg bg-brand-500/10 hover:bg-brand-500 text-brand-600 dark:text-brand-400 hover:text-night-950 border border-brand-500/30 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="Tocar VS">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                    <span class="hidden sm:inline">VS</span>
+                                </button>
+                            ` : ''}
+                            <span class="text-slate-400 group-hover:text-brand-500 transition text-sm font-bold">›</span>
+                        </div>
                     </div>
-                    <p id="status-c-${contadorCard}" class="text-xs text-liturge-400 hidden">Enviado com sucesso!</p>
+                `;
+            }).join('');
+        }
+    }
+
+    // Renderiza Escala da Equipe
+    const escalaEl = document.getElementById('culto-conteudo-escala');
+    if (escalaEl) {
+        if (!culto.groupedEscala || Object.keys(culto.groupedEscala).length === 0) {
+            escalaEl.innerHTML = `
+                <div class="col-span-2 p-8 text-center bg-white dark:bg-night-900/40 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-400 text-xs">
+                    Nenhum integrante escalado neste culto até o momento.
+                </div>
+            `;
+        } else {
+            escalaEl.innerHTML = Object.entries(culto.groupedEscala).map(([minName, info]) => {
+                return `
+                    <div class="p-4 rounded-xl bg-white dark:bg-night-900/80 border border-slate-200 dark:border-slate-800 space-y-2.5 shadow-sm">
+                        <div class="flex items-center gap-2">
+                            <span class="text-base">${info.icon || '🏢'}</span>
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">${minName}</h4>
+                        </div>
+                        <div class="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs space-y-1.5 pt-1">
+                            ${info.parts.map(p => `<div class="pt-1.5 flex items-center justify-between">${p}</div>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+
+    // Renderiza Mídias & Arquivos
+    const midiasEl = document.getElementById('culto-conteudo-midias');
+    if (midiasEl) {
+        if (!culto.midias || culto.midias.length === 0) {
+            midiasEl.innerHTML = `
+                <div class="col-span-full p-8 text-center bg-white dark:bg-night-900/40 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-400 text-xs">
+                    Nenhuma mídia ou arquivo anexado a este culto.
+                </div>
+            `;
+        } else {
+            midiasEl.innerHTML = culto.midias.map(m => {
+                return `
+                    <a href="${m.url}" target="_blank" class="p-3.5 rounded-xl bg-white dark:bg-night-900/80 hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-slate-200 dark:border-slate-800 flex items-center gap-3 transition group shadow-sm">
+                        <div class="w-9 h-9 rounded-lg bg-brand-500/10 text-brand-500 border border-brand-500/20 flex items-center justify-center shrink-0">
+                            📎
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <span class="block text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-brand-500 transition">${m.name || 'Arquivo'}</span>
+                            <span class="text-[10px] text-slate-400">Clique para abrir</span>
+                        </div>
+                        <span class="text-slate-400 group-hover:translate-x-0.5 transition text-xs">↗</span>
+                    </a>
+                `;
+            }).join('');
+        }
+    }
+
+    // Renderiza Avisos & Sugestões
+    const avisosEl = document.getElementById('culto-conteudo-avisos');
+    if (avisosEl) {
+        if (culto.emMontagem) {
+            avisosEl.innerHTML = `
+                <div class="space-y-3">
+                    <p class="text-xs font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>🚧</span> Playlist em Montagem: Envie suas sugestões de louvor
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input type="text" id="sugestao-culto-autor" placeholder="Seu nome"
+                            class="sm:w-1/3 bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500">
+                        <input type="text" id="sugestao-culto-texto" placeholder="Música sugerida e tom de preferência"
+                            class="sm:w-2/3 bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500">
+                    </div>
+                    <button type="button" onclick="enviarSugestaoCultoAtual()"
+                        class="bg-brand-500 hover:bg-brand-400 text-night-950 font-bold px-4 py-2 rounded-xl text-xs shadow-sm cursor-pointer transition">
+                        Enviar Sugestão
+                    </button>
+                    <p id="sugestao-culto-status" class="text-xs text-brand-500 hidden font-medium">Sugestão enviada com sucesso!</p>
+                </div>
+            `;
+        } else {
+            avisosEl.innerHTML = `
+                <div class="space-y-3">
+                    <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Observações do Culto</p>
+                    <p class="text-xs text-slate-600 dark:text-slate-300">Este culto já está com repertório confirmado. Para alterações ou alinhamentos de tom, utilize o botão na tela de cada música.</p>
                 </div>
             `;
         }
     }
 
-    if (blocoAtual && !blocoOculto) htmlCultos += `</div></div>`;
-    container.innerHTML = htmlCultos || '<p class="text-center text-slate-500 py-10">Nenhum culto agendado encontrado no banco de dados.</p>';
+    // Ativa aba padrão de Repertório
+    mudarSubAbaCulto('repertorio');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+function mudarSubAbaCulto(aba) {
+    const abas = ['repertorio', 'escala', 'midias', 'avisos'];
+    abas.forEach(a => {
+        const conteudo = document.getElementById(`culto-aba-${a}`);
+        const btn = document.getElementById(`tab-btn-${a}`);
+        const isActive = a === aba;
+        if (conteudo) conteudo.classList.toggle('hidden', !isActive);
+        if (btn) {
+            if (isActive) {
+                btn.className = "py-3 px-3 sm:px-4 border-b-2 font-bold text-xs sm:text-sm transition flex items-center gap-2 border-brand-500 text-brand-600 dark:text-brand-400 cursor-pointer";
+            } else {
+                btn.className = "py-3 px-3 sm:px-4 border-b-2 font-semibold text-xs sm:text-sm transition flex items-center gap-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 cursor-pointer";
+            }
+        }
+    });
+}
+
+function voltarParaCultos() {
+    const vLista = document.getElementById('visao-cultos-lista');
+    const vCulto = document.getElementById('visao-culto-detalhe');
+    const vMusica = document.getElementById('visao-musica-detalhe');
+
+    if (vLista) vLista.classList.remove('hidden');
+    if (vCulto) vCulto.classList.add('hidden');
+    if (vMusica) vMusica.classList.add('hidden');
+
+    if (window.history && window.history.pushState) {
+        window.history.pushState({ view: 'cultos-lista' }, '', '#cultos');
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// =========================================================================
+// VISÃO 3: TELA DEDICADA DE DETALHES DA MÚSICA
+// =========================================================================
+
+function abrirDetalhesMusica(musicaIndex, cultoIndex, skipPushState = false) {
+    const culto = window.cultosProcessados[cultoIndex];
+    if (!culto || !culto.songs[musicaIndex]) return;
+
+    const musica = culto.songs[musicaIndex];
+    window.musicaAtualDetalhe = musica;
+    window.cultoAtualIndex = cultoIndex;
+    window.tomMusicaAtualOriginal = musica.tom || 'C';
+    window.tomMusicaAtualCorrente = musica.tom || 'C';
+
+    const vLista = document.getElementById('visao-cultos-lista');
+    const vCulto = document.getElementById('visao-culto-detalhe');
+    const vMusica = document.getElementById('visao-musica-detalhe');
+
+    if (vLista) vLista.classList.add('hidden');
+    if (vCulto) vCulto.classList.add('hidden');
+    if (vMusica) vMusica.classList.remove('hidden');
+
+    if (!skipPushState && window.history && window.history.pushState) {
+        window.history.pushState({ view: 'musica-detalhe', musicaIndex: musicaIndex, cultoIndex: cultoIndex }, '', `#musica-${musicaIndex}`);
+    }
+
+    // Botão Voltar com nome do Culto
+    const btnVoltarTexto = document.getElementById('musica-btn-voltar-texto');
+    if (btnVoltarTexto) btnVoltarTexto.textContent = `Voltar para ${culto.nome}`;
+
+    // Identificação da Música
+    const elTitulo = document.getElementById('musica-detalhe-titulo');
+    const elArtista = document.getElementById('musica-detalhe-artista');
+    const elOrdem = document.getElementById('musica-detalhe-ordem-badge');
+    const elTom = document.getElementById('musica-detalhe-tom-badge');
+    const elCantorBloco = document.getElementById('musica-detalhe-cantor-bloco');
+    const elCantorNome = document.getElementById('musica-detalhe-cantor-nome');
+
+    if (elTitulo) elTitulo.textContent = musica.title;
+    if (elArtista) elArtista.textContent = musica.artist || 'Ministério de Louvor';
+    if (elOrdem) elOrdem.textContent = `Faixa ${musicaIndex + 1}`;
+    if (elTom) elTom.textContent = `Tom: ${musica.tom || '—'}`;
+
+    if (elCantorBloco && elCantorNome) {
+        if (musica.cantor) {
+            elCantorBloco.classList.remove('hidden');
+            elCantorNome.textContent = musica.cantor;
+        } else {
+            elCantorBloco.classList.add('hidden');
+        }
+    }
+
+    // Aba 1: Metadados
+    const metaTom = document.getElementById('musica-meta-tom');
+    const metaBpm = document.getElementById('musica-meta-bpm');
+    const metaDuracao = document.getElementById('musica-meta-duracao');
+    const metaVersao = document.getElementById('musica-meta-versao');
+
+    if (metaTom) metaTom.textContent = musica.tom || '—';
+    if (metaBpm) metaBpm.textContent = musica.bpm || '—';
+    if (metaDuracao) metaDuracao.textContent = musica.duracao || '—';
+    if (metaVersao) metaVersao.textContent = musica.variacao || 'Original';
+
+    // Links de YouTube e VS
+    const btnYt = document.getElementById('btn-musica-link-youtube');
+    if (btnYt) {
+        if (musica.linkYoutube) {
+            btnYt.href = musica.linkYoutube;
+            btnYt.classList.remove('opacity-50', 'pointer-events-none');
+        } else {
+            btnYt.href = '#';
+            btnYt.classList.add('opacity-50', 'pointer-events-none');
+        }
+    }
+
+    const btnVs = document.getElementById('btn-musica-ouvir-vs');
+    if (btnVs) {
+        btnVs.classList.toggle('opacity-50', !musica.vs);
+    }
+
+    // Aba 2: Cifra
+    const displayTomCifra = document.getElementById('cifra-tom-atual-display');
+    if (displayTomCifra) displayTomCifra.textContent = window.tomMusicaAtualCorrente;
+
+    const cifraTextoEl = document.getElementById('musica-cifra-texto');
+    if (cifraTextoEl) {
+        cifraTextoEl.textContent = musica.chords 
+            ? (typeof sanitizarTextoCifraClub === 'function' ? sanitizarTextoCifraClub(musica.chords) : musica.chords)
+            : 'Nenhuma cifra cadastrada para esta música.';
+    }
+
+    // Aba 3: Letra
+    const letraTextoEl = document.getElementById('musica-letra-texto');
+    if (letraTextoEl) {
+        letraTextoEl.textContent = musica.lyrics || 'Nenhuma letra cadastrada para esta música.';
+    }
+
+    // Ativa aba padrão de Info
+    mudarSubAbaMusica('info');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function mudarSubAbaMusica(aba) {
+    const abas = ['info', 'cifra', 'letra'];
+    abas.forEach(a => {
+        const conteudo = document.getElementById(`musica-aba-${a}`);
+        const btn = document.getElementById(`tab-btn-musica-${a}`);
+        const isActive = a === aba;
+        if (conteudo) conteudo.classList.toggle('hidden', !isActive);
+        if (btn) {
+            if (isActive) {
+                btn.className = "py-3 px-3 sm:px-4 border-b-2 font-bold text-xs sm:text-sm transition flex items-center gap-2 border-brand-500 text-brand-600 dark:text-brand-400 cursor-pointer";
+            } else {
+                btn.className = "py-3 px-3 sm:px-4 border-b-2 font-semibold text-xs sm:text-sm transition flex items-center gap-2 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 cursor-pointer";
+            }
+        }
+    });
+}
+
+function voltarParaCultoDetalhe() {
+    const vLista = document.getElementById('visao-cultos-lista');
+    const vCulto = document.getElementById('visao-culto-detalhe');
+    const vMusica = document.getElementById('visao-musica-detalhe');
+
+    if (vLista) vLista.classList.add('hidden');
+    if (vCulto) vCulto.classList.remove('hidden');
+    if (vMusica) vMusica.classList.add('hidden');
+
+    if (window.history && window.history.pushState) {
+        window.history.pushState({ view: 'culto-detalhe', cultoIndex: window.cultoAtualIndex }, '', `#culto-${window.cultoAtualIndex}`);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Suporte para botão físico / Voltar do navegador
+window.addEventListener('popstate', (e) => {
+    if (e.state) {
+        if (e.state.view === 'culto-detalhe') {
+            abrirDetalhesCulto(e.state.cultoIndex, true);
+        } else if (e.state.view === 'musica-detalhe') {
+            abrirDetalhesMusica(e.state.musicaIndex, e.state.cultoIndex, true);
+        } else {
+            voltarParaCultos();
+        }
+    } else {
+        voltarParaCultos();
+    }
+});
+
+// =========================================================================
+// AÇÕES & FERRAMENTAS DO CULTO E DA MÚSICA
+// =========================================================================
+
+function executarPlaylistCultoAtual() {
+    if (window.cultoAtualIndex === undefined || !window.cultosProcessados) return;
+    const culto = window.cultosProcessados[window.cultoAtualIndex];
+    if (!culto) return;
+
+    if (window.liturgeCultosPlaylists && window.liturgeCultosPlaylists[culto.playlistId] && window.liturgeCultosPlaylists[culto.playlistId].length > 0) {
+        if (window.LiturgePlayer && typeof window.LiturgePlayer.tocarDoCulto === 'function') {
+            window.LiturgePlayer.tocarDoCulto(culto.playlistId, 0);
+            if (typeof mostrarToast === 'function') mostrarToast(`Iniciando playlist: ${culto.nome}`, 'sucesso');
+        }
+    } else {
+        if (typeof mostrarToast === 'function') mostrarToast('Nenhum VS ou áudio disponível nesta playlist.', 'aviso');
+    }
+}
+
+function copiarCultoAtualWhatsApp() {
+    if (window.cultoAtualIndex === undefined || !window.cultosProcessados) return;
+    const culto = window.cultosProcessados[window.cultoAtualIndex];
+    if (!culto) return;
+
+    let texto = `*LITURGE • ${culto.nome.toUpperCase()}*\n`;
+    if (culto.dataStr) texto += `📅 Data: ${culto.dataStr} (${culto.diaSemana || ''})\n`;
+
+    if (culto.songs && culto.songs.length > 0) {
+        texto += `\n*🎵 REPERTÓRIO:*\n`;
+        culto.songs.forEach((s, idx) => {
+            texto += `${idx + 1}. *${s.title}*`;
+            if (s.tom) texto += ` - Tom: ${s.tom}`;
+            if (s.cantor) texto += ` (Voz: ${s.cantor})`;
+            texto += `\n`;
+        });
+    }
+
+    if (culto.groupedEscala && Object.keys(culto.groupedEscala).length > 0) {
+        texto += `\n*👥 ESCALA DA EQUIPE:*\n`;
+        Object.entries(culto.groupedEscala).forEach(([min, info]) => {
+            if (info.cleanParts && info.cleanParts.length > 0) {
+                texto += `• *${min}*: ${info.cleanParts.join(' | ')}\n`;
+            }
+        });
+    }
+
+    navigator.clipboard.writeText(texto).then(() => {
+        if (typeof mostrarToast === 'function') {
+            mostrarToast('📋 Programação e escala copiadas para o WhatsApp!', 'sucesso');
+        }
+    }).catch(() => {
+        if (typeof mostrarToast === 'function') {
+            mostrarToast('Erro ao copiar texto.', 'erro');
+        }
+    });
+}
+
+function exportarHplsCultoAtual() {
+    if (window.cultoAtualIndex === undefined || !window.cultosProcessados) return;
+    const culto = window.cultosProcessados[window.cultoAtualIndex];
+    if (!culto) return;
+
+    if (typeof gerarScriptHolyrics === 'function') {
+        gerarScriptHolyrics(culto.rawTitle || culto.nome);
+    } else {
+        if (typeof mostrarToast === 'function') mostrarToast('Exportador Holyrics não disponível.', 'aviso');
+    }
+}
+
+function tocarVsMusicaAtual() {
+    if (!window.musicaAtualDetalhe) return;
+    const m = window.musicaAtualDetalhe;
+    if (m.vs && window.LiturgePlayer) {
+        const fileId = typeof obterUrlAudioVs === 'function' ? obterUrlAudioVs(m.vs) : m.vs;
+        window.LiturgePlayer.playDriveAudio(m.title, fileId, {
+            artist: m.artist || m.cantor || 'Liturge • Louvor',
+            album: m.cultoNome || 'Culto'
+        });
+        if (typeof mostrarToast === 'function') mostrarToast(`Tocando: ${m.title}`, 'sucesso');
+    } else {
+        if (typeof mostrarToast === 'function') mostrarToast('Esta música não possui arquivo de VS vinculado.', 'aviso');
+    }
+}
+
+function transporCifraMusicaAtual(delta) {
+    if (!window.musicaAtualDetalhe || !window.musicaAtualDetalhe.chords) return;
+    const tomAtual = window.tomMusicaAtualCorrente || window.musicaAtualDetalhe.tom || 'C';
+    const raiz = typeof extrairNotaRaiz === 'function' ? extrairNotaRaiz(tomAtual) : null;
+    if (!raiz || typeof NOTAS_SEMITONS_MAP === 'undefined') return;
+
+    const semitom = NOTAS_SEMITONS_MAP[raiz];
+    if (semitom === undefined) return;
+
+    const novoSemitom = (semitom + delta + 12) % 12;
+    const escalaAlvo = ESCALA_NOTAS_SUSTENIDOS;
+    const novaRaiz = escalaAlvo[novoSemitom];
+    const sufixo = tomAtual.replace(/^[A-G][#b]?/i, '');
+    const novoTom = novaRaiz + sufixo;
+
+    window.tomMusicaAtualCorrente = novoTom;
+    const displayEl = document.getElementById('cifra-tom-atual-display');
+    if (displayEl) displayEl.textContent = novoTom;
+
+    if (typeof transporCifra === 'function') {
+        const textoTransposto = transporCifra(window.musicaAtualDetalhe.chords, window.musicaAtualDetalhe.tom, novoTom);
+        const cifraPre = document.getElementById('musica-cifra-texto');
+        if (cifraPre) cifraPre.textContent = textoTransposto;
+    }
+}
+
+function resetarTomCifraMusicaAtual() {
+    if (!window.musicaAtualDetalhe) return;
+    window.tomMusicaAtualCorrente = window.musicaAtualDetalhe.tom || 'C';
+    const displayEl = document.getElementById('cifra-tom-atual-display');
+    if (displayEl) displayEl.textContent = window.tomMusicaAtualCorrente;
+    const cifraPre = document.getElementById('musica-cifra-texto');
+    if (cifraPre) {
+        cifraPre.textContent = window.musicaAtualDetalhe.chords 
+            ? (typeof sanitizarTextoCifraClub === 'function' ? sanitizarTextoCifraClub(window.musicaAtualDetalhe.chords) : window.musicaAtualDetalhe.chords)
+            : 'Nenhuma cifra cadastrada para esta música.';
+    }
+}
+
+function ajustarFonteCifra(delta) {
+    tamanhoFonteCifra = Math.max(10, Math.min(22, tamanhoFonteCifra + delta));
+    const cifraPre = document.getElementById('musica-cifra-texto');
+    if (cifraPre) cifraPre.style.fontSize = `${tamanhoFonteCifra}px`;
+}
+
+function ajustarFonteLetra(delta) {
+    tamanhoFonteLetra = Math.max(11, Math.min(24, tamanhoFonteLetra + delta));
+    const letraDiv = document.getElementById('musica-letra-texto');
+    if (letraDiv) letraDiv.style.fontSize = `${tamanhoFonteLetra}px`;
+}
+
+function copiarCifraAtual() {
+    const el = document.getElementById('musica-cifra-texto');
+    if (el && el.textContent) {
+        navigator.clipboard.writeText(el.textContent);
+        if (typeof mostrarToast === 'function') mostrarToast('Cifra copiada para a área de transferência!', 'sucesso');
+    }
+}
+
+function copiarLetraAtual() {
+    const el = document.getElementById('musica-letra-texto');
+    if (el && el.textContent) {
+        navigator.clipboard.writeText(el.textContent);
+        if (typeof mostrarToast === 'function') mostrarToast('Letra copiada para a área de transferência!', 'sucesso');
+    }
+}
+
+function enviarSugestaoCultoAtual() {
+    if (window.cultoAtualIndex === undefined || !window.cultosProcessados) return;
+    const culto = window.cultosProcessados[window.cultoAtualIndex];
+    if (!culto) return;
+
+    const autorEl = document.getElementById('sugestao-culto-autor');
+    const textoEl = document.getElementById('sugestao-culto-texto');
+    const statusEl = document.getElementById('sugestao-culto-status');
+
+    const autor = autorEl ? autorEl.value.trim() : '';
+    const texto = textoEl ? textoEl.value.trim() : '';
+
+    if (!autor || !texto) {
+        if (typeof mostrarToast === 'function') mostrarToast('Preencha seu nome e a sugestão.', 'aviso');
+        return;
+    }
+
+    if (typeof enviarComentario === 'function') {
+        enviarComentario(culto.rawTitle || culto.nome, 'sugestao-culto-autor', 'sugestao-culto-texto', 'sugestao-culto-status', 'Sugestão para Culto');
+    }
+}
+
+// Exportações Globais
+window.renderizarCultos = renderizarCultos;
+window.filtrarCultos = filtrarCultos;
+window.abrirDetalhesCulto = abrirDetalhesCulto;
+window.mudarSubAbaCulto = mudarSubAbaCulto;
+window.voltarParaCultos = voltarParaCultos;
+window.abrirDetalhesMusica = abrirDetalhesMusica;
+window.mudarSubAbaMusica = mudarSubAbaMusica;
+window.voltarParaCultoDetalhe = voltarParaCultoDetalhe;
+window.executarPlaylistCultoAtual = executarPlaylistCultoAtual;
+window.copiarCultoAtualWhatsApp = copiarCultoAtualWhatsApp;
+window.exportarHplsCultoAtual = exportarHplsCultoAtual;
+window.tocarVsMusicaAtual = tocarVsMusicaAtual;
+window.transporCifraMusicaAtual = transporCifraMusicaAtual;
+window.resetarTomCifraMusicaAtual = resetarTomCifraMusicaAtual;
+window.ajustarFonteCifra = ajustarFonteCifra;
+window.ajustarFonteLetra = ajustarFonteLetra;
+window.copiarCifraAtual = copiarCifraAtual;
+window.copiarLetraAtual = copiarLetraAtual;
+window.enviarSugestaoCultoAtual = enviarSugestaoCultoAtual;
+window.toggleCultoBloco = function() {}; // Mantido para compatibilidade residual
+
 
 function gerarHtmlCardMusica(musicaObj, prefix) {
     const isAdminMode = typeof isAdmin !== 'undefined' && isAdmin;
