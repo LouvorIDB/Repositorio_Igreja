@@ -1920,45 +1920,79 @@ window.toggleCultoBloco = function() {}; // Mantido para compatibilidade residua
 
 // Gerenciador nativo do botão/gesto "Voltar" do Android (Galaxy S24 / One UI)
 window.tratarBotaoVoltarNativo = function() {
-    // 1. Se estiver na tela de Detalhes da Música, volta para os Detalhes do Culto
-    const vMusica = document.getElementById('visao-musica-detalhe');
-    if (vMusica && !vMusica.classList.contains('hidden')) {
-        voltarParaCultoDetalhe();
-        return 'HANDLED';
-    }
+    try {
+        // 1. Se estiver na tela de Detalhes da Música, volta para os Detalhes do Culto
+        const vMusica = document.getElementById('visao-musica-detalhe');
+        if (vMusica && !vMusica.classList.contains('hidden') && vMusica.style.display !== 'none') {
+            if (typeof voltarParaCultoDetalhe === 'function') {
+                voltarParaCultoDetalhe();
+                return 'HANDLED';
+            }
+        }
 
-    // 2. Se estiver na tela de Detalhes do Culto, volta para a lista de cultos
-    const vCulto = document.getElementById('visao-culto-detalhe');
-    if (vCulto && !vCulto.classList.contains('hidden')) {
-        voltarParaCultos();
-        return 'HANDLED';
-    }
+        // 2. Se estiver na tela de Detalhes do Culto, volta para a lista de cultos
+        const vCulto = document.getElementById('visao-culto-detalhe');
+        if (vCulto && !vCulto.classList.contains('hidden') && vCulto.style.display !== 'none') {
+            if (typeof voltarParaCultos === 'function') {
+                voltarParaCultos();
+                return 'HANDLED';
+            }
+        }
 
-    // 3. Se a barra lateral estiver aberta, fecha a barra lateral
-    const sidebar = document.getElementById('sidebar-menu');
-    if (sidebar && !sidebar.classList.contains('hidden')) {
-        if (typeof fecharSidebarMenu === 'function') fecharSidebarMenu('sidebar-menu');
-        return 'HANDLED';
-    }
-
-    // 4. Se houver algum modal aberto na tela, fecha o modal
-    const modaisVisiveis = document.querySelectorAll('.modal-container:not(.hidden), [id^="modal-"]:not(.hidden)');
-    for (const m of modaisVisiveis) {
-        if (m.id && m.id !== 'app-splash-screen' && !m.classList.contains('hidden') && m.style.display !== 'none') {
-            m.classList.add('hidden');
+        // 3. Se a barra lateral estiver aberta, fecha a barra lateral
+        const sidebar = document.getElementById('sidebar-menu');
+        if (sidebar && !sidebar.classList.contains('hidden') && sidebar.style.display !== 'none') {
+            if (typeof fecharSidebarMenu === 'function') fecharSidebarMenu('sidebar-menu');
             return 'HANDLED';
         }
-    }
+        const adminSidebar = document.getElementById('admin-sidebar-menu');
+        if (adminSidebar && !adminSidebar.classList.contains('hidden') && adminSidebar.style.display !== 'none') {
+            if (typeof fecharSidebarMenu === 'function') fecharSidebarMenu('admin-sidebar-menu');
+            return 'HANDLED';
+        }
 
-    // 5. Se estiver em outra aba principal (ex: agenda, repertorio, novas), volta para a aba principal de cultos
-    const secCultos = document.getElementById('secao-cultos');
-    if (secCultos && secCultos.classList.contains('hidden')) {
-        if (typeof mudarAba === 'function') mudarAba('cultos');
-        return 'HANDLED';
-    }
+        // 4. Se houver algum modal aberto na tela (somente contêineres principais fixos), fecha o modal
+        const modaisVisiveis = document.querySelectorAll(
+            'div[id^="modal-"].fixed:not(.hidden), .modal-container:not(.hidden), div[id^="modal-"][class*="fixed"]:not(.hidden)'
+        );
+        for (const m of modaisVisiveis) {
+            if (m.id && m.id !== 'app-splash-screen' && !m.classList.contains('hidden') && m.style.display !== 'none') {
+                m.classList.add('hidden');
+                return 'HANDLED';
+            }
+        }
 
-    // 6. Já está na tela inicial principal de cultos: permite a saída/minimização padrão do Android
-    return 'EXIT';
+        // 5. Se o Painel Admin estiver aberto sobreposto, fecha o painel admin
+        const painelAdmin = document.getElementById('painel-admin');
+        if (painelAdmin && !painelAdmin.classList.contains('hidden') && painelAdmin.style.display !== 'none') {
+            if (typeof sairAdmin === 'function') sairAdmin();
+            else painelAdmin.classList.add('hidden');
+            return 'HANDLED';
+        }
+
+        // 6. Se estiver em outra aba principal (agenda, repertorio, novas, midia...), volta para cultos
+        const secCultos = document.getElementById('secao-cultos');
+        if (secCultos && (secCultos.classList.contains('hidden') || secCultos.style.display === 'none')) {
+            if (typeof mudarAba === 'function') {
+                mudarAba('cultos');
+                return 'HANDLED';
+            }
+        }
+
+        // 7. Se houver filtro ativo em cultos diferente de 'todos', volta para 'todos'
+        if (window.filtroCultosAtual && window.filtroCultosAtual !== 'todos') {
+            if (typeof filtrarCultos === 'function') {
+                filtrarCultos('todos');
+                return 'HANDLED';
+            }
+        }
+
+        // 8. Já está na tela inicial principal de cultos: solicita confirmação de saída
+        return 'EXIT';
+    } catch (e) {
+        console.error('[Liturge] Erro na rotina tratarBotaoVoltarNativo:', e);
+        return 'EXIT';
+    }
 };
 
 function gerarHtmlCardMusica(musicaObj, prefix) {

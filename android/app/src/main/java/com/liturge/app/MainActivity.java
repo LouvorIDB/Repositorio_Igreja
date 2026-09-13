@@ -40,6 +40,8 @@ public class MainActivity extends BridgeActivity {
         registrarInterfacesNativas();
     }
 
+    private long ultimoToqueVoltar = 0;
+
     private void configurarBotaoVoltarNativo() {
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -48,23 +50,48 @@ public class MainActivity extends BridgeActivity {
                     android.webkit.WebView webView = getBridge().getWebView();
                     webView.evaluateJavascript(
                         "(function() {" +
-                        "  if (typeof window.tratarBotaoVoltarNativo === 'function') {" +
-                        "    return window.tratarBotaoVoltarNativo();" +
+                        "  try {" +
+                        "    if (typeof window.tratarBotaoVoltarNativo === 'function') {" +
+                        "      return window.tratarBotaoVoltarNativo();" +
+                        "    }" +
+                        "  } catch (e) {" +
+                        "    console.error('Erro ao executar tratarBotaoVoltarNativo:', e);" +
                         "  }" +
-                        "  return 'DEFAULT';" +
+                        "  return 'EXIT';" +
                         "})();",
                         value -> {
-                            if ("\"EXIT\"".equals(value) || "\"DEFAULT\"".equals(value) || value == null) {
-                                setEnabled(false);
-                                getOnBackPressedDispatcher().onBackPressed();
-                                setEnabled(true);
+                            android.util.Log.d("LiturgeBack", "Retorno JS Voltar: " + value);
+                            if ("\"HANDLED\"".equals(value)) {
+                                // O app Web tratou o recuo internamente com sucesso
+                                return;
+                            }
+
+                            // Se chegou na raiz da navegação ou houve exceção, exige confirmação de 2 toques para sair
+                            long agora = System.currentTimeMillis();
+                            if (agora - ultimoToqueVoltar < 2000) {
+                                moveTaskToBack(true);
+                            } else {
+                                ultimoToqueVoltar = agora;
+                                android.widget.Toast.makeText(
+                                    MainActivity.this,
+                                    "Pressione voltar novamente para sair",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show();
                             }
                         }
                     );
                 } else {
-                    setEnabled(false);
-                    getOnBackPressedDispatcher().onBackPressed();
-                    setEnabled(true);
+                    long agora = System.currentTimeMillis();
+                    if (agora - ultimoToqueVoltar < 2000) {
+                        moveTaskToBack(true);
+                    } else {
+                        ultimoToqueVoltar = agora;
+                        android.widget.Toast.makeText(
+                            MainActivity.this,
+                            "Pressione voltar novamente para sair",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show();
+                    }
                 }
             }
         });

@@ -18,7 +18,7 @@
             }
             const url = `views/${viewName}.html`;
             try {
-                const response = await fetch(`${url}?v=1.0`);
+                const response = await fetch(`${url}?v=1.1`);
                 if (response.ok) {
                     const html = await response.text();
                     this.viewsCache.set(viewName, html);
