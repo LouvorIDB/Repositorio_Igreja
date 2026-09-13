@@ -17,7 +17,10 @@ public class MediaBridgeInterface {
     @JavascriptInterface
     public void updateMedia(String title, String artist, String album, double durationSec, double positionSec, boolean isPlaying) {
         try {
-            Intent intent = new Intent(activity, MediaNotificationService.class);
+            android.content.Context ctx = (activity != null) ? activity.getApplicationContext() : null;
+            if (ctx == null) return;
+
+            Intent intent = new Intent(ctx, MediaNotificationService.class);
             intent.setAction(MediaNotificationService.ACTION_START_OR_UPDATE);
             intent.putExtra(MediaNotificationService.EXTRA_TITLE, title);
             intent.putExtra(MediaNotificationService.EXTRA_ARTIST, artist);
@@ -27,9 +30,9 @@ public class MediaBridgeInterface {
             intent.putExtra(MediaNotificationService.EXTRA_IS_PLAYING, isPlaying);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                activity.startForegroundService(intent);
+                ctx.startForegroundService(intent);
             } else {
-                activity.startService(intent);
+                ctx.startService(intent);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -39,15 +42,18 @@ public class MediaBridgeInterface {
     @JavascriptInterface
     public void updatePosition(double positionSec, boolean isPlaying) {
         try {
-            Intent intent = new Intent(activity, MediaNotificationService.class);
+            android.content.Context ctx = (activity != null) ? activity.getApplicationContext() : null;
+            if (ctx == null) return;
+
+            Intent intent = new Intent(ctx, MediaNotificationService.class);
             intent.setAction(MediaNotificationService.ACTION_UPDATE_POSITION);
             intent.putExtra(MediaNotificationService.EXTRA_POSITION, (long) (positionSec * 1000));
             intent.putExtra(MediaNotificationService.EXTRA_IS_PLAYING, isPlaying);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                activity.startForegroundService(intent);
+                ctx.startForegroundService(intent);
             } else {
-                activity.startService(intent);
+                ctx.startService(intent);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -57,9 +63,12 @@ public class MediaBridgeInterface {
     @JavascriptInterface
     public void stopMedia() {
         try {
-            Intent intent = new Intent(activity, MediaNotificationService.class);
+            android.content.Context ctx = (activity != null) ? activity.getApplicationContext() : null;
+            if (ctx == null) return;
+
+            Intent intent = new Intent(ctx, MediaNotificationService.class);
             intent.setAction(MediaNotificationService.ACTION_STOP);
-            activity.startService(intent);
+            ctx.startService(intent);
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -423,6 +423,10 @@ window.LiturgePlayer = (function () {
 
         currentTrackInfo = { title, artist, album, url: strUrl };
 
+        // Dispara imediatamente o controle nativo do Android para aparecer na hora do clique
+        setupMediaSession(currentTrackInfo);
+        syncNativeAndroidMedia(currentTrackInfo, true);
+
         let streamUrl = null;
 
         // 1. URLs Diretas (Cloudflare Worker/R2, Supabase Storage, CDN ou arquivo de áudio)
@@ -470,6 +474,7 @@ window.LiturgePlayer = (function () {
         if (playPromise !== undefined) {
             playPromise.then(() => {
                 atualizarIconePlayPause(true);
+                syncNativeAndroidMedia(currentTrackInfo, true);
             }).catch((err) => {
                 console.warn('[LiturgePlayer] Play aguardando interação do usuário:', err);
                 atualizarIconePlayPause(false);
@@ -478,7 +483,6 @@ window.LiturgePlayer = (function () {
         if (window.AndroidMedia && typeof window.AndroidMedia.requestNotificationPermission === 'function') {
             try { window.AndroidMedia.requestNotificationPermission(); } catch (e) {}
         }
-        setupMediaSession(currentTrackInfo);
         syncNativeAndroidMedia(currentTrackInfo, true);
     }
 

@@ -18,7 +18,7 @@ import android.os.IBinder;
 import android.webkit.WebView;
 
 public class MediaNotificationService extends Service {
-    public static final String CHANNEL_ID = "liturge_media_channel";
+    public static final String CHANNEL_ID = "liturge_media_playback_v3";
     public static final int NOTIFICATION_ID = 1001;
 
     public static final String ACTION_START_OR_UPDATE = "com.liturge.app.ACTION_START_OR_UPDATE";
@@ -75,14 +75,24 @@ public class MediaNotificationService extends Service {
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Remove canais legados com importância baixa para recriar com visibilidade ativa
+            try {
+                if (notificationManager != null) {
+                    notificationManager.deleteNotificationChannel("liturge_media_channel");
+                    notificationManager.deleteNotificationChannel("liturge_media_playback_channel_v2");
+                }
+            } catch (Exception ignored) {}
+
             NotificationChannel channel = new NotificationChannel(
                 CHANNEL_ID,
                 "Reprodução de Áudio e VS",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_DEFAULT
             );
-            channel.setDescription("Controle de mídia Liturge em segundo plano e tela de bloqueio");
-            channel.setShowBadge(false);
+            channel.setDescription("Controle de mídia Liturge em primeiro e segundo plano");
+            channel.setShowBadge(true);
             channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+            channel.setSound(null, null); // Sem alerta sonoro para não tocar bipe por cima da música
+            channel.enableVibration(false);
             if (notificationManager != null) {
                 notificationManager.createNotificationChannel(channel);
             }
@@ -239,7 +249,13 @@ public class MediaNotificationService extends Service {
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(openAppPendingIntent)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
-            .setOngoing(isPlaying);
+            .setCategory(Notification.CATEGORY_TRANSPORT)
+            .setOngoing(isPlaying)
+            .setOnlyAlertOnce(true);
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            builder.setPriority(Notification.PRIORITY_HIGH);
+        }
 
         if (appIconBitmap != null) {
             builder.setLargeIcon(appIconBitmap);
@@ -271,6 +287,10 @@ public class MediaNotificationService extends Service {
                 startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
             } else {
                 startForeground(NOTIFICATION_ID, notification);
+            }
+            // Força a publicação imediata da notificação no NotificationManager para que apareça na barra sem atraso
+            if (notificationManager != null) {
+                notificationManager.notify(NOTIFICATION_ID, notification);
             }
         } catch (Exception e) {
             e.printStackTrace();
