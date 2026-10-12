@@ -1,16 +1,40 @@
-<div id="secao-novas" class="hidden space-y-4">
-    <div class="bg-night-900/90 border border-liturge-500/30 rounded-2xl p-5 shadow-xl relative overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-r from-liturge-500/5 via-transparent to-transparent pointer-events-none"></div>
-        <div class="flex items-center gap-2.5">
-            <span class="text-xl text-liturge-400">✨</span>
-            <div>
-                <h2 class="text-base font-bold text-white tracking-wide">Músicas Novas em Aprendizado</h2>
-                <p class="text-xs text-slate-400 mt-0.5">Repertório selecionado para o próximo mês. Ouça os arranjos, estude os tons e prepare-se para os ensaios.</p>
+<div id="secao-novas" class="hidden space-y-5 animate-fade-in">
+    <!-- Hero Banner Moderno de Aprendizado -->
+    <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-brand-500 to-amber-600"></div>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+                <div class="w-11 h-11 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-600 dark:text-brand-400 flex items-center justify-center text-xl shrink-0 shadow-sm">
+                    ✨
+                </div>
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30">Foco de Ensaio</span>
+                        <span id="badge-count-novas-topo" class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">0 louvores</span>
+                    </div>
+                    <h2 class="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                        Músicas em Aprendizado
+                    </h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 max-w-xl">
+                        Repertório selecionado para os próximos ensaios. Ouça os arranjos, confira as cifras e estude os tons antes do culto.
+                    </p>
+                </div>
             </div>
+
+            <!-- Sugerir Louvor Novo -->
+            <button type="button" onclick="toggleComentario('form-sugestao-nova')"
+                class="self-start sm:self-auto px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition flex items-center gap-1.5 cursor-pointer shrink-0 active:scale-95">
+                <span>💡</span>
+                <span>Sugerir Louvor</span>
+            </button>
         </div>
     </div>
-    <div id="novasList" class="space-y-4">
-        <div class="text-center text-slate-500 py-10">Carregando músicas novas...</div>
+
+    <!-- Lista de Novas Músicas no Padrão Streaming Compacto -->
+    <div id="novasList" class="space-y-2">
+        <div class="text-center text-slate-400 dark:text-slate-500 py-16 flex flex-col items-center justify-center gap-3">
+            <div class="w-8 h-8 rounded-full border-2 border-brand-500/30 border-t-brand-500 animate-spin"></div>
+            <span class="text-xs sm:text-sm font-medium">Carregando músicas novas...</span>
+        </div>
     </div>
 </div>
-

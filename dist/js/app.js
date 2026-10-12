@@ -1590,36 +1590,82 @@ function voltarParaCultos() {
 }
 
 // =========================================================================
-// VISÃO 3: TELA DEDICADA DE DETALHES DA MÚSICA
+// VISÃO 3: TELA DEDICADA DE DETALHES DA MÚSICA (CULTOS & REPERTÓRIO)
 // =========================================================================
 
-function abrirDetalhesMusica(musicaIndex, cultoIndex, skipPushState = false) {
-    const culto = window.cultosProcessados[cultoIndex];
-    if (!culto || !culto.songs[musicaIndex]) return;
+window.origemMusicaDetalhe = 'culto'; // 'culto', 'repertorio' ou 'novas'
+window.musicaRepertorioOrigemObj = null;
+window.versaoMusicaAtualIndex = 0;
 
-    const musica = culto.songs[musicaIndex];
+async function atualizarArtworkMusicaDetalhe(titulo, artista) {
+    const fotoEl = document.getElementById('musica-detalhe-foto');
+    const fallbackEl = document.getElementById('musica-detalhe-foto-fallback');
+    if (!fotoEl || !fallbackEl) return;
+
+    fotoEl.classList.add('hidden');
+    fallbackEl.classList.remove('hidden');
+
+    if (typeof window.fetchTrackArtwork === 'function') {
+        try {
+            const art = await window.fetchTrackArtwork(titulo, artista);
+            if (art && window.musicaAtualDetalhe && window.musicaAtualDetalhe.title === titulo) {
+                fotoEl.src = art;
+                fotoEl.onload = () => {
+                    fotoEl.classList.remove('hidden');
+                    fallbackEl.classList.add('hidden');
+                };
+            }
+        } catch (e) {
+            console.warn('[Artwork] Falha ao carregar artwork:', e);
+        }
+    }
+}
+
+function preencherVisaoMusicaDetalhe(musica, options = {}) {
     window.musicaAtualDetalhe = musica;
-    window.cultoAtualIndex = cultoIndex;
     window.tomMusicaAtualOriginal = musica.tom || 'C';
     window.tomMusicaAtualCorrente = musica.tom || 'C';
+    window.origemMusicaDetalhe = options.origem || 'culto';
 
+    const origem = window.origemMusicaDetalhe;
+
+    // Gerencia visibilidade das seções
     const vLista = document.getElementById('visao-cultos-lista');
     const vCulto = document.getElementById('visao-culto-detalhe');
     const vMusica = document.getElementById('visao-musica-detalhe');
+    const secCultos = document.getElementById('secao-cultos');
+    const secRep = document.getElementById('secao-repertorio');
+    const secNovas = document.getElementById('secao-novas');
 
-    if (vLista) vLista.classList.add('hidden');
-    if (vCulto) vCulto.classList.add('hidden');
+    if (origem === 'repertorio') {
+        if (secRep) secRep.classList.add('hidden');
+        if (secCultos) secCultos.classList.remove('hidden');
+        if (vLista) vLista.classList.add('hidden');
+        if (vCulto) vCulto.classList.add('hidden');
+    } else if (origem === 'novas') {
+        if (secNovas) secNovas.classList.add('hidden');
+        if (secCultos) secCultos.classList.remove('hidden');
+        if (vLista) vLista.classList.add('hidden');
+        if (vCulto) vCulto.classList.add('hidden');
+    } else {
+        if (vLista) vLista.classList.add('hidden');
+        if (vCulto) vCulto.classList.add('hidden');
+    }
     if (vMusica) vMusica.classList.remove('hidden');
 
-    if (!skipPushState && window.history && window.history.pushState) {
-        window.history.pushState({ view: 'musica-detalhe', musicaIndex: musicaIndex, cultoIndex: cultoIndex }, '', `#musica-${musicaIndex}`);
+    // Botão Voltar contextual
+    const btnVoltarTexto = document.getElementById('musica-btn-voltar-texto');
+    if (btnVoltarTexto) {
+        if (origem === 'repertorio') {
+            btnVoltarTexto.textContent = 'Voltar para o Repertório';
+        } else if (origem === 'novas') {
+            btnVoltarTexto.textContent = 'Voltar para Músicas Novas';
+        } else {
+            btnVoltarTexto.textContent = options.cultoNome ? `Voltar para ${options.cultoNome}` : 'Voltar para o Culto';
+        }
     }
 
-    // Botão Voltar com nome do Culto
-    const btnVoltarTexto = document.getElementById('musica-btn-voltar-texto');
-    if (btnVoltarTexto) btnVoltarTexto.textContent = `Voltar para ${culto.nome}`;
-
-    // Identificação da Música
+    // Identificação Principal
     const elTitulo = document.getElementById('musica-detalhe-titulo');
     const elArtista = document.getElementById('musica-detalhe-artista');
     const elOrdem = document.getElementById('musica-detalhe-ordem-badge');
@@ -1629,7 +1675,18 @@ function abrirDetalhesMusica(musicaIndex, cultoIndex, skipPushState = false) {
 
     if (elTitulo) elTitulo.textContent = musica.title;
     if (elArtista) elArtista.textContent = musica.artist || 'Ministério de Louvor';
-    if (elOrdem) elOrdem.textContent = `Faixa ${musicaIndex + 1}`;
+    if (elOrdem) {
+        if (origem === 'culto' && options.musicaIndex !== undefined) {
+            elOrdem.textContent = `Faixa ${options.musicaIndex + 1}`;
+            elOrdem.classList.remove('hidden');
+        } else if (origem === 'novas') {
+            elOrdem.textContent = 'Música Nova';
+            elOrdem.classList.remove('hidden');
+        } else {
+            elOrdem.textContent = 'Catálogo';
+            elOrdem.classList.remove('hidden');
+        }
+    }
     if (elTom) elTom.textContent = `Tom: ${musica.tom || '—'}`;
 
     if (elCantorBloco && elCantorNome) {
@@ -1640,6 +1697,40 @@ function abrirDetalhesMusica(musicaIndex, cultoIndex, skipPushState = false) {
             elCantorBloco.classList.add('hidden');
         }
     }
+
+    // Seletor Dinâmico de Versões / Tons
+    const seletorVersoesEl = document.getElementById('musica-detalhe-seletor-versoes');
+    const pillsContainer = document.getElementById('musica-versoes-pills');
+    const versoes = musica.versions || [];
+
+    if (seletorVersoesEl && pillsContainer) {
+        if (versoes.length > 1) {
+            seletorVersoesEl.classList.remove('hidden');
+            let pillsHtml = '';
+            versoes.forEach((v, idx) => {
+                const isActive = idx === (options.versaoIndex || 0);
+                const rotuloTom = v.key ? `Tom ${v.key}` : `Versão ${idx + 1}`;
+                const rotuloVariacao = v.variation || v.cantor || (idx === 0 ? 'Original' : '');
+                const classesPill = isActive
+                    ? 'px-3 py-1 rounded-xl text-xs font-bold bg-brand-500 text-night-950 border border-brand-500 shadow-sm cursor-pointer'
+                    : 'px-3 py-1 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-brand-500/50 cursor-pointer transition';
+
+                pillsHtml += `
+                    <button type="button" onclick="trocarVersaoMusicaDetalhe(${idx})" class="${classesPill}">
+                        <span>${rotuloTom}</span>
+                        ${rotuloVariacao ? `<span class="opacity-80 text-[10px] ml-1">(${rotuloVariacao})</span>` : ''}
+                    </button>
+                `;
+            });
+            pillsContainer.innerHTML = pillsHtml;
+        } else {
+            seletorVersoesEl.classList.add('hidden');
+            pillsContainer.innerHTML = '';
+        }
+    }
+
+    // Capa em Alta Resolução (Apple Music)
+    atualizarArtworkMusicaDetalhe(musica.title, musica.artist);
 
     // Aba 1: Metadados
     const metaTom = document.getElementById('musica-meta-tom');
@@ -1686,9 +1777,201 @@ function abrirDetalhesMusica(musicaIndex, cultoIndex, skipPushState = false) {
         letraTextoEl.textContent = musica.lyrics || 'Nenhuma letra cadastrada para esta música.';
     }
 
+    // Botões de Ações Rápidas no Cabeçalho
+    const btnEditAdmin = document.getElementById('btn-musica-editar-admin');
+    if (btnEditAdmin) {
+        const canEdit = (typeof isAdmin !== 'undefined' && isAdmin) || (typeof hasPermission === 'function' && hasPermission('editar_repertorio'));
+        btnEditAdmin.classList.toggle('hidden', !canEdit);
+    }
+
     // Ativa aba padrão de Info
     mudarSubAbaMusica('info');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function abrirDetalhesMusica(musicaIndex, cultoIndex, skipPushState = false) {
+    const culto = window.cultosProcessados ? window.cultosProcessados[cultoIndex] : null;
+    if (!culto || !culto.songs[musicaIndex]) return;
+
+    const musica = culto.songs[musicaIndex];
+    window.cultoAtualIndex = cultoIndex;
+
+    if (!skipPushState && window.history && window.history.pushState) {
+        window.history.pushState({ view: 'musica-detalhe', musicaIndex: musicaIndex, cultoIndex: cultoIndex }, '', `#musica-${musicaIndex}`);
+    }
+
+    preencherVisaoMusicaDetalhe(musica, { origem: 'culto', musicaIndex, cultoNome: culto.nome });
+}
+
+function abrirDetalhesMusicaDoRepertorio(musicaId, origem = 'repertorio', versaoIndex = 0, skipPushState = false) {
+    let musicaObj = null;
+    if (dadosGlobais && dadosGlobais.repertorio) {
+        musicaObj = dadosGlobais.repertorio.find(m => String(m.id) === String(musicaId));
+    }
+    if (!musicaObj && dadosGlobais && dadosGlobais.novas) {
+        musicaObj = dadosGlobais.novas.find(m => String(m.id) === String(musicaId));
+    }
+    if (!musicaObj) return;
+
+    window.musicaRepertorioOrigemObj = musicaObj;
+    window.versaoMusicaAtualIndex = versaoIndex;
+
+    const versoes = musicaObj.versions || [];
+    const vAtiva = versoes[versaoIndex] || versoes[0];
+
+    const musicaFormatada = {
+        id: musicaObj.id,
+        title: musicaObj.title,
+        artist: musicaObj.artist || 'Ministério de Louvor',
+        tom: vAtiva ? (vAtiva.key || musicaObj.key || 'C') : (musicaObj.key || 'C'),
+        variacao: vAtiva ? (vAtiva.variation || 'Original') : 'Original',
+        cantor: vAtiva ? (vAtiva.cantor || vAtiva.minister || '') : '',
+        bpm: (vAtiva && vAtiva.bpm) || musicaObj.bpm || '—',
+        duracao: (vAtiva && vAtiva.duration) || musicaObj.duration || '—',
+        linkYoutube: (vAtiva && vAtiva.yt) || musicaObj.yt || '',
+        vs: (vAtiva && vAtiva.vs) || musicaObj.vs || '',
+        chords: (vAtiva && vAtiva.chords) || musicaObj.chords || '',
+        lyrics: (vAtiva && vAtiva.lyrics) || musicaObj.lyrics || '',
+        versions: versoes
+    };
+
+    if (!skipPushState && window.history && window.history.pushState) {
+        window.history.pushState({ view: 'musica-detalhe-repertorio', musicaId: musicaId, origem: origem, versaoIndex: versaoIndex }, '', `#musica-${musicaId}`);
+    }
+
+    preencherVisaoMusicaDetalhe(musicaFormatada, { origem, versaoIndex });
+}
+
+function trocarVersaoMusicaDetalhe(versaoIndex) {
+    if (window.origemMusicaDetalhe === 'repertorio' || window.origemMusicaDetalhe === 'novas') {
+        if (window.musicaRepertorioOrigemObj) {
+            abrirDetalhesMusicaDoRepertorio(window.musicaRepertorioOrigemObj.id, window.origemMusicaDetalhe, versaoIndex, true);
+        }
+    } else if (window.origemMusicaDetalhe === 'culto') {
+        if (window.musicaAtualDetalhe && window.musicaAtualDetalhe.versions && window.musicaAtualDetalhe.versions[versaoIndex]) {
+            const v = window.musicaAtualDetalhe.versions[versaoIndex];
+            window.musicaAtualDetalhe.tom = v.key || window.musicaAtualDetalhe.tom;
+            window.musicaAtualDetalhe.variacao = v.variation || window.musicaAtualDetalhe.variacao;
+            window.musicaAtualDetalhe.cantor = v.cantor || window.musicaAtualDetalhe.cantor;
+            window.musicaAtualDetalhe.chords = v.chords || window.musicaAtualDetalhe.chords;
+            window.musicaAtualDetalhe.lyrics = v.lyrics || window.musicaAtualDetalhe.lyrics;
+            window.musicaAtualDetalhe.vs = v.vs || window.musicaAtualDetalhe.vs;
+            window.musicaAtualDetalhe.linkYoutube = v.yt || window.musicaAtualDetalhe.linkYoutube;
+            const culto = window.cultosProcessados ? window.cultosProcessados[window.cultoAtualIndex] : null;
+            preencherVisaoMusicaDetalhe(window.musicaAtualDetalhe, { origem: 'culto', versaoIndex: versaoIndex, cultoNome: culto?.nome });
+        }
+    }
+}
+
+function voltarDeMusicaDetalhe() {
+    const vMusica = document.getElementById('visao-musica-detalhe');
+    if (vMusica) vMusica.classList.add('hidden');
+
+    const origem = window.origemMusicaDetalhe;
+    if (origem === 'repertorio') {
+        const secCultos = document.getElementById('secao-cultos');
+        const secRep = document.getElementById('secao-repertorio');
+        if (secCultos) secCultos.classList.add('hidden');
+        if (secRep) secRep.classList.remove('hidden');
+    } else if (origem === 'novas') {
+        const secCultos = document.getElementById('secao-cultos');
+        const secNovas = document.getElementById('secao-novas');
+        if (secCultos) secCultos.classList.add('hidden');
+        if (secNovas) secNovas.classList.remove('hidden');
+    } else {
+        const vCulto = document.getElementById('visao-culto-detalhe');
+        if (vCulto) vCulto.classList.remove('hidden');
+    }
+
+    if (window.history && window.history.pushState) {
+        if (origem === 'culto' && window.cultoAtualIndex !== undefined) {
+            window.history.pushState({ view: 'culto-detalhe', cultoIndex: window.cultoAtualIndex }, '', `#culto-${window.cultoAtualIndex}`);
+        } else {
+            window.history.pushState({ view: origem || 'repertorio' }, '', window.location.pathname);
+        }
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function voltarParaCultoDetalhe() {
+    voltarDeMusicaDetalhe();
+}
+
+function abrirModalAjusteMusicaAtual() {
+    if (!window.musicaAtualDetalhe) return;
+    const modal = document.getElementById('modal-ajuste-tom-rapido');
+    const tit = document.getElementById('modal-ajuste-musica-titulo');
+    const autorInput = document.getElementById('modal-ajuste-autor');
+    const statusMsg = document.getElementById('modal-ajuste-status');
+
+    if (tit) tit.textContent = window.musicaAtualDetalhe.title;
+    if (statusMsg) statusMsg.classList.add('hidden');
+
+    if (autorInput && !autorInput.value) {
+        const user = (typeof usuarioLogado !== 'undefined' && usuarioLogado) || (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil);
+        if (user && user.name) {
+            autorInput.value = `${user.name} (${user.ministries || 'Louvor'})`;
+        }
+    }
+
+    if (modal) modal.classList.remove('hidden');
+}
+
+function fecharModalAjusteMusicaAtual() {
+    const modal = document.getElementById('modal-ajuste-tom-rapido');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function submeterAjusteMusicaAtual(event) {
+    if (event) event.preventDefault();
+    if (!window.musicaAtualDetalhe) return;
+
+    const autor = (document.getElementById('modal-ajuste-autor')?.value || '').trim();
+    const texto = (document.getElementById('modal-ajuste-texto')?.value || '').trim();
+    const btnSubmit = document.getElementById('btn-submit-ajuste-musica');
+
+    if (!autor || !texto) {
+        if (typeof mostrarToast === 'function') mostrarToast('Preencha seu nome e a solicitação.', 'aviso');
+        return;
+    }
+
+    if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Enviando...';
+    }
+
+    try {
+        await enviarComentario(window.musicaAtualDetalhe.title, 'modal-ajuste-autor', 'modal-ajuste-texto', 'modal-ajuste-status', 'Ajuste de Tom');
+        fecharModalAjusteMusicaAtual();
+        if (typeof mostrarToast === 'function') mostrarToast('Solicitação de ajuste enviada aos líderes!', 'sucesso');
+        const txtEl = document.getElementById('modal-ajuste-texto');
+        if (txtEl) txtEl.value = '';
+    } catch (err) {
+        console.error('Erro ao enviar solicitação:', err);
+        if (typeof mostrarToast === 'function') mostrarToast('Erro ao enviar solicitação.', 'erro');
+    } finally {
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = 'Enviar Ajuste';
+        }
+    }
+}
+
+function abrirModalEditarMusicaAdmin() {
+    if (!window.musicaAtualDetalhe || !window.musicaAtualDetalhe.id) {
+        if (typeof mostrarToast === 'function') mostrarToast('Selecione uma música cadastrada no acervo.', 'aviso');
+        return;
+    }
+    const fnEdit = window.abrirModalEditarMusicaAdmin || (typeof abrirModalEditarMusicaAdmin !== 'undefined' && abrirModalEditarMusicaAdmin);
+    if (typeof fnEdit === 'function') {
+        fnEdit(window.musicaAtualDetalhe.id);
+    }
+}
+
+function abrirModalNovaMusicaAdmin() {
+    if (typeof abrirModalMusicaAdmin === 'function') {
+        abrirModalMusicaAdmin('geral');
+    }
 }
 
 function mudarSubAbaMusica(aba) {
@@ -1708,21 +1991,6 @@ function mudarSubAbaMusica(aba) {
     });
 }
 
-function voltarParaCultoDetalhe() {
-    const vLista = document.getElementById('visao-cultos-lista');
-    const vCulto = document.getElementById('visao-culto-detalhe');
-    const vMusica = document.getElementById('visao-musica-detalhe');
-
-    if (vLista) vLista.classList.add('hidden');
-    if (vCulto) vCulto.classList.remove('hidden');
-    if (vMusica) vMusica.classList.add('hidden');
-
-    if (window.history && window.history.pushState) {
-        window.history.pushState({ view: 'culto-detalhe', cultoIndex: window.cultoAtualIndex }, '', `#culto-${window.cultoAtualIndex}`);
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
 // Suporte para botão físico / Voltar do navegador
 window.addEventListener('popstate', (e) => {
     if (e.state) {
@@ -1730,11 +1998,17 @@ window.addEventListener('popstate', (e) => {
             abrirDetalhesCulto(e.state.cultoIndex, true);
         } else if (e.state.view === 'musica-detalhe') {
             abrirDetalhesMusica(e.state.musicaIndex, e.state.cultoIndex, true);
+        } else if (e.state.view === 'musica-detalhe-repertorio') {
+            abrirDetalhesMusicaDoRepertorio(e.state.musicaId, e.state.origem, e.state.versaoIndex, true);
+        } else if (e.state.view === 'repertorio') {
+            voltarDeMusicaDetalhe();
+        } else if (e.state.view === 'novas') {
+            voltarDeMusicaDetalhe();
         } else {
             voltarParaCultos();
         }
     } else {
-        voltarParaCultos();
+        voltarDeMusicaDetalhe();
     }
 });
 
@@ -1918,6 +2192,9 @@ window.abrirDetalhesCulto = abrirDetalhesCulto;
 window.mudarSubAbaCulto = mudarSubAbaCulto;
 window.voltarParaCultos = voltarParaCultos;
 window.abrirDetalhesMusica = abrirDetalhesMusica;
+window.abrirDetalhesMusicaDoRepertorio = abrirDetalhesMusicaDoRepertorio;
+window.trocarVersaoMusicaDetalhe = trocarVersaoMusicaDetalhe;
+window.voltarDeMusicaDetalhe = voltarDeMusicaDetalhe;
 window.mudarSubAbaMusica = mudarSubAbaMusica;
 window.voltarParaCultoDetalhe = voltarParaCultoDetalhe;
 window.executarPlaylistCultoAtual = executarPlaylistCultoAtual;
@@ -1930,16 +2207,25 @@ window.ajustarFonteCifra = ajustarFonteCifra;
 window.ajustarFonteLetra = ajustarFonteLetra;
 window.copiarCifraAtual = copiarCifraAtual;
 window.copiarLetraAtual = copiarLetraAtual;
+window.abrirModalAjusteMusicaAtual = abrirModalAjusteMusicaAtual;
+window.fecharModalAjusteMusicaAtual = fecharModalAjusteMusicaAtual;
+window.submeterAjusteMusicaAtual = submeterAjusteMusicaAtual;
+window.abrirModalEditarMusicaAdmin = abrirModalEditarMusicaAdmin;
+window.abrirModalNovaMusicaAdmin = abrirModalNovaMusicaAdmin;
+window.toggleMenuFiltrosRepertorio = toggleMenuFiltrosRepertorio;
+window.selecionarFiltroRepertorio = selecionarFiltroRepertorio;
+window.limparBuscaRepertorio = limparBuscaRepertorio;
+window.renderizarLinhaMusicaStreaming = renderizarLinhaMusicaStreaming;
 window.toggleCultoBloco = function() {}; // Mantido para compatibilidade residual
 
 // Gerenciador nativo do botão/gesto "Voltar" do Android (Galaxy S24 / One UI)
 window.tratarBotaoVoltarNativo = function() {
     try {
-        // 1. Se estiver na tela de Detalhes da Música, volta para os Detalhes do Culto
+        // 1. Se estiver na tela de Detalhes da Música, volta de acordo com a origem (repertório, novas ou culto)
         const vMusica = document.getElementById('visao-musica-detalhe');
         if (vMusica && !vMusica.classList.contains('hidden') && vMusica.style.display !== 'none') {
-            if (typeof voltarParaCultoDetalhe === 'function') {
-                voltarParaCultoDetalhe();
+            if (typeof voltarDeMusicaDetalhe === 'function') {
+                voltarDeMusicaDetalhe();
                 return 'HANDLED';
             }
         }
@@ -2092,75 +2378,260 @@ function gerarHtmlCardMusica(musicaObj, prefix) {
     `;
 }
 
+window.filtroRepertorioAtual = 'todas';
+
+function toggleMenuFiltrosRepertorio() {
+    const dropdown = document.getElementById('dropdown-filtros-repertorio');
+    if (dropdown) dropdown.classList.toggle('hidden');
+}
+
+// Fechar dropdown ao clicar fora
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('dropdown-filtros-repertorio');
+    const btnToggle = document.getElementById('btn-toggle-filtros-repertorio');
+    if (dropdown && !dropdown.classList.contains('hidden')) {
+        if (!dropdown.contains(e.target) && !btnToggle?.contains(e.target)) {
+            dropdown.classList.add('hidden');
+        }
+    }
+});
+
+function selecionarFiltroRepertorio(filtro) {
+    window.filtroRepertorioAtual = filtro;
+    const dropdown = document.getElementById('dropdown-filtros-repertorio');
+    if (dropdown) dropdown.classList.add('hidden');
+
+    const filtrosDisponiveis = ['todas', 'com_vs', 'com_cifra', 'com_yt', 'com_letra'];
+    filtrosDisponiveis.forEach(f => {
+        const check = document.getElementById(`check-filtro-${f}`);
+        if (check) check.classList.toggle('hidden', f !== filtro);
+    });
+
+    const dot = document.getElementById('filtro-ativo-dot');
+    const badge = document.getElementById('filtro-badge-nome');
+    if (dot) dot.classList.toggle('hidden', filtro === 'todas');
+
+    if (badge) {
+        if (filtro === 'todas') {
+            badge.classList.add('hidden');
+        } else {
+            const rotulos = {
+                com_vs: '🎵 Com Áudio / VS',
+                com_cifra: '🎸 Com Cifra',
+                com_yt: '📺 Com YouTube',
+                com_letra: '📜 Com Letra'
+            };
+            badge.textContent = rotulos[filtro] || filtro;
+            badge.classList.remove('hidden');
+        }
+    }
+
+    filtrarMusicas();
+}
+
+function limparBuscaRepertorio() {
+    const input = document.getElementById('searchInput');
+    if (input) input.value = '';
+    const btnLimpar = document.getElementById('btn-limpar-busca-repertorio');
+    if (btnLimpar) btnLimpar.classList.add('hidden');
+    filtrarMusicas();
+}
+
+function renderizarLinhaMusicaStreaming(musicaObj, index, origem = 'repertorio') {
+    if (!musicaObj || !musicaObj.title) return '';
+
+    const versoes = musicaObj.versions || [];
+    const v0 = versoes[0] || {};
+    const tomExibicao = (v0.key || musicaObj.key || 'C').toUpperCase();
+    const temVs = versoes.some(v => v.vs && v.vs.trim()) || (musicaObj.vs && musicaObj.vs.trim());
+    const temYt = versoes.some(v => v.yt && v.yt.trim()) || (musicaObj.yt && musicaObj.yt.trim());
+    const temCifra = (musicaObj.chords && musicaObj.chords.trim()) || versoes.some(v => v.chords && v.chords.trim());
+    const temLetra = (musicaObj.lyrics && musicaObj.lyrics.trim()) || versoes.some(v => v.lyrics && v.lyrics.trim());
+    const qtdVersoes = versoes.length;
+
+    const thumbId = `thumb-${origem}-${musicaObj.id}`;
+    const fallbackId = `thumb-fallback-${origem}-${musicaObj.id}`;
+
+    // Dispara a busca assíncrona da capa para a thumbnail em lotes leves
+    setTimeout(() => {
+        if (typeof window.fetchTrackArtwork === 'function') {
+            window.fetchTrackArtwork(musicaObj.title, musicaObj.artist).then(art => {
+                if (art) {
+                    const img = document.getElementById(thumbId);
+                    const fb = document.getElementById(fallbackId);
+                    if (img && fb) {
+                        img.src = art;
+                        img.classList.remove('hidden');
+                        fb.classList.add('hidden');
+                    }
+                }
+            }).catch(() => {});
+        }
+    }, 10 + (index * 20));
+
+    return `
+        <div onclick="abrirDetalhesMusicaDoRepertorio('${musicaObj.id}', '${origem}')" 
+            class="group w-full p-2.5 sm:p-3 rounded-2xl bg-white dark:bg-night-900/90 hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800/80 transition-all cursor-pointer flex items-center justify-between gap-3 shadow-xs active:scale-[0.99]">
+            
+            <!-- Capa e Título / Artista -->
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+                <div class="relative w-11 h-11 sm:w-12 sm:h-12 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 shrink-0 flex items-center justify-center shadow-xs">
+                    <img id="${thumbId}" src="" alt="" class="hidden w-full h-full object-cover">
+                    <div id="${fallbackId}" class="w-full h-full flex items-center justify-center text-brand-500 bg-gradient-to-br from-brand-500/10 to-brand-500/25">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                    </div>
+                </div>
+
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition">
+                            ${musicaObj.title}
+                        </h3>
+                        ${qtdVersoes > 1 ? `<span class="text-[10px] px-1.5 py-0.2 rounded font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 shrink-0">${qtdVersoes} versões</span>` : ''}
+                    </div>
+                    <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5 font-medium">
+                        ${musicaObj.artist || 'Ministério de Louvor'}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Badges e Recursos -->
+            <div class="flex items-center gap-2 shrink-0">
+                <!-- Badge de Tom -->
+                <span class="text-[11px] font-mono font-bold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80">
+                    Tom ${tomExibicao}
+                </span>
+
+                <!-- Ícones de Recursos -->
+                <div class="hidden sm:flex items-center gap-1.5 text-xs text-slate-400">
+                    ${temVs ? `<span title="Áudio VS disponível">🎵</span>` : ''}
+                    ${temCifra ? `<span title="Cifra disponível">🎸</span>` : ''}
+                    ${temYt ? `<span title="Vídeo do YouTube disponível">📺</span>` : ''}
+                    ${temLetra ? `<span title="Letra disponível">📜</span>` : ''}
+                </div>
+
+                <span class="text-slate-300 dark:text-slate-600 group-hover:text-brand-500 transition text-sm font-bold pl-0.5">›</span>
+            </div>
+        </div>
+    `;
+}
+
 function renderizarRepertorio(rows) {
     const container = document.getElementById('musicList');
-    container.innerHTML = '';
+    if (!container) return;
+
+    // Atualiza visibilidade do botão Admin de Nova Música
+    const btnNovaAdmin = document.getElementById('btn-admin-nova-musica-repertorio');
+    if (btnNovaAdmin) {
+        const canCreate = (typeof isAdmin !== 'undefined' && isAdmin) || (typeof hasPermission === 'function' && hasPermission('criar_musica'));
+        btnNovaAdmin.classList.toggle('hidden', !canCreate);
+    }
+
+    const contadorTotalEl = document.getElementById('repertorio-contador-total');
+    if (contadorTotalEl) {
+        contadorTotalEl.textContent = `${rows ? rows.length : 0} músicas cadastradas`;
+    }
+
     if (!rows || rows.length === 0) {
-        container.innerHTML = '<p class="text-center text-slate-500 py-10">Repertório vazio.</p>';
+        container.innerHTML = `
+            <div class="text-center py-16 px-4 bg-white dark:bg-night-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/80 space-y-3">
+                <div class="text-3xl">🎵</div>
+                <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Repertório Vazio</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">Nenhuma música cadastrada no acervo da igreja.</p>
+            </div>
+        `;
         return;
     }
-    
+
     let html = '';
     rows.forEach((musicaObj, i) => {
-        if (!musicaObj || !musicaObj.title) return;
-        html += gerarHtmlCardMusica(musicaObj, 'rep');
+        html += renderizarLinhaMusicaStreaming(musicaObj, i, 'repertorio');
     });
     container.innerHTML = html;
 }
 
 function renderizarMusicasNovas(rows) {
     const container = document.getElementById('novasList');
-    container.innerHTML = '';
+    if (!container) return;
+
+    const contadorTopoEl = document.getElementById('badge-count-novas-topo');
+    if (contadorTopoEl) {
+        contadorTopoEl.textContent = `${rows ? rows.length : 0} louvores`;
+    }
+
     if (!rows || rows.length === 0) {
-        container.innerHTML = '<p class="text-center text-slate-500 py-10">Nenhuma música nova cadastrada ainda.</p>';
+        container.innerHTML = `
+            <div class="text-center py-16 px-4 bg-white dark:bg-night-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/80 space-y-3">
+                <div class="text-3xl">✨</div>
+                <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Nenhuma Música Nova no Momento</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">Quando novas músicas forem selecionadas para ensaio, elas aparecerão aqui.</p>
+            </div>
+        `;
         return;
     }
-    
+
     let html = '';
     rows.forEach((musicaObj, i) => {
-        if (!musicaObj || !musicaObj.title) return;
-        html += gerarHtmlCardMusica(musicaObj, 'nova');
+        html += renderizarLinhaMusicaStreaming(musicaObj, i, 'novas');
     });
     container.innerHTML = html;
 }
 
 function filtrarMusicas() {
-    const termo = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
-    const filtro = document.getElementById('repertorio-filter')?.value || 'todas';
+    const inputSearch = document.getElementById('searchInput');
+    const termo = (inputSearch?.value || '').toLowerCase().trim();
+    const btnLimpar = document.getElementById('btn-limpar-busca-repertorio');
+    if (btnLimpar) btnLimpar.classList.toggle('hidden', termo.length === 0);
+
+    const filtro = window.filtroRepertorioAtual || 'todas';
     const rows = dadosGlobais.repertorio || [];
     const container = document.getElementById('musicList');
     if (!container) return;
-    container.innerHTML = '';
-    
-    let html = '';
-    rows.forEach((musicaObj, i) => {
+
+    let filtradas = [];
+    rows.forEach((musicaObj) => {
         if (!musicaObj || !musicaObj.title) return;
 
         const title = (musicaObj.title || '').toLowerCase();
         const artist = (musicaObj.artist || '').toLowerCase();
-        const passaBusca = title.includes(termo) || artist.includes(termo);
+        const passaBusca = !termo || title.includes(termo) || artist.includes(termo);
 
         let passaFiltro = true;
         const versoes = musicaObj.versions || [];
-        const temVs = versoes.some(v => v.vs && v.vs.trim());
-        const temYt = versoes.some(v => v.yt && v.yt.trim());
+        const temVs = versoes.some(v => v.vs && v.vs.trim()) || (musicaObj.vs && musicaObj.vs.trim());
+        const temYt = versoes.some(v => v.yt && v.yt.trim()) || (musicaObj.yt && musicaObj.yt.trim());
+        const temCifra = (musicaObj.chords && musicaObj.chords.trim()) || versoes.some(v => v.chords && v.chords.trim());
         const temLetra = (musicaObj.lyrics && musicaObj.lyrics.trim()) || versoes.some(v => v.lyrics && v.lyrics.trim());
 
         if (filtro === 'com_vs') passaFiltro = temVs;
-        else if (filtro === 'sem_vs') passaFiltro = !temVs;
+        else if (filtro === 'com_cifra') passaFiltro = temCifra;
         else if (filtro === 'com_yt') passaFiltro = temYt;
-        else if (filtro === 'sem_yt') passaFiltro = !temYt;
         else if (filtro === 'com_letra') passaFiltro = temLetra;
-        else if (filtro === 'sem_letra') passaFiltro = !temLetra;
 
         if (passaBusca && passaFiltro) {
-            html += gerarHtmlCardMusica(musicaObj, 'filtrado');
+            filtradas.push(musicaObj);
         }
     });
-    
-    if (!html) {
-        container.innerHTML = '<p class="text-center text-slate-500 py-10">Nenhuma música encontrada para este filtro.</p>';
+
+    const contadorTotalEl = document.getElementById('repertorio-contador-total');
+    if (contadorTotalEl) {
+        contadorTotalEl.textContent = `${filtradas.length} de ${rows.length} músicas`;
+    }
+
+    if (filtradas.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-16 px-4 bg-white dark:bg-night-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/80 space-y-3">
+                <div class="text-3xl">🔍</div>
+                <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Nenhuma música encontrada</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">Tente alterar os termos da busca ou redefinir os filtros.</p>
+                <button type="button" onclick="limparBuscaRepertorio(); selecionarFiltroRepertorio('todas');" class="text-xs text-brand-500 hover:underline font-semibold cursor-pointer">Ver todas as músicas</button>
+            </div>
+        `;
     } else {
+        let html = '';
+        filtradas.forEach((musicaObj, i) => {
+            html += renderizarLinhaMusicaStreaming(musicaObj, i, 'repertorio');
+        });
         container.innerHTML = html;
     }
 }

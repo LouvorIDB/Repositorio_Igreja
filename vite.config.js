@@ -3,12 +3,8 @@ import driveStreamHandler from './api/drive-stream.js';
 
 export default defineConfig({
   server: {
-    host: 'localhost',
-    port: 5173,
-    hmr: {
-      protocol: 'ws',
-      host: 'localhost'
-    }
+    host: true,
+    port: 5173
   },
   plugins: [
     {

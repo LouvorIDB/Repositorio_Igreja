@@ -2257,4 +2257,36 @@
     </div>
 </div>
 
+<!-- ===================== MODAL DE AJUSTE DE TOM / SOLICITAÇÃO ===================== -->
+<div id="modal-ajuste-tom-rapido" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-3 sm:p-4 overflow-hidden animate-fade-in">
+    <div class="bg-night-900 border border-slate-800 rounded-3xl max-w-md w-full shadow-2xl p-5 sm:p-6 space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-2">
+                <span class="text-xl">💬</span>
+                <div>
+                    <h3 class="text-sm sm:text-base font-bold text-white">Solicitar Ajuste de Tom</h3>
+                    <p id="modal-ajuste-musica-titulo" class="text-xs text-brand-400 font-semibold truncate max-w-[240px]">Música</p>
+                </div>
+            </div>
+            <button type="button" onclick="fecharModalAjusteMusicaAtual()" class="w-7 h-7 rounded-xl bg-night-950 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-xs font-bold border border-slate-800 cursor-pointer">✕</button>
+        </div>
+        
+        <form onsubmit="submeterAjusteMusicaAtual(event)" class="space-y-3">
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Seu Nome e Função / Instrumento</label>
+                <input type="text" id="modal-ajuste-autor" required placeholder="Ex: Lucas (Violão)" class="w-full bg-night-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500 font-sans">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-300 mb-1">Solicitação ou Observação</label>
+                <textarea id="modal-ajuste-texto" required rows="3" placeholder="Ex: Mudar tom para D no próximo culto, ou atualizar link do playback..." class="w-full bg-night-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-brand-500 font-sans resize-none"></textarea>
+            </div>
+            <p id="modal-ajuste-status" class="hidden text-xs text-brand-400 font-medium"></p>
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <button type="button" onclick="fecharModalAjusteMusicaAtual()" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">Cancelar</button>
+                <button type="submit" id="btn-submit-ajuste-musica" class="px-4 py-2 rounded-xl text-xs font-bold bg-brand-500 hover:bg-brand-400 text-night-950 transition shadow-sm cursor-pointer">Enviar Ajuste</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 

@@ -196,13 +196,32 @@
         
         <!-- Barra de Navegação Superior da Música -->
         <div class="flex items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
-            <button type="button" onclick="voltarParaCultoDetalhe()"
+            <button type="button" onclick="voltarDeMusicaDetalhe()"
                 class="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand-500 dark:hover:text-brand-400 transition cursor-pointer group">
                 <span class="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 group-hover:bg-brand-500/10 border border-slate-200 dark:border-slate-700">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 </span>
                 <span id="musica-btn-voltar-texto">Voltar para o Culto</span>
             </button>
+
+            <!-- Ações Rápidas da Música (Ajuste de Tom / Edição Admin) -->
+            <div class="flex items-center gap-2">
+                <!-- Solicitar Ajuste de Tom (Músicos e Voluntários) -->
+                <button type="button" id="btn-musica-ajuste-rapido" onclick="abrirModalAjusteMusicaAtual()"
+                    class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition flex items-center gap-1.5 cursor-pointer active:scale-95"
+                    title="Solicitar alteração de tom ou observação para os líderes">
+                    <span>💬</span>
+                    <span class="hidden sm:inline">Ajuste de Tom</span>
+                </button>
+
+                <!-- Editar Música (Líder / Administrador) -->
+                <button type="button" id="btn-musica-editar-admin" onclick="abrirModalEditarMusicaAdmin()"
+                    class="hidden px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/30 transition items-center gap-1.5 cursor-pointer active:scale-95"
+                    title="Editar informações no acervo">
+                    <span>✏️</span>
+                    <span class="hidden sm:inline">Editar</span>
+                </button>
+            </div>
         </div>
 
         <!-- Hero da Música: Foto / Artwork, Título e Artista -->
@@ -231,6 +250,14 @@
                     <span class="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 font-medium">
                         <span class="text-brand-500">🎤</span> Ministro: <strong id="musica-detalhe-cantor-nome" class="font-semibold text-slate-900 dark:text-white"></strong>
                     </span>
+                </div>
+
+                <!-- Seletor Dinâmico de Versões / Tons (Exibido quando houver mais de 1 versão cadastrada) -->
+                <div id="musica-detalhe-seletor-versoes" class="hidden pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center sm:items-start gap-2">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0 sm:pt-1">Versões:</span>
+                    <div id="musica-versoes-pills" class="flex items-center gap-1.5 flex-wrap justify-center sm:justify-start">
+                        <!-- Pílulas de versão injetadas dinamicamente -->
+                    </div>
                 </div>
             </div>
         </div>

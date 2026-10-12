@@ -80,6 +80,8 @@ window.LiturgePlayer = (function () {
         return null;
     }
 
+    window.fetchTrackArtwork = fetchTrackArtwork;
+
     function atualizarThumbnailPlayerBar(artworkUrl) {
         const imgEl = document.getElementById('nowPlayingArtwork');
         const fallbackEl = document.getElementById('nowPlayingArtworkFallback');
