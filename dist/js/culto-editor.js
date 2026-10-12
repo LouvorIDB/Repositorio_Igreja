@@ -911,6 +911,8 @@ function renderizarMidiasCulto() {
             icone = '🎵';
         } else if (m.type?.includes('image') || nomeLower.endsWith('.png') || nomeLower.endsWith('.jpg') || nomeLower.endsWith('.jpeg') || nomeLower.endsWith('.webp')) {
             icone = '🖼️';
+        } else if (m.type?.includes('presentation') || /\.(pptx|ppt)$/i.test(nomeLower)) {
+            icone = '📊';
         } else if (m.type?.includes('pdf') || nomeLower.endsWith('.pdf')) {
             icone = '📄';
         } else if (urlLower.includes('canva.com')) {

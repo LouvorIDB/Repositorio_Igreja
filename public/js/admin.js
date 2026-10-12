@@ -4621,7 +4621,7 @@ function selecionarFiltroTipoMidia(tipo) {
     filtroTipoMidia = tipo || 'todos';
     
     // Atualiza estados dos botões
-    const tipos = ['todos', 'imagem', 'video', 'audio', 'doc'];
+    const tipos = ['todos', 'imagem', 'video', 'audio', 'slides', 'doc'];
     tipos.forEach(t => {
         const btn = document.getElementById(`filtro-tipo-midia-${t}`);
         if (btn) {
@@ -4665,11 +4665,14 @@ function renderizarGridMidiasFiltradas() {
             const isAudio = mime.startsWith('audio/') || /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(fName);
             const isVideo = mime.startsWith('video/') || /\.(mp4|webm|mov|mkv)$/i.test(fName);
             const isImage = mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(fName);
+            const isSlides = mime.includes('presentation') || mime.includes('powerpoint') || /\.(pptx|ppt)$/i.test(fName);
+            const isPdf = mime.includes('pdf') || /\.pdf$/i.test(fName);
 
             if (filtroTipoMidia === 'imagem') return isImage;
             if (filtroTipoMidia === 'video') return isVideo;
             if (filtroTipoMidia === 'audio') return isAudio;
-            if (filtroTipoMidia === 'doc') return !isImage && !isVideo && !isAudio;
+            if (filtroTipoMidia === 'slides') return isSlides;
+            if (filtroTipoMidia === 'doc') return isPdf || (!isImage && !isVideo && !isAudio && !isSlides);
             return true;
         });
     }
@@ -4704,6 +4707,8 @@ function renderizarGridMidiasFiltradas() {
         const isAudio = mime.startsWith('audio/') || /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(fileName);
         const isVideo = mime.startsWith('video/') || /\.(mp4|webm|mov|mkv)$/i.test(fileName);
         const isImage = mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(fileName);
+        const isSlides = mime.includes('presentation') || mime.includes('powerpoint') || /\.(pptx|ppt)$/i.test(fileName);
+        const isPdf = mime.includes('pdf') || /\.pdf$/i.test(fileName);
 
         let previewHtml = '';
         if (isImage) {
@@ -4739,11 +4744,37 @@ function renderizarGridMidiasFiltradas() {
                     </div>
                 </div>
             `;
+        } else if (isSlides) {
+            previewHtml = `
+                <div class="h-32 sm:h-36 bg-gradient-to-br from-amber-950 via-slate-900 to-orange-950 flex flex-col items-center justify-center relative text-slate-300 cursor-pointer group p-3" onclick="abrirLightboxMidia('${url}', '${fileName.replace(/'/g, "\\'")}', 'slides')">
+                    <div class="w-11 h-11 rounded-2xl bg-orange-500/20 border border-orange-500/30 text-orange-400 flex items-center justify-center text-xl shadow-md mb-1.5 group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition duration-300">
+                        📊
+                    </div>
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-slate-300">Slides PPTX</span>
+                    <span class="absolute top-2 right-2 text-[10px] bg-orange-500/20 text-orange-300 border border-orange-500/30 px-1.5 py-0.5 rounded font-mono font-bold">PPTX</span>
+                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold gap-1 backdrop-blur-[1px]">
+                        <span>▶ Ver Apresentação</span>
+                    </div>
+                </div>
+            `;
+        } else if (isPdf) {
+            previewHtml = `
+                <div class="h-32 sm:h-36 bg-gradient-to-br from-red-950 via-slate-900 to-rose-950 flex flex-col items-center justify-center relative text-slate-300 cursor-pointer group p-3" onclick="abrirLightboxMidia('${url}', '${fileName.replace(/'/g, "\\'")}', 'pdf')">
+                    <div class="w-11 h-11 rounded-2xl bg-red-500/20 border border-red-500/30 text-red-400 flex items-center justify-center text-xl shadow-md mb-1.5 group-hover:scale-110 group-hover:bg-red-500 group-hover:text-white transition duration-300">
+                        📄
+                    </div>
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-slate-300">Documento PDF</span>
+                    <span class="absolute top-2 right-2 text-[10px] bg-red-500/20 text-red-300 border border-red-500/30 px-1.5 py-0.5 rounded font-mono font-bold">PDF</span>
+                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold gap-1 backdrop-blur-[1px]">
+                        <span>🔍 Ler Documento</span>
+                    </div>
+                </div>
+            `;
         } else {
             previewHtml = `
                 <div class="h-32 sm:h-36 bg-slate-900 flex flex-col items-center justify-center relative text-slate-400">
-                    <span class="text-3xl mb-1">📄</span>
-                    <span class="text-[10px] uppercase tracking-wider font-bold text-slate-300">Documento</span>
+                    <span class="text-3xl mb-1">📁</span>
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-slate-300">Arquivo</span>
                     <span class="absolute top-2 right-2 text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded font-mono font-bold">DOC</span>
                 </div>
             `;
@@ -4792,6 +4823,8 @@ function abrirLightboxMidia(url, nome, tipo) {
 
     const isVideo = tipo === 'video' || (url && url.match(/\.(mp4|webm|mov|mkv)(?:\?.*)?$/i));
     const isAudio = tipo === 'audio' || (url && url.match(/\.(mp3|wav|m4a|aac|ogg|flac)(?:\?.*)?$/i)) || (nome && nome.match(/\.(mp3|wav|m4a|aac|ogg|flac)$/i));
+    const isSlides = tipo === 'slides' || (url && url.match(/\.(pptx|ppt)(?:\?.*)?$/i)) || (nome && nome.match(/\.(pptx|ppt)$/i));
+    const isPdf = tipo === 'pdf' || (url && url.match(/\.pdf(?:\?.*)?$/i)) || (nome && nome.match(/\.pdf$/i));
 
     if (isVideo) {
         container.innerHTML = `
@@ -4814,6 +4847,20 @@ function abrirLightboxMidia(url, nome, tipo) {
                     <source src="${url}">
                     Seu navegador não suporta reprodução direta de áudio.
                 </audio>
+            </div>
+        `;
+    } else if (isSlides) {
+        const officeViewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
+        container.innerHTML = `
+            <div class="w-full h-[78vh] flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
+                <iframe src="${officeViewerUrl}" class="w-full h-full border-0 rounded-xl bg-white" title="${nome || 'Apresentação PowerPoint'}" allowfullscreen></iframe>
+            </div>
+        `;
+    } else if (isPdf) {
+        const gViewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
+        container.innerHTML = `
+            <div class="w-full h-[78vh] flex flex-col bg-slate-900 rounded-xl overflow-hidden border border-slate-800">
+                <iframe src="${gViewerUrl}" class="w-full h-full border-0 rounded-xl bg-white" title="${nome || 'Documento PDF'}"></iframe>
             </div>
         `;
     } else {
