@@ -674,6 +674,9 @@ function toggleSidebarMenu(menuId = 'sidebar-menu') {
         menu.classList.add('flex');
         if (backdrop) backdrop.classList.remove('hidden');
         document.body.classList.add('overflow-hidden');
+        if (menuId === 'sidebar-menu' && typeof atualizarSidebarPerfilUsuario === 'function') {
+            atualizarSidebarPerfilUsuario();
+        }
     } else {
         menu.classList.add('hidden');
         menu.classList.remove('flex');
@@ -695,6 +698,65 @@ function fecharSidebarMenu(menuId = 'sidebar-menu') {
     document.body.classList.remove('overflow-hidden');
 }
 
+// Atualizar informações do cabeçalho da sidebar (Avatar, Nome, Igreja, Cargo, Botão Admin)
+function atualizarSidebarPerfilUsuario() {
+    const userToEvaluate = (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil) || usuarioLogado;
+    const cardLogado = document.getElementById('sidebar-user-card');
+    const cardVisitante = document.getElementById('sidebar-guest-card');
+    const btnAdminSidebar = document.getElementById('btn-admin-panel-sidebar');
+
+    if (userToEvaluate) {
+        if (cardLogado) cardLogado.classList.remove('hidden');
+        if (cardVisitante) cardVisitante.classList.add('hidden');
+
+        // Nome de exibição
+        const nome = userToEvaluate.name || userToEvaluate.full_name || userToEvaluate.email || 'Usuário';
+        const elNome = document.getElementById('sidebar-user-name');
+        if (elNome) elNome.textContent = nome;
+
+        // Iniciais para o Avatar estilizado
+        const partes = String(nome).trim().split(/\s+/);
+        let iniciais = 'US';
+        if (partes.length >= 2) {
+            iniciais = (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+        } else if (partes.length === 1 && partes[0].length >= 2) {
+            iniciais = partes[0].slice(0, 2).toUpperCase();
+        } else if (partes.length === 1 && partes[0].length === 1) {
+            iniciais = partes[0].toUpperCase();
+        }
+        const elAvatar = document.getElementById('sidebar-user-avatar');
+        if (elAvatar) elAvatar.textContent = iniciais;
+
+        // Nome da Igreja vinculada
+        const churchName = dadosGlobais.church?.name || dadosGlobais.church?.tag || (typeof window.obterNomeIgrejaAtual === 'function' ? window.obterNomeIgrejaAtual() : 'Liturge');
+        const elChurch = document.getElementById('sidebar-church-label');
+        if (elChurch) elChurch.textContent = churchName;
+
+        // Papel e Ministério
+        const role = userToEvaluate.system_role || userToEvaluate.role || 'membro';
+        let roleLabel = 'Membro';
+        if (role === 'admin') roleLabel = 'Administrador';
+        else if (role === 'lider') roleLabel = 'Líder';
+        else if (role === 'voluntario') roleLabel = 'Voluntário';
+
+        if (role !== 'admin' && userToEvaluate.ministries) {
+            roleLabel = `${roleLabel} • ${userToEvaluate.ministries}`;
+        }
+        const elRole = document.getElementById('sidebar-user-role');
+        if (elRole) elRole.textContent = roleLabel;
+
+        // Visibilidade do botão direto para o Painel Admin
+        const isLiderOrAdmin = role === 'admin' || role === 'lider' || Boolean(window.isSuperAdmin);
+        if (btnAdminSidebar) {
+            btnAdminSidebar.classList.toggle('hidden', !isLiderOrAdmin);
+        }
+    } else {
+        if (cardLogado) cardLogado.classList.add('hidden');
+        if (cardVisitante) cardVisitante.classList.remove('hidden');
+        if (btnAdminSidebar) btnAdminSidebar.classList.add('hidden');
+    }
+}
+
 // Fechar menu com a tecla ESC no computador
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
@@ -705,14 +767,15 @@ document.addEventListener('keydown', function(e) {
 
 window.toggleSidebarMenu = toggleSidebarMenu;
 window.fecharSidebarMenu = fecharSidebarMenu;
+window.atualizarSidebarPerfilUsuario = atualizarSidebarPerfilUsuario;
 
 // ===================== SITE PRINCIPAL =====================
 
 function mudarAba(aba) {
     const secoes = { cultos: 'secao-cultos', repertorio: 'secao-repertorio', novas: 'secao-novas', midia: 'secao-midia', agenda: 'secao-agenda', almoxarifado: 'secao-almoxarifado', analytics: 'secao-analytics', holyrics: 'secao-holyrics' };
     const botoes = { cultos: 'btn-cultos', repertorio: 'btn-repertorio', novas: 'btn-novas', midia: 'btn-midia', agenda: 'btn-agenda', almoxarifado: 'btn-almoxarifado', analytics: 'btn-analytics', holyrics: 'btn-holyrics-igreja-container' };
-    const ativo = "w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition bg-brand-600/20 text-brand-400 border border-brand-500/30 flex items-center gap-3";
-    const inativo = "w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3";
+    const ativo = "w-full text-left px-3.5 py-2.5 rounded-xl font-semibold text-sm transition bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 shadow-xs flex items-center gap-3";
+    const inativo = "w-full text-left px-3.5 py-2.5 rounded-xl font-medium text-sm transition text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white border border-transparent flex items-center gap-3";
 
     const userToEvaluate = modoSimulacaoPerfil || usuarioLogado;
     const roleToEval = userToEvaluate ? (userToEvaluate.system_role || userToEvaluate.role || 'membro') : 'visitante';
@@ -740,8 +803,8 @@ function mudarAba(aba) {
             } else {
                 if (key === 'holyrics') {
                     btn.className = key === aba 
-                        ? "w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition bg-cyan-900/40 text-cyan-300 border border-cyan-500/40 flex items-center gap-3"
-                        : "w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-cyan-300 hover:bg-cyan-900/30 border border-transparent hover:border-cyan-500/30 flex items-center gap-3";
+                        ? "w-full text-left px-3.5 py-2.5 rounded-xl font-semibold text-sm transition bg-cyan-500/15 text-cyan-600 dark:text-cyan-300 border border-cyan-500/30 flex items-center gap-3"
+                        : "w-full text-left px-3.5 py-2.5 rounded-xl font-medium text-sm transition text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10 border border-transparent flex items-center gap-3";
                 } else {
                     btn.className = key === aba ? ativo : inativo;
                 }
@@ -3509,6 +3572,10 @@ function aplicarVisibilidadePermissoes() {
             activeTab = 'cultos';
         }
         mudarAbaAdmin(activeTab);
+    }
+
+    if (typeof atualizarSidebarPerfilUsuario === 'function') {
+        atualizarSidebarPerfilUsuario();
     }
 }
 window.aplicarVisibilidadePermissoes = aplicarVisibilidadePermissoes;

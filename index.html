@@ -511,25 +511,78 @@
 
 
             <!-- SIDEBAR (MENU SLIDE-OVER RECOLHIDO POR PADRÃO) -->
-            <aside id="sidebar-menu" class="hidden flex-col gap-6 fixed top-0 left-0 bottom-0 z-[70] h-[100dvh] max-h-[100dvh] w-72 sm:w-80 max-w-[85vw] shrink-0 bg-night-900 border-r border-slate-800 shadow-2xl p-6 overflow-y-auto sidebar-scroll-container custom-scrollbar">
+            <aside id="sidebar-menu" class="hidden flex-col gap-5 fixed top-0 left-0 bottom-0 z-[70] h-[100dvh] max-h-[100dvh] w-72 sm:w-80 max-w-[85vw] shrink-0 bg-white dark:bg-night-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl p-5 sm:p-6 overflow-y-auto sidebar-scroll-container custom-scrollbar transition-all">
+                
                 <!-- CABEÇALHO DO MENU -->
-                <div class="mb-2 flex items-center justify-between px-2">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800/80">
                     <div class="flex items-center gap-2.5">
                         <img src="assets/liturge-symbol.svg" alt="Liturge" class="w-6 h-6 glow-node">
-                        <span class="text-base font-black text-white tracking-[0.2em] select-none" id="titulo-site">LITURGE</span>
+                        <span class="text-base font-black text-slate-900 dark:text-white tracking-[0.2em] select-none" id="titulo-site">LITURGE</span>
                     </div>
-                    <button onclick="fecharSidebarMenu('sidebar-menu')" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition cursor-pointer" aria-label="Fechar Menu" title="Fechar Menu">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <button onclick="fecharSidebarMenu('sidebar-menu')" class="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-center text-sm font-bold border border-slate-200 dark:border-slate-700 transition cursor-pointer" aria-label="Fechar Menu" title="Fechar Menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
 
-                <nav class="flex flex-col gap-6 pb-24">
+                <!-- CARD DE PERFIL DO USUÁRIO NA SIDEBAR (SE LOGADO) -->
+                <div id="sidebar-user-card" class="hidden p-3.5 rounded-2xl bg-slate-50 dark:bg-night-950/80 border border-slate-200/80 dark:border-slate-800/80 space-y-2.5 shadow-xs">
+                    <div class="flex items-center gap-3">
+                        <div id="sidebar-user-avatar" class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-brand-500 text-night-950 font-black text-sm flex items-center justify-center shrink-0 shadow-sm shadow-brand-500/20">
+                            US
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p id="sidebar-user-name" class="text-sm font-bold text-slate-900 dark:text-white truncate">Usuário</p>
+                            <p id="sidebar-church-name" class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 truncate">
+                                <span>⛪</span> <span id="sidebar-church-label">Liturge</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between pt-1 border-t border-slate-200/60 dark:border-slate-800/60 text-[10px]">
+                        <span id="sidebar-user-role" class="font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30 truncate max-w-[170px]">
+                            Voluntário
+                        </span>
+                        <span class="inline-flex items-center gap-1 font-medium text-emerald-600 dark:text-emerald-400">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Online
+                        </span>
+                    </div>
+                </div>
+
+                <!-- CARD DE VISITANTE (SE NÃO LOGADO) -->
+                <div id="sidebar-guest-card" class="p-3.5 rounded-2xl bg-slate-50 dark:bg-night-950/80 border border-slate-200/80 dark:border-slate-800/80 space-y-2.5 shadow-xs">
                     <div>
-                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2">Geral</h3>
+                        <p class="text-xs font-bold text-slate-900 dark:text-white">Bem-vindo ao Liturge</p>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Acesse sua conta para visualizar suas escalas e repertórios.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="abrirModalLoginUsuario(); fecharSidebarMenu('sidebar-menu');"
+                            class="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold bg-brand-500 hover:bg-brand-400 text-night-950 transition text-center cursor-pointer shadow-xs">
+                            Entrar
+                        </button>
+                        <button type="button" onclick="abrirModalCadastroUsuario(); fecharSidebarMenu('sidebar-menu');"
+                            class="flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 transition text-center cursor-pointer">
+                            Cadastrar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- BOTÃO DE ATALHO RÁPIDO: PAINEL ADMIN (VISÍVEL APENAS PARA ADMIN/LÍDER) -->
+                <button type="button" id="btn-admin-panel-sidebar" onclick="abrirPainelAdmin(); fecharSidebarMenu('sidebar-menu');"
+                    class="hidden w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition bg-gradient-to-r from-brand-500/15 via-amber-500/10 to-transparent text-brand-600 dark:text-brand-400 border border-brand-500/30 hover:border-brand-500/60 flex items-center justify-between cursor-pointer shadow-xs active:scale-[0.99]">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-6 h-6 rounded-lg bg-brand-500/20 text-brand-600 dark:text-brand-400 flex items-center justify-center text-xs">⚙️</span>
+                        <span>Painel de Administração</span>
+                    </div>
+                    <span class="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-md bg-brand-500/20 text-brand-600 dark:text-brand-400 font-black">Admin</span>
+                </button>
+
+                <nav class="flex flex-col gap-5 pb-24">
+                    <!-- GRUPO 1: CULTOS & PROGRAMAÇÃO -->
+                    <div>
+                        <h3 class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-2">Cultos & Agenda</h3>
                         <div class="flex flex-col gap-1">
                             <button onclick="mudarAba('cultos'); fecharSidebarMenu('sidebar-menu');" id="btn-cultos"
-                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-liturge-400">
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-brand-500">
                                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                                     <line x1="16" y1="2" x2="16" y2="6"></line>
                                     <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -538,8 +591,8 @@
                                 <span>Próximos Cultos</span>
                             </button>
                             <button onclick="mudarAba('agenda'); fecharSidebarMenu('sidebar-menu');" id="btn-agenda"
-                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-amber-400">
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-amber-500">
                                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                                     <line x1="16" y1="2" x2="16" y2="6"></line>
                                     <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -553,21 +606,22 @@
                         </div>
                     </div>
 
+                    <!-- GRUPO 2: MÚSICAS & REPERTÓRIO -->
                     <div>
-                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2">Músicas & Ensaios</h3>
+                        <h3 class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-2">Músicas & Ensaios</h3>
                         <div class="flex flex-col gap-1">
                             <button onclick="mudarAba('repertorio'); fecharSidebarMenu('sidebar-menu');" id="btn-repertorio"
-                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-liturge-400">
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-brand-500">
                                     <path d="M9 18V5l12-2v13"></path>
                                     <circle cx="6" cy="18" r="3"></circle>
                                     <circle cx="18" cy="16" r="3"></circle>
                                 </svg>
-                                <span>Lista Geral</span>
+                                <span>Repertório Geral</span>
                             </button>
                             <button onclick="mudarAba('novas'); fecharSidebarMenu('sidebar-menu');" id="btn-novas"
-                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-amber-300">
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-amber-500">
                                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                                 </svg>
                                 <span>Músicas Novas</span>
@@ -575,12 +629,13 @@
                         </div>
                     </div>
 
+                    <!-- GRUPO 3: FERRAMENTAS DA EQUIPE -->
                     <div>
-                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2">Ferramentas da Equipe</h3>
+                        <h3 class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-2">Ferramentas da Equipe</h3>
                         <div class="flex flex-col gap-1">
                             <button onclick="mudarAba('midia'); fecharSidebarMenu('sidebar-menu');" id="btn-midia"
-                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 items-center gap-3 hidden">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-blue-400">
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200 items-center gap-3 hidden">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-blue-500">
                                     <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
                                     <line x1="7" y1="2" x2="7" y2="22"></line>
                                     <line x1="17" y1="2" x2="17" y2="22"></line>
@@ -590,42 +645,43 @@
                                     <line x1="17" y1="17" x2="22" y2="17"></line>
                                     <line x1="17" y1="7" x2="22" y2="7"></line>
                                 </svg>
-                                <span>Mídias & Vídeos</span>
+                                <span>Central de Mídias</span>
                             </button>
                             <button onclick="mudarAba('almoxarifado'); fecharSidebarMenu('sidebar-menu');" id="btn-almoxarifado"
-                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-emerald-400">
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-emerald-500">
                                     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                                     <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
                                     <line x1="12" y1="22.08" x2="12" y2="12"></line>
                                 </svg>
-                                <span>Recursos & Wiki</span>
+                                <span>Almoxarifado & Wiki</span>
                             </button>
                             <button onclick="mudarAba('analytics'); fecharSidebarMenu('sidebar-menu');" id="btn-analytics"
-                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-indigo-400">
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-indigo-500">
                                     <line x1="18" y1="20" x2="18" y2="10"></line>
                                     <line x1="12" y1="20" x2="12" y2="4"></line>
                                     <line x1="6" y1="20" x2="6" y2="14"></line>
                                 </svg>
-                                <span>Analytics & Relatórios</span>
+                                <span>Analytics & Inteligência</span>
                             </button>
                             <a href="brandbook.html" target="_blank"
-                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-liturge-400 hover:bg-liturge-500/10 hover:text-liturge-300 flex items-center gap-3 border border-liturge-500/20">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-liturge-400 glow-node">
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-brand-600 dark:text-brand-400 hover:bg-brand-500/10 hover:text-brand-500 flex items-center gap-3 border border-brand-500/20">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-brand-500 glow-node">
                                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                                 </svg>
-                                <span>Brandbook & Marca</span>
+                                <span>Brandbook Oficial</span>
                             </a>
                         </div>
                     </div>
 
+                    <!-- GRUPO 4: AÇÕES ESPECIAIS -->
                     <div id="botoes-sugestao-container" class="hidden">
-                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2 pt-2 border-t border-slate-700/50">Ações Especiais</h3>
+                        <h3 class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-2 pt-2 border-t border-slate-200 dark:border-slate-800">Ações Especiais</h3>
                         <div class="flex flex-col gap-1">
                             <button id="btn-sugerir-nova-container" onclick="toggleComentario('form-sugestao-nova'); fecharSidebarMenu('sidebar-menu');"
-                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-amber-300 hover:bg-amber-900/20 border border-transparent hover:border-amber-500/30 flex items-center gap-3 hidden">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-amber-400">
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 border border-transparent hover:border-amber-500/30 flex items-center gap-3 hidden">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-amber-500">
                                     <line x1="9" y1="18" x2="15" y2="18"></line>
                                     <line x1="10" y1="22" x2="14" y2="22"></line>
                                     <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path>
@@ -633,8 +689,8 @@
                                 <span>Sugerir Música Nova</span>
                             </button>
                             <button id="btn-indisponibilidade-container" onclick="toggleComentario('form-indisponibilidade'); fecharSidebarMenu('sidebar-menu');"
-                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-rose-300 hover:bg-rose-900/30 border border-transparent hover:border-rose-500/30 flex items-center gap-3 hidden">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-rose-400">
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 flex items-center gap-3 hidden">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-rose-500">
                                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                                     <line x1="16" y1="2" x2="16" y2="6"></line>
                                     <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -645,8 +701,8 @@
                                 <span>Informar Indisponibilidade</span>
                             </button>
                             <button id="btn-holyrics-igreja-container" onclick="mudarAba('holyrics'); fecharSidebarMenu('sidebar-menu');"
-                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-cyan-300 hover:bg-cyan-900/30 border border-transparent hover:border-cyan-500/30 flex items-center gap-3 hidden">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-cyan-400">
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/10 border border-transparent hover:border-cyan-500/30 flex items-center gap-3 hidden">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-cyan-500">
                                     <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
                                     <line x1="8" y1="21" x2="16" y2="21"></line>
                                     <line x1="12" y1="17" x2="12" y2="21"></line>
@@ -656,24 +712,34 @@
                         </div>
                     </div>
 
+                    <!-- GRUPO 5: PREFERÊNCIAS & CONTA -->
                     <div id="sidebar-minha-conta-container">
-                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 px-2 pt-2 border-t border-slate-700/50">Preferências & Conta</h3>
+                        <h3 class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2 px-2 pt-2 border-t border-slate-200 dark:border-slate-800">Preferências & Conta</h3>
                         <div class="flex flex-col gap-1">
                             <button onclick="toggleTemaClaroEscuro()" id="btn-toggle-theme-sidebar"
-                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center justify-between cursor-pointer">
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200 flex items-center justify-between cursor-pointer">
                                 <div class="flex items-center gap-3">
                                     <span class="text-base" id="sidebar-theme-icon">☀️</span>
                                     <span id="sidebar-theme-label">Tema Claro</span>
                                 </div>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700" id="sidebar-theme-badge">Alternar</span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700" id="sidebar-theme-badge">Alternar</span>
                             </button>
                             <button onclick="abrirMinhaConta(); fecharSidebarMenu('sidebar-menu');" id="btn-minha-conta-sidebar"
-                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 flex items-center gap-3">
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200 flex items-center gap-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-slate-400">
                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                                     <circle cx="12" cy="7" r="4"></circle>
                                 </svg>
                                 <span>Meus Dados</span>
+                            </button>
+                            <button onclick="realizarLogoutUsuario(); fecharSidebarMenu('sidebar-menu');" id="btn-logout-sidebar"
+                                class="w-full text-left px-4 py-2.5 rounded-xl font-medium text-sm transition text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-3 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 text-rose-500">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                    <polyline points="16 17 21 12 16 7"></polyline>
+                                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                                </svg>
+                                <span>Sair da Conta</span>
                             </button>
                         </div>
                     </div>
