@@ -907,6 +907,8 @@ function renderizarMidiasCulto() {
 
         if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be') || m.type?.includes('video') || nomeLower.endsWith('.mp4')) {
             icone = '🎬';
+        } else if (m.type?.includes('audio') || /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(nomeLower)) {
+            icone = '🎵';
         } else if (m.type?.includes('image') || nomeLower.endsWith('.png') || nomeLower.endsWith('.jpg') || nomeLower.endsWith('.jpeg') || nomeLower.endsWith('.webp')) {
             icone = '🖼️';
         } else if (m.type?.includes('pdf') || nomeLower.endsWith('.pdf')) {

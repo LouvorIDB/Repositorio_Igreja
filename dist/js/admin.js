@@ -4621,7 +4621,7 @@ function selecionarFiltroTipoMidia(tipo) {
     filtroTipoMidia = tipo || 'todos';
     
     // Atualiza estados dos botões
-    const tipos = ['todos', 'imagem', 'video', 'doc'];
+    const tipos = ['todos', 'imagem', 'video', 'audio', 'doc'];
     tipos.forEach(t => {
         const btn = document.getElementById(`filtro-tipo-midia-${t}`);
         if (btn) {
@@ -4661,9 +4661,15 @@ function renderizarGridMidiasFiltradas() {
     if (filtroTipoMidia !== 'todos') {
         midias = midias.filter(m => {
             const mime = (m.mime_type || '').toLowerCase();
-            if (filtroTipoMidia === 'imagem') return mime.startsWith('image/');
-            if (filtroTipoMidia === 'video') return mime.startsWith('video/');
-            if (filtroTipoMidia === 'doc') return !mime.startsWith('image/') && !mime.startsWith('video/');
+            const fName = (m.file_name || '').toLowerCase();
+            const isAudio = mime.startsWith('audio/') || /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(fName);
+            const isVideo = mime.startsWith('video/') || /\.(mp4|webm|mov|mkv)$/i.test(fName);
+            const isImage = mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(fName);
+
+            if (filtroTipoMidia === 'imagem') return isImage;
+            if (filtroTipoMidia === 'video') return isVideo;
+            if (filtroTipoMidia === 'audio') return isAudio;
+            if (filtroTipoMidia === 'doc') return !isImage && !isVideo && !isAudio;
             return true;
         });
     }
@@ -4695,8 +4701,12 @@ function renderizarGridMidiasFiltradas() {
             ? `<span class="inline-block text-[10px] px-2 py-0.5 rounded-md bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20 font-medium truncate max-w-full">${minObj.icon || '🏢'} ${minObj.name}</span>`
             : `<span class="inline-block text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-medium">Geral</span>`;
 
+        const isAudio = mime.startsWith('audio/') || /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(fileName);
+        const isVideo = mime.startsWith('video/') || /\.(mp4|webm|mov|mkv)$/i.test(fileName);
+        const isImage = mime.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg)$/i.test(fileName);
+
         let previewHtml = '';
-        if (mime.startsWith('image/')) {
+        if (isImage) {
             previewHtml = `
                 <div class="h-32 sm:h-36 bg-slate-950 overflow-hidden flex items-center justify-center relative cursor-pointer group" onclick="abrirLightboxMidia('${url}', '${fileName.replace(/'/g, "\\'")}', 'imagem')">
                     <img src="${url}" alt="${fileName}" class="w-full h-full object-cover transition duration-300 group-hover:scale-105" loading="lazy" />
@@ -4706,7 +4716,7 @@ function renderizarGridMidiasFiltradas() {
                     </div>
                 </div>
             `;
-        } else if (mime.startsWith('video/')) {
+        } else if (isVideo) {
             previewHtml = `
                 <div class="h-32 sm:h-36 bg-slate-950 flex flex-col items-center justify-center relative text-slate-400 cursor-pointer group" onclick="abrirLightboxMidia('${url}', '${fileName.replace(/'/g, "\\'")}', 'video')">
                     <div class="w-10 h-10 rounded-full bg-brand-500 text-night-950 flex items-center justify-center text-sm shadow-md mb-1 group-hover:scale-110 transition">
@@ -4714,6 +4724,19 @@ function renderizarGridMidiasFiltradas() {
                     </div>
                     <span class="text-[10px] uppercase tracking-wider font-bold text-slate-300">Vídeo</span>
                     <span class="absolute top-2 right-2 text-[10px] bg-brand-500/20 text-brand-400 border border-brand-500/30 px-1.5 py-0.5 rounded font-mono font-bold">VÍDEO</span>
+                </div>
+            `;
+        } else if (isAudio) {
+            previewHtml = `
+                <div class="h-32 sm:h-36 bg-gradient-to-br from-indigo-950 via-slate-900 to-purple-950 flex flex-col items-center justify-center relative text-slate-300 cursor-pointer group p-3" onclick="abrirLightboxMidia('${url}', '${fileName.replace(/'/g, "\\'")}', 'audio')">
+                    <div class="w-11 h-11 rounded-2xl bg-brand-500/20 border border-brand-500/30 text-brand-400 flex items-center justify-center text-xl shadow-md mb-1.5 group-hover:scale-110 group-hover:bg-brand-500 group-hover:text-night-950 transition duration-300">
+                        🎵
+                    </div>
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-slate-300">Áudio</span>
+                    <span class="absolute top-2 right-2 text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded font-mono font-bold">ÁUDIO</span>
+                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold gap-1 backdrop-blur-[1px]">
+                        <span>▶ Reproduzir</span>
+                    </div>
                 </div>
             `;
         } else {
@@ -4767,12 +4790,31 @@ function abrirLightboxMidia(url, nome, tipo) {
         btnDownload.setAttribute('download', nome || 'arquivo');
     }
 
-    if (tipo === 'video' || (url && url.match(/\.(mp4|webm|ogg)(?:\?.*)?$/i))) {
+    const isVideo = tipo === 'video' || (url && url.match(/\.(mp4|webm|mov|mkv)(?:\?.*)?$/i));
+    const isAudio = tipo === 'audio' || (url && url.match(/\.(mp3|wav|m4a|aac|ogg|flac)(?:\?.*)?$/i)) || (nome && nome.match(/\.(mp3|wav|m4a|aac|ogg|flac)$/i));
+
+    if (isVideo) {
         container.innerHTML = `
             <video controls autoplay class="max-h-[75vh] max-w-full rounded-xl outline-none shadow-2xl">
                 <source src="${url}">
                 Seu navegador não suporta reprodução direta deste formato de vídeo.
             </video>
+        `;
+    } else if (isAudio) {
+        container.innerHTML = `
+            <div class="w-full max-w-md p-6 bg-night-900/90 border border-slate-800 rounded-2xl flex flex-col items-center text-center space-y-4 my-8">
+                <div class="w-20 h-20 rounded-3xl bg-brand-500/10 border border-brand-500/30 text-brand-400 flex items-center justify-center text-4xl shadow-lg">
+                    🎵
+                </div>
+                <div class="min-w-0 w-full">
+                    <h5 class="text-sm font-bold text-white truncate">${nome || 'Áudio'}</h5>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Player de Áudio Liturge</p>
+                </div>
+                <audio controls autoplay class="w-full rounded-lg outline-none">
+                    <source src="${url}">
+                    Seu navegador não suporta reprodução direta de áudio.
+                </audio>
+            </div>
         `;
     } else {
         container.innerHTML = `
