@@ -1,14 +1,68 @@
 /**
- * analytics.js - Módulo de Inteligência de Dados, Métricas e Gráficos do LouvorIDB
+ * analytics.js - Módulo de Inteligência de Dados, Métricas e Gráficos do Liturge
  */
 
 let chartTopMusicasInstance = null;
 let chartTopVoluntariosInstance = null;
 let todasMusicasExecutadas = [];
+let periodoAtivoAnalytics = 30;
+
+function atualizarPilulasPeriodoAnalytics(opcao) {
+    periodoAtivoAnalytics = opcao;
+    const botoes = {
+        30: document.getElementById('btn-periodo-30d'),
+        'mes': document.getElementById('btn-periodo-mes'),
+        'ano': document.getElementById('btn-periodo-ano'),
+        'tudo': document.getElementById('btn-periodo-tudo'),
+        'custom': document.getElementById('btn-periodo-custom')
+    };
+
+    const badgePeriodo = document.getElementById('badge-periodo-atual-analytics');
+    const textosBadge = {
+        30: 'Últimos 30 Dias',
+        'mes': 'Este Mês',
+        'ano': 'Este Ano',
+        'tudo': 'Todo o Histórico',
+        'custom': 'Intervalo Personalizado'
+    };
+
+    if (badgePeriodo && textosBadge[opcao]) {
+        badgePeriodo.textContent = textosBadge[opcao];
+    }
+
+    const classeAtiva = "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700 font-bold";
+    const classeInativa = "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-transparent font-medium";
+
+    Object.keys(botoes).forEach(key => {
+        const btn = botoes[key];
+        if (!btn) return;
+        btn.className = `px-2.5 sm:px-3 py-1.5 rounded-lg text-xs transition flex items-center gap-1 cursor-pointer ${key == opcao ? classeAtiva : classeInativa}`;
+    });
+}
+
+function alternarPainelDatasCustomizadasAnalytics() {
+    const painel = document.getElementById('painel-datas-custom-analytics');
+    if (!painel) return;
+    const estaOculto = painel.classList.contains('hidden');
+    if (estaOculto) {
+        painel.classList.remove('hidden');
+        atualizarPilulasPeriodoAnalytics('custom');
+    } else {
+        painel.classList.add('hidden');
+    }
+}
+
+function aplicarFiltroCustomizadoAnalytics() {
+    atualizarPilulasPeriodoAnalytics('custom');
+    carregarAnalytics();
+}
 
 function definirAtalhoPeriodoAnalytics(opcao) {
     const elInicio = document.getElementById('analytics-data-inicio');
     const elFim = document.getElementById('analytics-data-fim');
+    const painelCustom = document.getElementById('painel-datas-custom-analytics');
+    if (painelCustom) painelCustom.classList.add('hidden');
+
     if (!elInicio || !elFim) return;
 
     const hoje = new Date();
@@ -18,18 +72,28 @@ function definirAtalhoPeriodoAnalytics(opcao) {
         const inicio = new Date();
         inicio.setDate(hoje.getDate() - 30);
         elInicio.value = inicio.toISOString().split('T')[0];
+    } else if (opcao === 'mes') {
+        const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+        elInicio.value = inicio.toISOString().split('T')[0];
     } else if (opcao === 'ano') {
         const inicio = new Date(hoje.getFullYear(), 0, 1);
         elInicio.value = inicio.toISOString().split('T')[0];
     }
+
+    atualizarPilulasPeriodoAnalytics(opcao);
     carregarAnalytics();
 }
 
 function limparFiltroPeriodoAnalytics() {
     const elInicio = document.getElementById('analytics-data-inicio');
     const elFim = document.getElementById('analytics-data-fim');
+    const painelCustom = document.getElementById('painel-datas-custom-analytics');
+    if (painelCustom) painelCustom.classList.add('hidden');
+
     if (elInicio) elInicio.value = '';
     if (elFim) elFim.value = '';
+
+    atualizarPilulasPeriodoAnalytics('tudo');
     carregarAnalytics();
 }
 
@@ -47,6 +111,18 @@ async function carregarAnalytics() {
             mostrarToast('Acesso negado: O módulo de Analytics é exclusivo para Líderes e Administradores.', 'aviso');
         }
         return;
+    }
+
+    // Inicialização padrão de datas se vazias (30 dias)
+    const elInicio = document.getElementById('analytics-data-inicio');
+    const elFim = document.getElementById('analytics-data-fim');
+    if (elInicio && elFim && !elInicio.value && !elFim.value && periodoAtivoAnalytics === 30) {
+        const hoje = new Date();
+        elFim.value = hoje.toISOString().split('T')[0];
+        const inicio = new Date();
+        inicio.setDate(hoje.getDate() - 30);
+        elInicio.value = inicio.toISOString().split('T')[0];
+        atualizarPilulasPeriodoAnalytics(30);
     }
 
     try {
@@ -71,14 +147,14 @@ async function carregarAnalytics() {
             if (kpiRepertorioEl) kpiRepertorioEl.classList.add('hidden');
             if (cardChartMusicasEl) cardChartMusicasEl.classList.add('hidden');
             if (tituloVoluntariosEl) {
-                tituloVoluntariosEl.innerHTML = `<span>🎥</span> Frequência da Equipe — ${minDoUsuario ? minDoUsuario.name : 'Ministério'}`;
+                tituloVoluntariosEl.innerHTML = `<span class="text-emerald-500">🎥</span> Frequência da Equipe — ${minDoUsuario ? minDoUsuario.name : 'Ministério'}`;
             }
         } else {
             if (kpiMusicasEl) kpiMusicasEl.classList.remove('hidden');
             if (kpiRepertorioEl) kpiRepertorioEl.classList.remove('hidden');
             if (cardChartMusicasEl) cardChartMusicasEl.classList.remove('hidden');
             if (tituloVoluntariosEl) {
-                tituloVoluntariosEl.innerHTML = `<span>🎸</span> Voluntários Mais Escalados`;
+                tituloVoluntariosEl.innerHTML = `<span class="text-emerald-500">🎸</span> Voluntários Mais Escalados`;
             }
         }
 
@@ -115,9 +191,13 @@ async function carregarAnalytics() {
         }
         const totalVoluntarios = listaVoluntariosBase.length;
 
-        document.getElementById('kpi-total-cultos').textContent = totalCultos;
-        document.getElementById('kpi-repertorio-ativo').textContent = totalRepertorio;
-        document.getElementById('kpi-total-voluntarios').textContent = totalVoluntarios;
+        const elTotalCultos = document.getElementById('kpi-total-cultos');
+        const elRepertorioAtivo = document.getElementById('kpi-repertorio-ativo');
+        const elTotalVoluntarios = document.getElementById('kpi-total-voluntarios');
+
+        if (elTotalCultos) elTotalCultos.textContent = totalCultos;
+        if (elRepertorioAtivo) elRepertorioAtivo.textContent = totalRepertorio;
+        if (elTotalVoluntarios) elTotalVoluntarios.textContent = totalVoluntarios;
 
         // 3. Buscar e filtrar dados de Músicas (service_songs)
         let topMusicas = [];
@@ -141,7 +221,9 @@ async function carregarAnalytics() {
 
             topMusicas = todasMusicasExecutadas.slice(0, 5);
         }
-        document.getElementById('kpi-total-musicas-tocadas').textContent = totalExecucoes;
+
+        const elTotalMusicasTocadas = document.getElementById('kpi-total-musicas-tocadas');
+        if (elTotalMusicasTocadas) elTotalMusicasTocadas.textContent = totalExecucoes;
 
         // 4. Buscar e filtrar dados de Escalas (service_scales)
         let queryScales = supabaseClient.from('service_scales').select('*, profiles(id, name, ministry_id), ministry_roles(id, name, ministry_id)');
@@ -199,6 +281,8 @@ function renderizarGraficoTopMusicas(topMusicas) {
         chartTopMusicasInstance.destroy();
     }
 
+    const isDark = document.documentElement.classList.contains('dark') || !document.documentElement.classList.contains('light');
+
     const labels = topMusicas.length > 0 ? topMusicas.map(m => m[0]) : ['Nenhuma música no período'];
     const dataValues = topMusicas.length > 0 ? topMusicas.map(m => m[1]) : [0];
 
@@ -210,10 +294,13 @@ function renderizarGraficoTopMusicas(topMusicas) {
             datasets: [{
                 label: 'Vezes Ministrada',
                 data: dataValues,
-                backgroundColor: 'rgba(245, 158, 11, 0.75)',
+                backgroundColor: 'rgba(245, 158, 11, 0.85)',
+                hoverBackgroundColor: 'rgba(217, 119, 6, 0.95)',
                 borderColor: '#f59e0b',
                 borderWidth: 1.5,
-                borderRadius: 8
+                borderRadius: 8,
+                barThickness: 'flex',
+                maxBarThickness: 28
             }]
         },
         options: {
@@ -221,15 +308,38 @@ function renderizarGraficoTopMusicas(topMusicas) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: isDark ? '#0f172a' : '#1e293b',
+                    titleColor: '#ffffff',
+                    bodyColor: '#f1f5f9',
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const val = context.parsed.x;
+                            return ` ${val} ${val === 1 ? 'culto' : 'cultos'}`;
+                        }
+                    }
+                }
             },
             scales: {
                 x: {
-                    ticks: { color: '#94a3b8', stepSize: 1 },
-                    grid: { color: 'rgba(51, 65, 85, 0.3)' }
+                    ticks: {
+                        color: isDark ? '#94a3b8' : '#64748b',
+                        stepSize: 1,
+                        precision: 0,
+                        font: { family: 'Plus Jakarta Sans', size: 11 }
+                    },
+                    grid: {
+                        color: isDark ? 'rgba(51, 65, 85, 0.25)' : 'rgba(226, 232, 240, 0.8)'
+                    }
                 },
                 y: {
-                    ticks: { color: '#f8fafc', font: { weight: 'bold' } },
+                    ticks: {
+                        color: isDark ? '#f8fafc' : '#0f172a',
+                        font: { family: 'Plus Jakarta Sans', weight: '600', size: 11 }
+                    },
                     grid: { display: false }
                 }
             }
@@ -245,9 +355,11 @@ function renderizarGraficoTopVoluntarios(topVoluntarios) {
         chartTopVoluntariosInstance.destroy();
     }
 
+    const isDark = document.documentElement.classList.contains('dark') || !document.documentElement.classList.contains('light');
+
     const labels = topVoluntarios.length > 0 ? topVoluntarios.map(v => v[0]) : ['Sem escalas no período'];
     const dataValues = topVoluntarios.length > 0 ? topVoluntarios.map(v => v[1]) : [1];
-    const colors = ['#f59e0b', '#fbbf24', '#d97706', '#38bdf8', '#10b981'];
+    const colors = ['#f59e0b', '#10b981', '#38bdf8', '#818cf8', '#f43f5e'];
 
     const ctx = canvas.getContext('2d');
     chartTopVoluntariosInstance = new Chart(ctx, {
@@ -257,17 +369,38 @@ function renderizarGraficoTopVoluntarios(topVoluntarios) {
             datasets: [{
                 data: dataValues,
                 backgroundColor: colors.slice(0, labels.length),
-                borderColor: '#070B14',
-                borderWidth: 3
+                borderColor: isDark ? '#0b0f19' : '#ffffff',
+                borderWidth: 3,
+                hoverOffset: 4
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '68%',
             plugins: {
                 legend: {
                     position: 'bottom',
-                    labels: { color: '#cbd5e1', font: { size: 11 } }
+                    labels: {
+                        color: isDark ? '#cbd5e1' : '#475569',
+                        font: { family: 'Plus Jakarta Sans', size: 11, weight: '500' },
+                        boxWidth: 12,
+                        padding: 14,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    backgroundColor: isDark ? '#0f172a' : '#1e293b',
+                    titleColor: '#ffffff',
+                    bodyColor: '#f1f5f9',
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const val = context.raw;
+                            return ` ${val} ${val === 1 ? 'escala' : 'escalas'}`;
+                        }
+                    }
                 }
             }
         }
@@ -298,11 +431,16 @@ function renderizarListaMusicasAnalyticsModal(lista) {
     if (!container) return;
 
     if (subtitulo) {
-        subtitulo.textContent = `${todasMusicasExecutadas.length} músicas diferentes encontradas no período`;
+        subtitulo.textContent = `${todasMusicasExecutadas.length} músicas diferentes executadas no período`;
     }
 
     if (!lista || lista.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-500 text-center py-8 italic">Nenhuma música encontrada.</p>';
+        container.innerHTML = `
+            <div class="py-10 text-center space-y-2">
+                <span class="text-3xl opacity-40">🎵</span>
+                <p class="text-xs text-slate-500 italic">Nenhuma música encontrada no período.</p>
+            </div>
+        `;
         return;
     }
 
@@ -311,19 +449,30 @@ function renderizarListaMusicasAnalyticsModal(lista) {
         const count = item[1];
         const rank = idx + 1;
 
-        let badgeCor = 'bg-night-950 text-slate-400 border-slate-800';
-        if (rank === 1) badgeCor = 'bg-liturge-500/15 text-liturge-400 border-liturge-500/40 font-bold';
-        else if (rank === 2) badgeCor = 'bg-slate-800 text-slate-200 border-slate-700';
-        else if (rank === 3) badgeCor = 'bg-amber-950/40 text-amber-500 border-amber-900/40';
+        let badgeCor = 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800';
+        let medalhaIcon = '';
+
+        if (rank === 1) {
+            badgeCor = 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40 font-black';
+            medalhaIcon = '🥇 ';
+        } else if (rank === 2) {
+            badgeCor = 'bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 font-black';
+            medalhaIcon = '🥈 ';
+        } else if (rank === 3) {
+            badgeCor = 'bg-amber-800/15 text-amber-700 dark:text-amber-500 border-amber-700/30 font-black';
+            medalhaIcon = '🥉 ';
+        }
 
         return `
-            <div class="flex items-center justify-between p-3 bg-night-950/80 rounded-xl border border-slate-800/80 hover:border-liturge-500/40 transition">
-                <div class="flex items-center gap-3">
-                    <span class="text-xs font-bold px-2 py-0.5 rounded-md border ${badgeCor}">#${rank}</span>
-                    <span class="text-xs font-semibold text-white">${title}</span>
+            <div class="flex items-center justify-between p-3 sm:p-3.5 bg-slate-50 dark:bg-night-950/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 hover:border-brand-500/40 transition gap-3 shadow-xs">
+                <div class="flex items-center gap-3 min-w-0">
+                    <span class="text-xs font-mono px-2 py-0.5 rounded-lg border shrink-0 flex items-center gap-1 ${badgeCor}">
+                        ${medalhaIcon}#${rank}
+                    </span>
+                    <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">${title}</span>
                 </div>
-                <span class="text-xs font-medium text-liturge-400 bg-liturge-500/10 px-2.5 py-1 rounded-lg border border-liturge-500/30">
-                    ${count} ${count === 1 ? 'vez' : 'vezes'}
+                <span class="text-xs font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20 shrink-0">
+                    ${count} ${count === 1 ? 'culto' : 'cultos'}
                 </span>
             </div>
         `;
@@ -340,9 +489,12 @@ function filtrarMusicasAnalyticsModal(query) {
     renderizarListaMusicasAnalyticsModal(filtradas);
 }
 
+// Tornar funções acessíveis globalmente no escopo de window
 window.carregarAnalytics = carregarAnalytics;
 window.definirAtalhoPeriodoAnalytics = definirAtalhoPeriodoAnalytics;
 window.limparFiltroPeriodoAnalytics = limparFiltroPeriodoAnalytics;
+window.alternarPainelDatasCustomizadasAnalytics = alternarPainelDatasCustomizadasAnalytics;
+window.aplicarFiltroCustomizadoAnalytics = aplicarFiltroCustomizadoAnalytics;
 window.abrirModalTodasMusicasAnalytics = abrirModalTodasMusicasAnalytics;
 window.fecharModalTodasMusicasAnalytics = fecharModalTodasMusicasAnalytics;
 window.filtrarMusicasAnalyticsModal = filtrarMusicasAnalyticsModal;
