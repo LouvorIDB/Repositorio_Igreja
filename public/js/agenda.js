@@ -506,7 +506,7 @@ function verificarEscalaUsuarioNoCulto(service, userParam = null) {
 /**
  * Obtém se o usuário logado/simulado está escalado para um dia específico (YYYY-MM-DD)
  */
-function obterEscalaUsuarioNoDia(dataStr) {
+function obterEscalaUsuarioNoDia(dataStr, userParam = null) {
     const resultado = {
         escalado: false,
         funcoes: [],
@@ -514,13 +514,15 @@ function obterEscalaUsuarioNoDia(dataStr) {
         detalhesCultos: []
     };
 
-    if (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil && modoSimulacaoPerfil.key === 'membro') {
+    if (!userParam && typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil && modoSimulacaoPerfil.key === 'membro') {
         return resultado;
     }
 
-    const user = (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil && (modoSimulacaoPerfil.id || modoSimulacaoPerfil.name))
-        ? modoSimulacaoPerfil
-        : (window.usuarioLogado || (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null));
+    const user = userParam || (
+        (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil && (modoSimulacaoPerfil.id || modoSimulacaoPerfil.name))
+            ? modoSimulacaoPerfil
+            : (window.usuarioLogado || (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null))
+    );
 
     if (!user) return resultado;
 

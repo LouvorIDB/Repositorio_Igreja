@@ -1,4 +1,4 @@
-﻿/**
+/**
  * MÓDULO: DISPONIBILIDADE DE VOLUNTÁRIOS
  * Liturge - Sistema Eclesiástico
  * Permite que voluntários informem seus dias disponíveis e indisponíveis,
@@ -148,47 +148,35 @@
             });
         } catch(e) {}
 
-        // 2. Mapear cultos em que o usuário já está escalado neste mês
-        if (window.dadosGlobais?.services && perfil?.name) {
-            const nomeMembroLower = perfil.name.toLowerCase().trim();
-            window.dadosGlobais.services.forEach(serv => {
-                if (serv.date && serv.date.startsWith(prefixoData)) {
-                    const dataOnly = serv.date.split('T')[0];
-                    let escalado = false;
-                    let funcao = '';
+        // 2. Mapear cultos em que o usuário já está escalado neste mês usando a lógica canônica
+        const totalDiasNoMes = new Date(ano, mes + 1, 0).getDate();
+        for (let dia = 1; dia <= totalDiasNoMes; dia++) {
+            const diaPad = String(dia).padStart(2, '0');
+            const dataStr = `${prefixoData}-${diaPad}`;
 
-                    // Checa escala relacional
-                    if (Array.isArray(serv.service_scales)) {
-                        const esc = serv.service_scales.find(s => 
-                            (s.profile_id && s.profile_id === perfil.id) ||
-                            (s.profile_name && s.profile_name.toLowerCase().trim() === nomeMembroLower)
-                        );
-                        if (esc) {
-                            escalado = true;
-                            funcao = esc.role_name || 'Ministério';
-                        }
-                    }
+            let escInfo = null;
+            if (typeof window.obterEscalaUsuarioNoDia === 'function') {
+                escInfo = window.obterEscalaUsuarioNoDia(dataStr, perfil);
+            } else if (typeof obterEscalaUsuarioNoDia === 'function') {
+                escInfo = obterEscalaUsuarioNoDia(dataStr, perfil);
+            }
 
-                    // Checa cantores em notes
-                    if (!escalado && serv.notes) {
-                        try {
-                            const pn = typeof serv.notes === 'string' ? JSON.parse(serv.notes) : serv.notes;
-                            if (Array.isArray(pn.cantores) && pn.cantores.some(c => String(c).toLowerCase().trim() === nomeMembroLower)) {
-                                escalado = true;
-                                funcao = 'Vocalista';
-                            }
-                        } catch(e){}
-                    }
-
-                    if (escalado) {
-                        if (!cacheEscalasUsuario[dataOnly]) cacheEscalasUsuario[dataOnly] = [];
-                        cacheEscalasUsuario[dataOnly].push({
-                            serviceTitle: serv.title || 'Culto',
-                            roleName: funcao
+            if (escInfo && escInfo.escalado) {
+                if (!cacheEscalasUsuario[dataStr]) cacheEscalasUsuario[dataStr] = [];
+                if (Array.isArray(escInfo.detalhesCultos) && escInfo.detalhesCultos.length > 0) {
+                    escInfo.detalhesCultos.forEach(dc => {
+                        cacheEscalasUsuario[dataStr].push({
+                            serviceTitle: dc.serviceTitle || 'Culto',
+                            roleName: (dc.funcoes && dc.funcoes.length > 0) ? dc.funcoes.join(', ') : (escInfo.funcaoResumo || 'Escalado')
                         });
-                    }
+                    });
+                } else {
+                    cacheEscalasUsuario[dataStr].push({
+                        serviceTitle: 'Culto',
+                        roleName: escInfo.funcaoResumo || 'Escalado'
+                    });
                 }
-            });
+            }
         }
 
         renderizarGradeDisponibilidade(ano, mes);
@@ -235,8 +223,11 @@
                 estiloCard = 'bg-purple-950/40 border-purple-700/60 hover:border-purple-500 shadow-md shadow-purple-950/30';
                 badgeHtml = `
                     <div class="mt-1">
-                        <span class="text-[9px] bg-purple-900/90 text-purple-200 border border-purple-700/80 px-1.5 py-0.5 rounded font-bold block truncate" title="${escalas.map(e => `${e.serviceTitle} (${e.roleName})`).join(' | ')}">
+                        <span class="text-[9px] bg-purple-900/90 text-purple-200 border border-purple-700/80 px-1 py-0.5 rounded font-bold block truncate text-center" title="${escalas.map(e => `${e.serviceTitle} (${e.roleName})`).join(' | ')}">
                             🟣 Escalado
+                        </span>
+                        <span class="text-[8px] text-purple-300 font-semibold truncate block text-center mt-0.5" title="${escalas.map(e => e.roleName).join(', ')}">
+                            ${escalas[0].roleName || ''}
                         </span>
                     </div>
                 `;
@@ -245,7 +236,7 @@
                 estiloCard = 'bg-emerald-950/40 border-emerald-700/60 hover:border-emerald-500 shadow-md shadow-emerald-950/30';
                 badgeHtml = `
                     <div class="mt-1">
-                        <span class="text-[9px] bg-emerald-900/90 text-emerald-200 border border-emerald-700/80 px-1.5 py-0.5 rounded font-bold block truncate">
+                        <span class="text-[9px] bg-emerald-900/90 text-emerald-200 border border-emerald-700/80 px-1 py-0.5 rounded font-bold block truncate text-center">
                             🟢 Disponível
                         </span>
                     </div>
@@ -255,16 +246,16 @@
                 estiloCard = 'bg-red-950/40 border-red-700/60 hover:border-red-500 shadow-md shadow-red-950/30';
                 badgeHtml = `
                     <div class="mt-1">
-                        <span class="text-[9px] bg-red-900/90 text-red-200 border border-red-700/80 px-1.5 py-0.5 rounded font-bold block truncate" title="${disp.notes || 'Indisponível'}">
+                        <span class="text-[9px] bg-red-900/90 text-red-200 border border-red-700/80 px-1 py-0.5 rounded font-bold block truncate text-center" title="${disp.notes || 'Indisponível'}">
                             🔴 Indisponível
                         </span>
-                        ${disp.notes ? `<p class="text-[8px] text-red-300/80 truncate mt-0.5">${disp.notes}</p>` : ''}
+                        ${disp.notes ? `<p class="text-[8px] text-red-300/80 truncate mt-0.5 text-center">${disp.notes}</p>` : ''}
                     </div>
                 `;
             } else {
                 badgeHtml = `
                     <div class="mt-1">
-                        <span class="text-[9px] text-slate-500 block truncate">⚪ Livre</span>
+                        <span class="text-[9px] text-slate-400 block truncate text-center">⚪ Livre</span>
                     </div>
                 `;
             }
