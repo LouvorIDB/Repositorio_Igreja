@@ -72,11 +72,228 @@ function salvarEventosMemoria(churchIdParam) {
 }
 
 /**
+ * Formata data YYYY-MM-DD para string por extenso em português
+ */
+function formatarDataPorExtenso(dataStr) {
+    if (!dataStr) return '';
+    const parts = dataStr.split('-');
+    if (parts.length !== 3) return dataStr;
+    const ano = parseInt(parts[0], 10);
+    const mes = parseInt(parts[1], 10) - 1;
+    const dia = parseInt(parts[2], 10);
+    const d = new Date(ano, mes, dia);
+    const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    return `${diasSemana[d.getDay()]}, ${dia} de ${meses[mes]} de ${ano}`;
+}
+
+function obterIconeFuncaoAgenda(roleStr) {
+    if (typeof extrairIconeFuncao === 'function') return extrairIconeFuncao(roleStr);
+    const r = (roleStr || '').toLowerCase();
+    if (r.includes('bateria')) return '🥁';
+    if (r.includes('violao') || r.includes('violão') || r.includes('guitarra')) return '🎸';
+    if (r.includes('baixo')) return '🎸';
+    if (r.includes('teclado') || r.includes('piano')) return '🎹';
+    if (r.includes('vocal') || r.includes('cantor') || r.includes('voz')) return '🎤';
+    if (r.includes('midia') || r.includes('mídia') || r.includes('projec') || r.includes('slide')) return '💻';
+    if (r.includes('som') || r.includes('audio') || r.includes('áudio') || r.includes('mesa')) return '🎛️';
+    return '🎯';
+}
+
+/**
+ * Atualiza o Hero Card da Agenda destacando a próxima escala do usuário logado
+ */
+function atualizarHeroAgenda() {
+    const elIconeContainer = document.getElementById('agenda-hero-icone-container');
+    const elBadge = document.getElementById('agenda-hero-badge');
+    const elData = document.getElementById('agenda-hero-data');
+    const elTitulo = document.getElementById('agenda-hero-titulo');
+    const elDetalhe = document.getElementById('agenda-hero-detalhe');
+    const btnNovoEvento = document.getElementById('btn-agenda-novo-evento');
+
+    // Visibilidade do botão de novo evento para administradores/líderes
+    if (btnNovoEvento) {
+        const userToEvaluate = (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null) || (window.usuarioLogado || null);
+        const roleUsuario = userToEvaluate ? (userToEvaluate.system_role || userToEvaluate.role || 'membro') : 'visitante';
+        const isLiderOuAdmin = (roleUsuario === 'admin' || roleUsuario === 'lider');
+        btnNovoEvento.classList.toggle('hidden', !isLiderOuAdmin);
+        if (isLiderOuAdmin) btnNovoEvento.classList.add('flex');
+    }
+
+    if (!elTitulo) return;
+
+    const h = new Date();
+    const hojeStr = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
+
+    const cultosArray = window.dadosGlobais?.servicesDataList || window.dadosGlobais?.services || window.dadosGlobais?.cultos || [];
+    const eventos = obterEventosIgreja();
+    const user = (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil) || window.usuarioLogado || null;
+
+    // 1. Procurar a PRÓXIMA ESCALA do usuário logado (cultos a partir de hoje)
+    let proximaEscala = null;
+    let proximoCultoGeral = null;
+
+    // Normaliza cultos futuros
+    const cultosFuturos = [];
+    cultosArray.forEach(c => {
+        let dStr = '';
+        let tStr = '19:00';
+        let id = c.id || '';
+        let title = c.title || '';
+
+        if (c.date) {
+            dStr = c.date.split('T')[0];
+            if (c.date.includes('T')) tStr = c.date.split('T')[1].substring(0, 5);
+        } else if (Array.isArray(c) && c[0]) {
+            title = c[0];
+            id = c[8] || 'culto-row';
+            const match = String(c[0]).match(/^(\d{2})\/(\d{2})/);
+            if (match) {
+                const anoAtual = new Date().getFullYear();
+                dStr = `${anoAtual}-${match[2]}-${match[1]}`;
+            }
+        }
+
+        if (dStr && dStr >= hojeStr) {
+            cultosFuturos.push({
+                id,
+                title,
+                date: dStr,
+                time: tStr,
+                raw: c
+            });
+        }
+    });
+
+    cultosFuturos.sort((a, b) => a.date.localeCompare(b.date));
+
+    // Verifica se usuário está escalado em algum culto futuro
+    for (const c of cultosFuturos) {
+        const check = verificarEscalaUsuarioNoCulto(c.raw, user);
+        if (check.escalado && !proximaEscala) {
+            proximaEscala = {
+                ...c,
+                funcoes: check.roles
+            };
+            break;
+        }
+    }
+
+    if (cultosFuturos.length > 0) {
+        proximoCultoGeral = cultosFuturos[0];
+    }
+
+    // Normaliza eventos futuros
+    const eventosFuturos = eventos.filter(e => (e.date || '') >= hojeStr).sort((a, b) => a.date.localeCompare(b.date));
+    const proximoEvento = eventosFuturos.length > 0 ? eventosFuturos[0] : null;
+
+    if (proximaEscala) {
+        // Usuário tem escala confirmada!
+        const [ano, mes, dia] = proximaEscala.date.split('-').map(Number);
+        const dataObj = new Date(ano, mes - 1, dia);
+        const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const diaSemanaCurto = diasSemana[dataObj.getDay()] || '';
+        const dataFmt = `${diaSemanaCurto}, ${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}`;
+        const iconeRole = obterIconeFuncaoAgenda(proximaEscala.funcoes[0] || '');
+
+        if (elIconeContainer) {
+            elIconeContainer.innerHTML = iconeRole || '🎯';
+            elIconeContainer.className = 'w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl shrink-0 shadow-sm';
+        }
+        if (elBadge) {
+            elBadge.textContent = 'Sua Próxima Escala';
+            elBadge.className = 'text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30';
+        }
+        if (elData) {
+            elData.textContent = `${dataFmt} • ${proximaEscala.time || '19:00'}`;
+        }
+        elTitulo.textContent = proximaEscala.title || 'Culto de Adoração';
+        if (elDetalhe) {
+            elDetalhe.textContent = `Sua função: ${proximaEscala.funcoes.join(', ')} • Fique atento aos ensaios e horários!`;
+        }
+    } else if (proximoCultoGeral) {
+        // Próximo culto geral da igreja
+        const [ano, mes, dia] = proximoCultoGeral.date.split('-').map(Number);
+        const dataObj = new Date(ano, mes - 1, dia);
+        const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const diaSemanaCurto = diasSemana[dataObj.getDay()] || '';
+        const dataFmt = `${diaSemanaCurto}, ${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}`;
+
+        if (elIconeContainer) {
+            elIconeContainer.innerHTML = '⛪';
+            elIconeContainer.className = 'w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shrink-0 shadow-sm';
+        }
+        if (elBadge) {
+            elBadge.textContent = 'Próximo Culto';
+            elBadge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30';
+        }
+        if (elData) {
+            elData.textContent = `${dataFmt} • ${proximoCultoGeral.time || '19:00'}`;
+        }
+        elTitulo.textContent = proximoCultoGeral.title || 'Culto de Adoração';
+        if (elDetalhe) {
+            elDetalhe.textContent = 'Você não possui escala marcada neste culto. Participe e adore conosco!';
+        }
+    } else if (proximoEvento) {
+        // Próximo evento
+        const [ano, mes, dia] = proximoEvento.date.split('-').map(Number);
+        const dataObj = new Date(ano, mes - 1, dia);
+        const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const diaSemanaCurto = diasSemana[dataObj.getDay()] || '';
+        const dataFmt = `${diaSemanaCurto}, ${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}`;
+
+        if (elIconeContainer) {
+            elIconeContainer.innerHTML = '🎉';
+            elIconeContainer.className = 'w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-2xl shrink-0 shadow-sm';
+        }
+        if (elBadge) {
+            elBadge.textContent = 'Próximo Evento';
+            elBadge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30';
+        }
+        if (elData) {
+            elData.textContent = `${dataFmt} ${proximoEvento.time ? `• ${proximoEvento.time}` : ''}`;
+        }
+        elTitulo.textContent = proximoEvento.title || 'Evento Especial';
+        if (elDetalhe) {
+            elDetalhe.textContent = proximoEvento.location ? `Local: ${proximoEvento.location}` : 'Fique atento aos comunicados da igreja!';
+        }
+    } else {
+        // Nada agendado
+        if (elIconeContainer) {
+            elIconeContainer.innerHTML = '📅';
+            elIconeContainer.className = 'w-12 h-12 rounded-2xl bg-brand-500/10 border border-brand-500/20 text-brand-600 dark:text-brand-400 flex items-center justify-center text-2xl shrink-0 shadow-sm';
+        }
+        if (elBadge) {
+            elBadge.textContent = 'Programação Geral';
+            elBadge.className = 'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30';
+        }
+        if (elData) {
+            elData.textContent = 'Calendário Atualizado';
+        }
+        elTitulo.textContent = 'Nenhuma escala futura agendada';
+        if (elDetalhe) {
+            elDetalhe.textContent = 'Acompanhe as próximas divulgações de escalas e ensaios dos ministérios.';
+        }
+    }
+}
+
+/**
  * Carrega e renderiza a tela de agenda
  */
 function carregarAgenda() {
+    atualizarHeroAgenda();
     renderizarCalendario();
     renderizarListaEventosProximos();
+
+    // Seleciona automaticamente o dia de hoje se nenhum dia estiver selecionado
+    if (!window.diaSelecionadoAgendaStr) {
+        const h = new Date();
+        const hStr = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
+        selecionarDiaCalendario(hStr, false);
+    } else {
+        selecionarDiaCalendario(window.diaSelecionadoAgendaStr, false);
+    }
+
     if (typeof renderizarAdminListaEventos === 'function') renderizarAdminListaEventos();
 }
 
@@ -93,6 +310,18 @@ function navegarMesAgenda(delta) {
         anoAtualAgenda++;
     }
     renderizarCalendario();
+}
+
+/**
+ * Volta diretamente para o mês e dia de hoje
+ */
+function voltarParaMesAtualAgenda() {
+    const h = new Date();
+    mesAtualAgenda = h.getMonth();
+    anoAtualAgenda = h.getFullYear();
+    renderizarCalendario();
+    const hStr = `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
+    selecionarDiaCalendario(hStr);
 }
 
 /**
@@ -357,7 +586,7 @@ function obterEscalaUsuarioNoDia(dataStr) {
 }
 
 /**
- * Renderiza a grade do calendário mensal
+ * Renderiza a grade do calendário mensal (Híbrido Mobile e Desktop)
  */
 function renderizarCalendario() {
     const elGrid = document.getElementById('grid-dias-calendario');
@@ -383,6 +612,7 @@ function renderizarCalendario() {
 
     const hoje = new Date();
     const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+    const diaSelecionado = window.diaSelecionadoAgendaStr || hojeStr;
 
     let html = '';
 
@@ -390,8 +620,8 @@ function renderizarCalendario() {
     for (let i = primeiroDia - 1; i >= 0; i--) {
         const diaNum = totalDiasMesAnterior - i;
         html += `
-            <div class="bg-slate-950/40 p-2 border border-slate-800/40 min-h-[88px] opacity-40 select-none">
-                <span class="text-xs font-semibold text-slate-600">${diaNum}</span>
+            <div class="bg-slate-100/40 dark:bg-slate-950/40 p-1 sm:p-2 border border-slate-100 dark:border-slate-800/40 min-h-[56px] sm:min-h-[78px] opacity-35 select-none rounded-xl">
+                <span class="text-[11px] sm:text-xs font-semibold text-slate-400 dark:text-slate-600">${diaNum}</span>
             </div>
         `;
     }
@@ -403,13 +633,13 @@ function renderizarCalendario() {
         const dataStr = `${anoAtualAgenda}-${mesFormatted}-${diaFormatted}`;
 
         const ehHoje = (dataStr === hojeStr);
+        const ehSelecionado = (dataStr === diaSelecionado);
 
         // Filtra eventos e cultos do dia
         const evtsDoDia = eventos.filter(e => e.date === dataStr || (e.date && e.date.startsWith(dataStr)));
         const cultosDoDia = cultosArray.filter(c => {
-            if (c.date && c.date.startsWith(dataStr)) return true; // Para objects do servicesDataList
+            if (c.date && c.date.startsWith(dataStr)) return true;
             if (Array.isArray(c) && c[0]) {
-                // Fallback para o array form formatado: '23/08 - CULTO DE DOMINGO'
                 const match = String(c[0]).match(/^(\d{2})\/(\d{2})/);
                 if (match && `${anoAtualAgenda}-${match[2]}-${match[1]}` === dataStr) return true;
             }
@@ -420,56 +650,66 @@ function renderizarCalendario() {
         const escalaInfo = obterEscalaUsuarioNoDia(dataStr);
         const estaEscalado = escalaInfo.escalado;
 
-        const temItens = evtsDoDia.length > 0 || cultosDoDia.length > 0 || estaEscalado;
-
-        // Estilização da borda e fundo do card do dia
-        let bordaDia = 'border border-slate-800/80 bg-slate-900/60 hover:bg-slate-800/80';
-        if (ehHoje && estaEscalado) {
-            bordaDia = 'border-2 border-emerald-500 ring-2 ring-brand-500/80 bg-emerald-950/40 shadow-md shadow-emerald-950/40';
+        // Estilização base do card do dia
+        let bordaDia = 'border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-night-900/60 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700';
+        if (ehSelecionado) {
+            bordaDia = 'ring-2 ring-brand-500 bg-brand-500/10 dark:bg-brand-500/20 border border-brand-500/60 shadow-sm';
         } else if (estaEscalado) {
-            bordaDia = 'border-2 border-emerald-500/90 bg-emerald-950/30 hover:bg-emerald-900/40 shadow-sm shadow-emerald-950/50';
+            bordaDia = 'border-2 border-emerald-500/80 bg-emerald-500/5 dark:bg-emerald-950/30 hover:border-emerald-500 shadow-sm';
         } else if (ehHoje) {
-            bordaDia = 'border-2 border-brand-500 bg-brand-950/20';
+            bordaDia = 'border-2 border-brand-500/80 bg-brand-500/5 dark:bg-brand-950/20';
         }
 
         html += `
-            <div onclick="abrirModalDetalhesDia('${dataStr}')" class="p-2 ${bordaDia} min-h-[88px] rounded-xl transition cursor-pointer flex flex-col justify-between group relative overflow-hidden">
-                <div class="flex items-center justify-between gap-1">
-                    <span class="text-xs font-bold ${
+            <div data-agenda-dia="${dataStr}" onclick="selecionarDiaCalendario('${dataStr}', true)" 
+                class="p-1 sm:p-2 ${bordaDia} min-h-[56px] sm:min-h-[78px] rounded-xl transition cursor-pointer flex flex-col justify-between group relative overflow-hidden select-none active:scale-98">
+                
+                <div class="flex items-center justify-between gap-1 w-full">
+                    <span class="text-xs sm:text-sm font-bold ${
                         estaEscalado 
-                            ? 'text-emerald-300 bg-emerald-950/90 border border-emerald-500/50 px-1.5 py-0.5 rounded-md shadow-sm' 
-                            : (ehHoje ? 'text-brand-400 bg-brand-900/60 px-1.5 py-0.5 rounded-md' : 'text-slate-300')
+                            ? 'text-emerald-700 dark:text-emerald-300' 
+                            : (ehHoje ? 'text-brand-600 dark:text-brand-400 font-black' : 'text-slate-700 dark:text-slate-300')
                     }">${dia}</span>
 
                     ${estaEscalado ? `
-                        <span class="inline-flex items-center gap-0.5 text-[8.5px] font-black text-emerald-300 bg-emerald-900/90 border border-emerald-400/60 px-1 py-0.5 rounded tracking-tighter shadow-sm animate-pulse" title="Você está escalado neste dia!">
-                            ⭐ ESCALA
+                        <span class="inline-flex items-center gap-0.5 text-[8px] sm:text-[9px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-1 py-0.2 rounded" title="Você está escalado neste dia!">
+                            ⭐<span class="hidden sm:inline"> ESCALA</span>
                         </span>
-                    ` : (temItens ? `<span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>` : '')}
+                    ` : (ehHoje ? `
+                        <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
+                    ` : '')}
                 </div>
 
-                <div class="space-y-1 mt-1">
+                <!-- PONTOS INDICADORES COMPACTOS (MOBILE) -->
+                <div class="flex md:hidden items-center justify-center gap-1 mt-1 flex-wrap">
+                    ${estaEscalado ? `<span class="w-2 h-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/80" title="Sua Escala"></span>` : ''}
+                    ${cultosDoDia.length > 0 ? `<span class="w-2 h-2 rounded-full bg-amber-500" title="Culto da Igreja"></span>` : ''}
+                    ${evtsDoDia.length > 0 ? `<span class="w-2 h-2 rounded-full bg-indigo-500" title="Evento Especial"></span>` : ''}
+                </div>
+
+                <!-- BADGES COMPLETOS (DESKTOP) -->
+                <div class="hidden md:flex flex-col gap-1 mt-1">
                     ${estaEscalado ? `
-                        <div class="text-[9.5px] bg-emerald-950 text-emerald-200 border border-emerald-500/70 px-1.5 py-0.5 rounded truncate font-bold flex items-center gap-1 shadow-sm" title="Sua função: ${escalaInfo.funcoes.join(', ')}">
+                        <div class="text-[9.5px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded truncate font-bold flex items-center gap-1 shadow-sm" title="Sua função: ${escalaInfo.funcoes.join(', ')}">
                             <span>⭐</span>
                             <span class="truncate">${escalaInfo.funcaoResumo}</span>
                         </div>
                     ` : ''}
 
-                    ${cultosDoDia.slice(0, estaEscalado ? 0 : 1).map(c => `
-                        <div class="text-[10px] bg-cyan-950/80 text-cyan-300 border border-cyan-800/60 px-1.5 py-0.5 rounded truncate font-medium">
+                    ${cultosDoDia.slice(0, estaEscalado ? 0 : 1).map(() => `
+                        <div class="text-[9.5px] bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded truncate font-medium">
                             ⛪ Culto
                         </div>
                     `).join('')}
 
                     ${evtsDoDia.slice(0, 1).map(e => `
-                        <div class="text-[10px] bg-purple-950/80 text-purple-300 border border-purple-800/60 px-1.5 py-0.5 rounded truncate font-medium">
+                        <div class="text-[9.5px] bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border border-indigo-500/30 px-1.5 py-0.5 rounded truncate font-medium">
                             📅 ${e.title}
                         </div>
                     `).join('')}
 
                     ${(evtsDoDia.length + (estaEscalado ? 0 : cultosDoDia.length)) > (estaEscalado ? 1 : 2) ? `
-                        <span class="text-[9px] text-slate-400 font-semibold block text-right">+${(evtsDoDia.length + cultosDoDia.length) - (estaEscalado ? 1 : 2)} mais</span>
+                        <span class="text-[8.5px] text-slate-400 font-semibold block text-right">+${(evtsDoDia.length + cultosDoDia.length) - (estaEscalado ? 1 : 2)} mais</span>
                     ` : ''}
                 </div>
             </div>
@@ -481,8 +721,8 @@ function renderizarCalendario() {
     const quadradosRestantes = (7 - (totalQuadradosAtuais % 7)) % 7;
     for (let i = 1; i <= quadradosRestantes; i++) {
         html += `
-            <div class="bg-slate-950/40 p-2 border border-slate-800/40 min-h-[88px] opacity-40 select-none">
-                <span class="text-xs font-semibold text-slate-600">${i}</span>
+            <div class="bg-slate-100/40 dark:bg-slate-950/40 p-1 sm:p-2 border border-slate-100 dark:border-slate-800/40 min-h-[56px] sm:min-h-[78px] opacity-35 select-none rounded-xl">
+                <span class="text-[11px] sm:text-xs font-semibold text-slate-400 dark:text-slate-600">${i}</span>
             </div>
         `;
     }
@@ -491,20 +731,285 @@ function renderizarCalendario() {
 }
 
 /**
- * Renderiza a lista lateral dos próximos eventos
+ * Seleciona um dia no calendário e atualiza o painel integrado de detalhes
+ */
+function selecionarDiaCalendario(dataStr, scrollParaPainel = true) {
+    if (!dataStr) return;
+    window.diaSelecionadoAgendaStr = dataStr;
+
+    // Atualiza título e subtítulo
+    const elTitulo = document.getElementById('painel-dia-selecionado-titulo');
+    const elSubtitulo = document.getElementById('painel-dia-selecionado-subtitulo');
+    const elConteudo = document.getElementById('painel-dia-selecionado-conteudo');
+    const btnVerCompleto = document.getElementById('btn-abrir-modal-dia-completo');
+
+    if (elTitulo) {
+        elTitulo.textContent = formatarDataPorExtenso(dataStr);
+    }
+
+    // Obter dados do dia
+    const cultosArray = window.dadosGlobais?.servicesDataList || window.dadosGlobais?.services || window.dadosGlobais?.cultos || [];
+    const eventos = obterEventosIgreja();
+    const userToEvaluate = (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null) || (window.usuarioLogado || null);
+    const roleUsuario = userToEvaluate ? (userToEvaluate.system_role || userToEvaluate.role || 'membro') : 'visitante';
+    const isLiderOuAdmin = (roleUsuario === 'admin' || roleUsuario === 'lider');
+
+    const cultosDoDia = cultosArray.filter(c => {
+        if (c.date && c.date.startsWith(dataStr)) return true;
+        if (Array.isArray(c) && c[0]) {
+            const match = String(c[0]).match(/^(\d{2})\/(\d{2})/);
+            if (match && `${anoAtualAgenda}-${match[2]}-${match[1]}` === dataStr) return true;
+        }
+        return false;
+    });
+
+    const evtsDoDia = eventos.filter(e => e.date === dataStr || (e.date && e.date.startsWith(dataStr)));
+    const escalaInfo = obterEscalaUsuarioNoDia(dataStr);
+    const totalItens = cultosDoDia.length + evtsDoDia.length;
+
+    if (elSubtitulo) {
+        if (totalItens === 0) {
+            elSubtitulo.textContent = 'Nenhuma programação cadastrada para esta data';
+        } else {
+            const partesContagem = [];
+            if (cultosDoDia.length > 0) partesContagem.push(`${cultosDoDia.length} culto${cultosDoDia.length > 1 ? 's' : ''}`);
+            if (evtsDoDia.length > 0) partesContagem.push(`${evtsDoDia.length} evento${evtsDoDia.length > 1 ? 's' : ''}`);
+            if (escalaInfo.escalado) partesContagem.push('⭐ Você está escalado');
+            elSubtitulo.textContent = partesContagem.join(' • ');
+        }
+    }
+
+    if (btnVerCompleto) {
+        btnVerCompleto.classList.remove('hidden');
+    }
+
+    // Renderiza conteúdo dos cards
+    if (elConteudo) {
+        if (totalItens === 0) {
+            elConteudo.innerHTML = `
+                <div class="py-6 px-4 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40 space-y-3">
+                    <span class="text-3xl block">☕</span>
+                    <div>
+                        <h5 class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Dia livre na programação</h5>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Nenhum culto ou evento agendado para este dia.</p>
+                    </div>
+                    ${isLiderOuAdmin ? `
+                        <div class="flex items-center justify-center gap-2 pt-1 flex-wrap">
+                            <button type="button" onclick="window.pendingDataClick = '${dataStr}'; mostrarFormCulto(null);"
+                                class="px-3 py-1.5 rounded-lg bg-brand-500/15 hover:bg-brand-500/25 text-brand-700 dark:text-brand-300 border border-brand-500/30 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer">
+                                <span>+ Criar Culto</span>
+                            </button>
+                            <button type="button" onclick="abrirModalEventoAdmin(null, '${dataStr}')"
+                                class="px-3 py-1.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/25 text-purple-700 dark:text-purple-300 border border-purple-500/30 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer">
+                                <span>+ Criar Evento</span>
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        } else {
+            let cardsHtml = '';
+
+            // 1. Cultos do dia
+            cultosDoDia.forEach(s => {
+                const sId = s.id || (Array.isArray(s) ? s[8] : '');
+                const sTitle = s.title || (Array.isArray(s) ? s[0] : 'Culto de Adoração');
+                const timeStr = s.date && s.date.includes('T') ? s.date.split('T')[1].substring(0, 5) : (s.time || '19:00');
+                const check = verificarEscalaUsuarioNoCulto(s, userToEvaluate);
+
+                let sLoc = s.location || 'Templo Principal';
+                if (s.notes) {
+                    try {
+                        const pn = typeof s.notes === 'string' ? JSON.parse(s.notes) : s.notes;
+                        if (pn.location) sLoc = pn.location;
+                    } catch(e) {}
+                }
+
+                cardsHtml += `
+                    <div class="border ${check.escalado ? 'border-emerald-500/60 bg-emerald-500/5 dark:bg-emerald-950/20' : 'border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60'} rounded-xl p-3.5 space-y-3 transition shadow-sm">
+                        
+                        ${check.escalado ? `
+                            <div class="flex items-center justify-between gap-2 bg-emerald-500/15 border border-emerald-500/30 rounded-lg px-2.5 py-1.5">
+                                <div class="flex items-center gap-1.5 min-w-0">
+                                    <span class="text-sm">⭐</span>
+                                    <span class="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 truncate">
+                                        Sua Função: <strong class="uppercase">${check.roles.join(', ')}</strong>
+                                    </span>
+                                </div>
+                                <span class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500 text-white shrink-0">
+                                    Escalado
+                                </span>
+                            </div>
+                        ` : ''}
+
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="space-y-1 min-w-0">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                                        Culto
+                                    </span>
+                                    <span class="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                        ⏰ ${timeStr}
+                                    </span>
+                                </div>
+                                <h5 class="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                    ${sTitle}
+                                </h5>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 truncate">
+                                    📍 <span>${sLoc}</span>
+                                </p>
+                            </div>
+
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <button type="button" onclick="irParaCultoDaAgenda('${sId}', '${sTitle.replace(/'/g, "\\'")}', '${dataStr}')"
+                                    class="px-2.5 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-400 text-night-950 text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-sm active:scale-95"
+                                    title="Abrir este culto com lista de músicas e escalas">
+                                    <span>Ver Culto</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // 2. Eventos do dia
+            evtsDoDia.forEach(evt => {
+                cardsHtml += `
+                    <div class="border border-indigo-500/30 bg-indigo-500/5 dark:bg-indigo-950/20 rounded-xl p-3.5 space-y-3 transition shadow-sm">
+                        <div class="flex items-start gap-3">
+                            ${evt.image_url ? `
+                                <img src="${evt.image_url}" alt="${evt.title}" class="w-14 h-14 rounded-lg object-cover border border-slate-200 dark:border-slate-800 shrink-0">
+                            ` : ''}
+                            <div class="space-y-1 min-w-0 flex-1">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border border-indigo-500/30">
+                                        Evento
+                                    </span>
+                                    ${evt.time ? `<span class="text-xs font-mono font-bold text-slate-500 dark:text-slate-400">⏰ ${evt.time}</span>` : ''}
+                                </div>
+                                <h5 class="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                    ${evt.title}
+                                </h5>
+                                ${evt.location ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 truncate">📍 ${evt.location}</p>` : ''}
+                                ${evt.description ? `<p class="text-[11px] text-slate-600 dark:text-slate-300 border-t border-slate-200 dark:border-slate-800 pt-1.5 line-clamp-2">${evt.description}</p>` : ''}
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-1.5 pt-1 border-t border-slate-200 dark:border-slate-800">
+                            <button type="button" onclick="abrirModalExportarCalendario('${evt.id}')"
+                                class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium transition cursor-pointer flex items-center gap-1">
+                                <span>📲 Sincronizar</span>
+                            </button>
+                            ${isLiderOuAdmin ? `
+                                <button type="button" onclick="abrirModalEventoAdmin('${evt.id}')"
+                                    class="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition cursor-pointer" title="Editar">
+                                    ✏️
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            elConteudo.innerHTML = cardsHtml;
+        }
+    }
+
+    // Atualiza a seleção visual dos dias no calendário
+    const diasGrid = document.querySelectorAll('#grid-dias-calendario > [data-agenda-dia]');
+    diasGrid.forEach(el => {
+        const diaAttr = el.getAttribute('data-agenda-dia');
+        if (diaAttr === dataStr) {
+            el.classList.add('ring-2', 'ring-brand-500', 'bg-brand-500/10', 'dark:bg-brand-500/20', 'border-brand-500/60');
+        } else {
+            el.classList.remove('ring-2', 'ring-brand-500', 'bg-brand-500/10', 'dark:bg-brand-500/20', 'border-brand-500/60');
+        }
+    });
+
+    // Em telas mobile, dá um scroll suave até o painel se solicitado
+    if (scrollParaPainel && window.innerWidth < 1024) {
+        const painel = document.getElementById('painel-dia-selecionado-container');
+        if (painel) {
+            painel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+}
+
+/**
+ * Navega da Agenda diretamente para os detalhes do culto na aba Cultos
+ */
+function irParaCultoDaAgenda(serviceId, serviceTitle, serviceDate) {
+    if (typeof mudarAba === 'function') {
+        mudarAba('cultos');
+    }
+
+    if (!window.cultosProcessados || window.cultosProcessados.length === 0) {
+        if (typeof mostrarToast === 'function') mostrarToast('Navegando para programação de cultos...', 'info');
+        return;
+    }
+
+    let matchIndex = -1;
+
+    // 1. Pelo ID
+    if (serviceId) {
+        matchIndex = window.cultosProcessados.findIndex(c => c.id === serviceId);
+    }
+
+    // 2. Pelo título
+    if (matchIndex === -1 && serviceTitle) {
+        const normTitle = serviceTitle.toLowerCase().trim();
+        matchIndex = window.cultosProcessados.findIndex(c => {
+            const cNome = (c.nome || '').toLowerCase().trim();
+            const cRaw = (c.rawTitle || '').toLowerCase().trim();
+            return cNome === normTitle || cRaw.includes(normTitle) || normTitle.includes(cNome);
+        });
+    }
+
+    // 3. Pela data (DD/MM)
+    if (matchIndex === -1 && serviceDate) {
+        const parts = serviceDate.split('-');
+        if (parts.length === 3) {
+            const dataFmt = `${parts[2]}/${parts[1]}`;
+            matchIndex = window.cultosProcessados.findIndex(c => c.dataStr === dataFmt);
+        }
+    }
+
+    if (matchIndex !== -1 && typeof abrirDetalhesCulto === 'function') {
+        abrirDetalhesCulto(matchIndex);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+        if (typeof mostrarToast === 'function') mostrarToast('Culto selecionado na programação.', 'info');
+    }
+}
+
+/**
+ * Abre o modal completo de detalhes para o dia selecionado atualmente
+ */
+function abrirModalDiaSelecionadoAtual() {
+    const dataStr = window.diaSelecionadoAgendaStr || (() => {
+        const h = new Date();
+        return `${h.getFullYear()}-${String(h.getMonth() + 1).padStart(2, '0')}-${String(h.getDate()).padStart(2, '0')}`;
+    })();
+    abrirModalDetalhesDia(dataStr);
+}
+
+/**
+ * Renderiza a lista lateral dos próximos eventos com estilo e contagem atualizados
  */
 function renderizarListaEventosProximos() {
     const container = document.getElementById('lista-eventos-proximos');
+    const badgeTotal = document.getElementById('badge-total-proximos-agenda');
     if (!container) return;
 
     const userToEvaluate = (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null) || (window.usuarioLogado || null);
     const roleUsuario = userToEvaluate ? (userToEvaluate.system_role || userToEvaluate.role || 'membro') : 'visitante';
     const podeEditar = (roleUsuario === 'admin' || roleUsuario === 'lider');
 
-    // 1. Eventos locais / cadastrados
+    // 1. Eventos cadastrados
     const eventos = [...obterEventosIgreja()];
 
-    // 2. Cultos marcados para aparecer em "Próximos Eventos" OU em que o usuário está escalado
+    // 2. Cultos marcados como evento ou onde o usuário está escalado
     const rawServices = window.dadosGlobais?.servicesDataList || window.dadosGlobais?.services || [];
     rawServices.forEach(s => {
         let pn = {};
@@ -525,7 +1030,7 @@ function renderizarListaEventosProximos() {
                 is_service: true,
                 title: s.title || 'Culto de Adoração',
                 date: dStr,
-                time: tStr,
+                time: tStr || '19:00',
                 location: pn.location || s.location || 'Templo Principal',
                 description: pn.description || s.description || '',
                 user_escalado: escalaCulto.escalado,
@@ -541,62 +1046,80 @@ function renderizarListaEventosProximos() {
     const hojeStr = `${anoH}-${mesH}-${diaH}`;
 
     const proximos = eventos
-        .filter(e => e.date >= hojeStr)
-        .sort((a, b) => a.date.localeCompare(b.date));
+        .filter(e => (e.date || '') >= hojeStr)
+        .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+    if (badgeTotal) {
+        badgeTotal.textContent = proximos.length;
+    }
 
     if (proximos.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-500 py-4 italic text-center">Nenhum evento futuro cadastrado.</p>`;
+        container.innerHTML = `
+            <div class="text-center py-8 space-y-1">
+                <span class="text-2xl block">🗓️</span>
+                <p class="text-xs text-slate-500 dark:text-slate-400 italic">Nenhum evento futuro cadastrado.</p>
+            </div>
+        `;
         return;
     }
 
     container.innerHTML = proximos.map(evt => {
-        const parts = evt.date.split('-');
+        const parts = (evt.date || '').split('-');
         const dataFmt = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : evt.date;
 
         const acoesBtn = podeEditar ? (
             evt.is_service ? `
                 <div class="flex items-center gap-1">
-                    <button onclick="editarEventoPorId('${evt.id}', '${evt.date}')" class="text-slate-400 hover:text-white p-1 text-xs" title="Editar Culto">✏️</button>
+                    <button onclick="editarEventoPorId('${evt.id}', '${evt.date}')" class="text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 text-xs" title="Editar Culto">✏️</button>
                 </div>
             ` : `
                 <div class="flex items-center gap-1">
-                    <button onclick="abrirModalEventoAdmin('${evt.id}')" class="text-slate-400 hover:text-white p-1 text-xs" title="Editar">✏️</button>
-                    <button onclick="excluirEventoAgenda('${evt.id}')" class="text-slate-400 hover:text-red-400 p-1 text-xs" title="Excluir">🗑️</button>
+                    <button onclick="abrirModalEventoAdmin('${evt.id}')" class="text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 text-xs" title="Editar">✏️</button>
+                    <button onclick="excluirEventoAgenda('${evt.id}')" class="text-slate-400 hover:text-red-500 p-1 text-xs" title="Excluir">🗑️</button>
                 </div>
             `
         ) : '';
 
         const isEscalado = !!evt.user_escalado;
-        let cardBorda = 'border-slate-800 bg-slate-900';
+        let cardBorda = 'border-slate-200 dark:border-slate-800 bg-white dark:bg-night-900/70';
         if (isEscalado) {
-            cardBorda = 'border-emerald-500/60 bg-gradient-to-br from-emerald-950/20 via-slate-900 to-slate-900 shadow-md shadow-emerald-950/30';
+            cardBorda = 'border-emerald-500/60 bg-emerald-500/5 dark:bg-emerald-950/20 shadow-sm';
         } else if (evt.is_service) {
-            cardBorda = 'border-amber-500/40 bg-slate-900/90 shadow-sm';
+            cardBorda = 'border-amber-500/40 bg-amber-500/5 dark:bg-slate-900/90 shadow-sm';
         }
 
         return `
-            <div class="border ${cardBorda} p-3.5 rounded-xl space-y-2.5 hover:border-slate-700 transition">
+            <div class="border ${cardBorda} p-3 sm:p-3.5 rounded-xl space-y-2.5 hover:border-slate-300 dark:hover:border-slate-700 transition">
                 ${evt.image_url ? `
-                    <div class="rounded-lg overflow-hidden border border-slate-800 bg-slate-950">
+                    <div class="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-950">
                         <img src="${evt.image_url}" alt="${evt.title}" class="w-full max-h-36 object-cover hover:scale-105 transition duration-300">
                     </div>
                 ` : ''}
                 <div class="flex items-start justify-between gap-2">
-                    <div>
+                    <div class="space-y-1 min-w-0">
                         <div class="flex items-center gap-1.5 flex-wrap">
                             ${isEscalado ? `
-                                <span class="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 px-2 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-1">
+                                <span class="text-[9px] bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/50 px-2 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-1">
                                     ⭐ SUA ESCALA: ${(evt.user_roles || []).join(', ')}
                                 </span>
-                            ` : (evt.is_service ? '<span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">🌟 CULTO</span>' : '')}
-                            <h4 class="text-sm font-bold text-white">${evt.title}</h4>
+                            ` : (evt.is_service ? '<span class="text-[9px] bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">🌟 CULTO</span>' : '<span class="text-[9px] bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/40 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">🎉 EVENTO</span>')}
                         </div>
-                        <p class="text-xs text-brand-400 font-medium mt-0.5">📅 ${dataFmt} ${evt.time ? `às ${evt.time}` : ''}</p>
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white truncate">${evt.title}</h4>
+                        <p class="text-xs text-brand-600 dark:text-brand-400 font-medium">📅 ${dataFmt} ${evt.time ? `às ${evt.time}` : ''}</p>
                     </div>
                     ${acoesBtn}
                 </div>
-                ${evt.location ? `<p class="text-xs text-slate-400 flex items-center gap-1">📍 <span>${evt.location}</span></p>` : ''}
-                ${evt.description ? `<p class="text-xs text-slate-300 border-t border-slate-800/80 pt-1.5 leading-relaxed">${evt.description}</p>` : ''}
+                ${evt.location ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 truncate">📍 <span>${evt.location}</span></p>` : ''}
+                ${evt.description ? `<p class="text-xs text-slate-600 dark:text-slate-300 border-t border-slate-200 dark:border-slate-800/80 pt-1.5 leading-relaxed line-clamp-2">${evt.description}</p>` : ''}
+                
+                ${evt.is_service ? `
+                    <div class="pt-1">
+                        <button type="button" onclick="irParaCultoDaAgenda('${evt.id}', '${evt.title.replace(/'/g, "\\'")}', '${evt.date}')"
+                            class="w-full text-center py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-brand-500 hover:text-night-950 text-slate-700 dark:text-slate-300 text-xs font-semibold transition cursor-pointer">
+                            Ver Programação do Culto ➔
+                        </button>
+                    </div>
+                ` : ''}
             </div>
         `;
     }).join('');
@@ -1523,8 +2046,13 @@ async function excluirServicosDuplicados(nomeCulto) {
 
 // Exportações Globais Atualizadas
 window.carregarAgenda = carregarAgenda;
+window.atualizarHeroAgenda = atualizarHeroAgenda;
 window.navegarMesAgenda = navegarMesAgenda;
+window.voltarParaMesAtualAgenda = voltarParaMesAtualAgenda;
 window.renderizarCalendario = renderizarCalendario;
+window.selecionarDiaCalendario = selecionarDiaCalendario;
+window.irParaCultoDaAgenda = irParaCultoDaAgenda;
+window.abrirModalDiaSelecionadoAtual = abrirModalDiaSelecionadoAtual;
 window.renderizarListaEventosProximos = renderizarListaEventosProximos;
 window.renderizarAdminListaEventos = renderizarAdminListaEventos;
 window.navegarCalendarioAdmin = navegarCalendarioAdmin;
