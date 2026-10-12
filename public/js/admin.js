@@ -4594,6 +4594,8 @@ async function lidarComUploadMidia(files) {
 
 let midiasAdminCache = [];
 let filtroMidiaMinisterioAtivo = '';
+let filtroBuscaMidia = '';
+let filtroTipoMidia = 'todos';
 
 function filtrarMidiasPorMinisterio(minId) {
     filtroMidiaMinisterioAtivo = minId || '';
@@ -4601,21 +4603,81 @@ function filtrarMidiasPorMinisterio(minId) {
 }
 window.filtrarMidiasPorMinisterio = filtrarMidiasPorMinisterio;
 
+function filtrarMidiasPorBusca(texto) {
+    filtroBuscaMidia = (texto || '').toLowerCase().trim();
+    renderizarGridMidiasFiltradas();
+}
+window.filtrarMidiasPorBusca = filtrarMidiasPorBusca;
+
+function limparBuscaMidias() {
+    filtroBuscaMidia = '';
+    const input = document.getElementById('input-busca-midias');
+    if (input) input.value = '';
+    renderizarGridMidiasFiltradas();
+}
+window.limparBuscaMidias = limparBuscaMidias;
+
+function selecionarFiltroTipoMidia(tipo) {
+    filtroTipoMidia = tipo || 'todos';
+    
+    // Atualiza estados dos botões
+    const tipos = ['todos', 'imagem', 'video', 'doc'];
+    tipos.forEach(t => {
+        const btn = document.getElementById(`filtro-tipo-midia-${t}`);
+        if (btn) {
+            if (t === filtroTipoMidia) {
+                btn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer bg-brand-500 text-night-950 shadow-sm shadow-brand-500/20';
+            } else {
+                btn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700';
+            }
+        }
+    });
+
+    renderizarGridMidiasFiltradas();
+}
+window.selecionarFiltroTipoMidia = selecionarFiltroTipoMidia;
+
 function renderizarGridMidiasFiltradas() {
     const grid = document.getElementById('lista-midias-grid');
+    const badgeTotal = document.getElementById('badge-total-midias');
     if (!grid) return;
 
     let midias = midiasAdminCache || [];
+
+    // Filtro por Ministério
     if (filtroMidiaMinisterioAtivo) {
         midias = midias.filter(m => m.ministry_id === filtroMidiaMinisterioAtivo);
     }
 
+    // Filtro por Busca
+    if (filtroBuscaMidia) {
+        midias = midias.filter(m => {
+            const fName = (m.file_name || '').toLowerCase();
+            return fName.includes(filtroBuscaMidia);
+        });
+    }
+
+    // Filtro por Tipo de Arquivo
+    if (filtroTipoMidia !== 'todos') {
+        midias = midias.filter(m => {
+            const mime = (m.mime_type || '').toLowerCase();
+            if (filtroTipoMidia === 'imagem') return mime.startsWith('image/');
+            if (filtroTipoMidia === 'video') return mime.startsWith('video/');
+            if (filtroTipoMidia === 'doc') return !mime.startsWith('image/') && !mime.startsWith('video/');
+            return true;
+        });
+    }
+
+    if (badgeTotal) {
+        badgeTotal.textContent = `${midias.length} arquivo${midias.length === 1 ? '' : 's'}`;
+    }
+
     if (midias.length === 0) {
         grid.innerHTML = `
-            <div class="col-span-full py-12 text-center text-slate-500">
-                <p class="text-3xl mb-2">📭</p>
-                <p class="text-sm font-medium">Nenhuma mídia encontrada para este filtro.</p>
-                <p class="text-xs text-slate-600 mt-1">Selecione outro ministério ou envie novos arquivos acima.</p>
+            <div class="col-span-full py-16 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-night-900/40 space-y-2">
+                <span class="text-3xl block">🔍</span>
+                <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Nenhum arquivo encontrado</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Tente ajustar o termo de busca ou selecione outro ministério.</p>
             </div>
         `;
         return;
@@ -4630,31 +4692,36 @@ function renderizarGridMidiasFiltradas() {
         const sizeFormatted = sizeBytes > 0 ? (sizeBytes / (1024 * 1024)).toFixed(2) + ' MB' : '';
         const minObj = (dadosGlobais.ministries || []).find(m => m.id === item.ministry_id);
         const minBadge = minObj 
-            ? `<span class="inline-block text-[10px] px-2 py-0.5 rounded-md bg-liturge-500/10 text-liturge-400 border border-liturge-500/20 font-medium mb-1 truncate max-w-full">${minObj.icon || '🏢'} ${minObj.name}</span>`
-            : `<span class="inline-block text-[10px] px-2 py-0.5 rounded-md bg-night-950 text-slate-400 border border-slate-800 font-medium mb-1">Geral</span>`;
+            ? `<span class="inline-block text-[10px] px-2 py-0.5 rounded-md bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20 font-medium truncate max-w-full">${minObj.icon || '🏢'} ${minObj.name}</span>`
+            : `<span class="inline-block text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-medium">Geral</span>`;
 
         let previewHtml = '';
         if (mime.startsWith('image/')) {
             previewHtml = `
-                <div class="h-32 bg-night-950 overflow-hidden flex items-center justify-center relative">
+                <div class="h-32 sm:h-36 bg-slate-950 overflow-hidden flex items-center justify-center relative cursor-pointer group" onclick="abrirLightboxMidia('${url}', '${fileName.replace(/'/g, "\\'")}', 'imagem')">
                     <img src="${url}" alt="${fileName}" class="w-full h-full object-cover transition duration-300 group-hover:scale-105" loading="lazy" />
-                    <span class="absolute top-2 right-2 text-[10px] bg-black/60 backdrop-blur-sm text-white px-1.5 py-0.5 rounded font-mono">IMG</span>
+                    <span class="absolute top-2 right-2 text-[10px] bg-black/60 backdrop-blur-sm text-white px-1.5 py-0.5 rounded font-mono font-bold">IMG</span>
+                    <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-lg">
+                        🔍
+                    </div>
                 </div>
             `;
         } else if (mime.startsWith('video/')) {
             previewHtml = `
-                <div class="h-32 bg-night-950 flex flex-col items-center justify-center relative text-slate-400">
-                    <span class="text-3xl mb-1">🎬</span>
+                <div class="h-32 sm:h-36 bg-slate-950 flex flex-col items-center justify-center relative text-slate-400 cursor-pointer group" onclick="abrirLightboxMidia('${url}', '${fileName.replace(/'/g, "\\'")}', 'video')">
+                    <div class="w-10 h-10 rounded-full bg-brand-500 text-night-950 flex items-center justify-center text-sm shadow-md mb-1 group-hover:scale-110 transition">
+                        ▶
+                    </div>
                     <span class="text-[10px] uppercase tracking-wider font-bold text-slate-300">Vídeo</span>
-                    <span class="absolute top-2 right-2 text-[10px] bg-liturge-500/20 text-liturge-300 border border-liturge-500/30 px-1.5 py-0.5 rounded font-mono">VÍDEO</span>
+                    <span class="absolute top-2 right-2 text-[10px] bg-brand-500/20 text-brand-400 border border-brand-500/30 px-1.5 py-0.5 rounded font-mono font-bold">VÍDEO</span>
                 </div>
             `;
         } else {
             previewHtml = `
-                <div class="h-32 bg-night-950 flex flex-col items-center justify-center relative text-slate-400">
+                <div class="h-32 sm:h-36 bg-slate-900 flex flex-col items-center justify-center relative text-slate-400">
                     <span class="text-3xl mb-1">📄</span>
-                    <span class="text-[10px] uppercase tracking-wider font-bold text-slate-300">Arquivo</span>
-                    <span class="absolute top-2 right-2 text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded font-mono">DOC</span>
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-slate-300">Documento</span>
+                    <span class="absolute top-2 right-2 text-[10px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded font-mono font-bold">DOC</span>
                 </div>
             `;
         }
@@ -4664,20 +4731,20 @@ function renderizarGridMidiasFiltradas() {
         const safeUrlEscaped = url.replace(/'/g, "\\'");
 
         html += `
-            <div class="bg-night-900/90 border border-slate-800 rounded-2xl shadow-lg flex flex-col hover:border-liturge-500/50 transition duration-300 group overflow-hidden">
+            <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm flex flex-col hover:border-brand-500/60 dark:hover:border-brand-500/60 transition duration-300 group overflow-hidden">
                 ${previewHtml}
-                <div class="p-3.5 flex-1 flex flex-col justify-between">
+                <div class="p-3 sm:p-3.5 flex-1 flex flex-col justify-between">
                     <div>
-                        <div class="mb-1">${minBadge}</div>
-                        <p class="text-xs text-white font-medium truncate mb-1" title="${fileName}">${fileName}</p>
-                        ${sizeFormatted ? `<span class="inline-block text-[10px] px-1.5 py-0.5 rounded bg-night-950 text-slate-400 font-mono mb-2 border border-slate-800/60">${sizeFormatted}</span>` : ''}
+                        <div class="mb-1.5">${minBadge}</div>
+                        <p class="text-xs text-slate-900 dark:text-white font-bold truncate mb-1" title="${fileName}">${fileName}</p>
+                        ${sizeFormatted ? `<span class="inline-block text-[10px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono mb-2 border border-slate-200 dark:border-slate-700/60">${sizeFormatted}</span>` : ''}
                     </div>
-                    <div class="flex items-center justify-between mt-auto pt-2 border-t border-slate-800/80">
-                        <div class="flex items-center gap-2.5">
-                            <a href="${url}" target="_blank" download="${fileName}" class="text-liturge-400 hover:text-liturge-300 text-xs font-semibold">Baixar</a>
-                            <button onclick="abrirModalVincularMidia('${safeNameEscaped}', '${safeUrlEscaped}')" class="text-emerald-400 hover:text-emerald-300 text-xs font-medium opacity-80 sm:opacity-0 group-hover:opacity-100 transition">Vincular</button>
+                    <div class="flex items-center justify-between mt-auto pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                        <div class="flex items-center gap-2">
+                            <a href="${url}" target="_blank" download="${fileName}" class="text-brand-600 dark:text-brand-400 hover:underline text-xs font-bold cursor-pointer">Baixar</a>
+                            <button type="button" onclick="abrirModalVincularMidia('${safeNameEscaped}', '${safeUrlEscaped}')" class="text-emerald-600 dark:text-emerald-400 hover:underline text-xs font-medium cursor-pointer">Vincular</button>
                         </div>
-                        <button onclick="excluirMidiaAdmin('${safeMediaId}')" class="text-slate-500 hover:text-rose-400 text-xs opacity-80 sm:opacity-0 group-hover:opacity-100 transition font-medium">Excluir</button>
+                        <button type="button" onclick="excluirMidiaAdmin('${safeMediaId}')" class="text-slate-400 hover:text-red-500 text-xs font-semibold cursor-pointer transition">Excluir</button>
                     </div>
                 </div>
             </div>
@@ -4686,6 +4753,53 @@ function renderizarGridMidiasFiltradas() {
 
     grid.innerHTML = html;
 }
+
+function abrirLightboxMidia(url, nome, tipo) {
+    const modal = document.getElementById('modal-lightbox-midia');
+    const container = document.getElementById('lightbox-midia-container');
+    const elTitulo = document.getElementById('lightbox-titulo');
+    const btnDownload = document.getElementById('lightbox-btn-download');
+    if (!modal || !container) return;
+
+    if (elTitulo) elTitulo.textContent = nome || 'Visualização de Mídia';
+    if (btnDownload) {
+        btnDownload.href = url;
+        btnDownload.setAttribute('download', nome || 'arquivo');
+    }
+
+    if (tipo === 'video' || (url && url.match(/\.(mp4|webm|ogg)(?:\?.*)?$/i))) {
+        container.innerHTML = `
+            <video controls autoplay class="max-h-[75vh] max-w-full rounded-xl outline-none shadow-2xl">
+                <source src="${url}">
+                Seu navegador não suporta reprodução direta deste formato de vídeo.
+            </video>
+        `;
+    } else {
+        container.innerHTML = `
+            <img src="${url}" alt="${nome}" class="max-h-[75vh] max-w-full object-contain rounded-xl shadow-2xl" />
+        `;
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+window.abrirLightboxMidia = abrirLightboxMidia;
+
+function fecharLightboxMidia(event) {
+    if (event && event.target && event.target.id !== 'modal-lightbox-midia' && !event.target.closest('button')) {
+        return;
+    }
+    const modal = document.getElementById('modal-lightbox-midia');
+    const container = document.getElementById('lightbox-midia-container');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+    if (container) {
+        container.innerHTML = '';
+    }
+}
+window.fecharLightboxMidia = fecharLightboxMidia;
 
 async function carregarMidiasAdmin() {
     setupUploadMidias();

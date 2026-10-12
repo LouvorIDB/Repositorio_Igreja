@@ -1,48 +1,140 @@
-<div id="secao-midia" class="hidden space-y-4">
-    <div class="bg-night-900/90 border border-slate-800 rounded-2xl p-5 mb-4 relative overflow-hidden backdrop-blur-sm">
-        <div class="flex items-center gap-2 mb-2">
-            <span class="badge-gold">Central de Mídia</span>
+<!-- SEÇÃO CENTRAL DE MÍDIAS E PROJEÇÃO -->
+<section id="secao-midia" class="hidden space-y-6 animate-fade-in">
+
+    <!-- HERO CARD: BANCO DE MÍDIAS & AÇÕES -->
+    <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-brand-500 to-emerald-500"></div>
+
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+            <div class="flex items-start sm:items-center gap-3.5">
+                <div class="w-12 h-12 rounded-2xl bg-brand-500/10 border border-brand-500/20 text-brand-600 dark:text-brand-400 flex items-center justify-center text-2xl shrink-0 shadow-sm">
+                    📁
+                </div>
+                <div class="space-y-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-600 dark:text-brand-400 border border-brand-500/30">
+                            Central de Mídias
+                        </span>
+                        <span id="badge-total-midias" class="text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400">
+                            Carregando...
+                        </span>
+                    </div>
+                    <h2 class="text-base sm:text-lg font-black text-slate-900 dark:text-white truncate">
+                        Banco de Mídias & Projeção
+                    </h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        Armazene fotos, vídeos, avisos e mídias de suporte para cultos e transmissão.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Upload Rápido no Topo -->
+            <div id="container-midia-upload-acao" class="flex items-center gap-2 sm:gap-2.5 flex-wrap self-start lg:self-auto shrink-0">
+                <select id="upload-midia-ministerio-destino" class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 rounded-xl px-3 py-2 sm:py-2.5 focus:outline-none focus:border-brand-500 cursor-pointer shadow-sm" title="Selecione o ministério proprietário">
+                    <option value="">Geral da Igreja</option>
+                </select>
+
+                <label id="btn-upload-midia-wrapper" class="px-4 py-2 sm:py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-night-950 text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-sm shadow-brand-500/20 active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <span>Fazer Upload</span>
+                    <input type="file" id="input-upload-midia" class="hidden" multiple accept="image/*,video/*,application/pdf">
+                </label>
+            </div>
         </div>
-        <h2 class="text-base font-bold text-white tracking-wide">Banco de Mídias e Projeção</h2>
-        <p class="text-slate-400 text-xs mt-1">Armazene e organize fotos, vídeos, avisos e mídias de suporte para transmissão e cultos.</p>
-    </div>
-    
-    <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
-        <div class="flex items-center gap-2">
-            <span class="text-xs text-slate-400 font-medium">📁 Filtrar por:</span>
-            <select id="filtro-midia-ministerio" onchange="filtrarMidiasPorMinisterio(this.value)" class="bg-night-950 border border-slate-800 text-xs text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-liturge-500 cursor-pointer">
-                <option value="">Todos os Ministérios</option>
-            </select>
-        </div>
-        
-        <div id="container-midia-upload-acao" class="flex items-center gap-2">
-            <select id="upload-midia-ministerio-destino" class="bg-night-950 border border-slate-800 text-xs text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-liturge-500 cursor-pointer" title="Selecione qual ministério é dono deste arquivo">
-                <option value="">Geral da Igreja</option>
-            </select>
-            <label id="btn-upload-midia-wrapper" class="btn-liturge-primary px-4 py-2 rounded-xl font-medium text-xs sm:text-sm cursor-pointer inline-flex items-center gap-2 shadow-lg shadow-liturge-500/10">
-                <span>⬆️ Fazer Upload</span>
-                <input type="file" id="input-upload-midia" class="hidden" multiple accept="image/*,video/*,application/pdf">
-            </label>
-        </div>
-    </div>
-    
-    <!-- Área de Drop -->
-    <div id="dropzone-midia" class="border-2 border-dashed border-slate-800 bg-night-900/40 hover:bg-night-900/80 hover:border-liturge-500/50 rounded-2xl p-8 text-center transition flex flex-col items-center justify-center min-h-[160px] cursor-pointer" onclick="document.getElementById('input-upload-midia').click()">
-        <span class="text-3xl mb-2">📁</span>
-        <p class="text-slate-200 font-medium text-sm">Clique ou arraste fotos e vídeos aqui</p>
-        <p class="text-slate-500 text-xs mt-1">Arquivos são enviados diretamente para o armazenamento seguro na nuvem</p>
     </div>
 
-    <!-- Progresso e Lista -->
-    <div id="midia-upload-progress" class="hidden mt-4 bg-night-950 p-4 rounded-xl border border-slate-800">
-        <p class="text-xs text-liturge-400 mb-2 font-medium" id="midia-upload-text">Enviando arquivos...</p>
-        <div class="w-full bg-night-900 rounded-full h-2 overflow-hidden">
-            <div id="midia-upload-bar" class="bg-gradient-to-r from-liturge-500 to-liturge-400 h-2 rounded-full transition-all" style="width: 0%"></div>
+    <!-- BARRA DE BUSCA E FILTROS RÁPIDOS -->
+    <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <!-- Campo de Busca por Nome -->
+        <div class="relative flex-1">
+            <input type="text" id="input-busca-midias" oninput="filtrarMidiasPorBusca(this.value)" placeholder="Buscar mídia por nome de arquivo..."
+                class="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-900 dark:text-white rounded-xl focus:outline-none focus:border-brand-500 placeholder-slate-400 transition">
+            <svg class="absolute left-3 top-2.5 text-slate-400 w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <button type="button" onclick="limparBuscaMidias()" class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold p-0.5 cursor-pointer">✕</button>
+        </div>
+
+        <!-- Filtros em Pílulas (Tipo de Mídia) -->
+        <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+            <button type="button" id="filtro-tipo-midia-todos" onclick="selecionarFiltroTipoMidia('todos')"
+                class="px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer bg-brand-500 text-night-950 shadow-sm shadow-brand-500/20">
+                <span>Todos</span>
+            </button>
+            <button type="button" id="filtro-tipo-midia-imagem" onclick="selecionarFiltroTipoMidia('imagem')"
+                class="px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700">
+                <span>🖼️ Imagens</span>
+            </button>
+            <button type="button" id="filtro-tipo-midia-video" onclick="selecionarFiltroTipoMidia('video')"
+                class="px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700">
+                <span>🎬 Vídeos</span>
+            </button>
+            <button type="button" id="filtro-tipo-midia-doc" onclick="selecionarFiltroTipoMidia('doc')"
+                class="px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700">
+                <span>📄 Documentos</span>
+            </button>
+        </div>
+
+        <!-- Filtro por Ministério -->
+        <div class="flex items-center gap-2 shrink-0">
+            <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400">Ministério:</span>
+            <select id="filtro-midia-ministerio" onchange="filtrarMidiasPorMinisterio(this.value)"
+                class="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-brand-500 cursor-pointer shadow-sm">
+                <option value="">Todos</option>
+            </select>
         </div>
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-6" id="lista-midias-grid">
-        <!-- Cards de mídia aparecerão aqui -->
-        <p class="text-slate-500 text-sm col-span-full py-8 text-center">Carregando arquivos da caixa de entrada...</p>
+    <!-- ÁREA DE DROPZONE MODERNA -->
+    <div id="dropzone-midia" onclick="document.getElementById('input-upload-midia').click()"
+        class="border-2 border-dashed border-slate-300 dark:border-slate-700/80 bg-slate-50/50 dark:bg-night-900/40 hover:bg-slate-100/60 dark:hover:bg-night-900/80 hover:border-brand-500/60 rounded-2xl p-6 sm:p-8 text-center transition flex flex-col items-center justify-center min-h-[140px] cursor-pointer group shadow-sm">
+        <div class="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center text-2xl mb-2 group-hover:scale-110 transition duration-300">
+            ☁️
+        </div>
+        <p class="text-slate-800 dark:text-slate-200 font-bold text-sm">Toque ou arraste fotos, vídeos e PDFs aqui</p>
+        <p class="text-slate-500 dark:text-slate-400 text-xs mt-1">Armazenamento em nuvem otimizado para projeção em alta definição</p>
+    </div>
+
+    <!-- BARRA DE PROGRESSO DE UPLOAD -->
+    <div id="midia-upload-progress" class="hidden bg-white dark:bg-night-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+        <div class="flex items-center justify-between text-xs mb-2">
+            <span id="midia-upload-text" class="font-bold text-brand-600 dark:text-brand-400">Enviando arquivos...</span>
+            <span id="midia-upload-percent" class="font-mono font-bold text-slate-500">0%</span>
+        </div>
+        <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+            <div id="midia-upload-bar" class="bg-gradient-to-r from-amber-500 to-brand-500 h-2 rounded-full transition-all duration-200" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <!-- GRADE DE MÍDIAS (CARDS RESPONSIVOS) -->
+    <div id="lista-midias-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4.5">
+        <div class="col-span-full py-16 text-center text-slate-400 text-xs">
+            Carregando banco de mídias...
+        </div>
+    </div>
+
+</section>
+
+<!-- MODAL LIGHTBOX DE PRÉ-VISUALIZAÇÃO EM TELA CHEIA (FOTOS E VÍDEOS) -->
+<div id="modal-lightbox-midia" class="hidden fixed inset-0 bg-black/95 backdrop-blur-md z-[200] items-center justify-center p-3 sm:p-6 animate-fade-in" onclick="fecharLightboxMidia(event)">
+    <div class="relative max-w-4xl w-full max-h-[95vh] flex flex-col items-center justify-center space-y-3" onclick="event.stopPropagation()">
+        <!-- Barra Superior do Lightbox -->
+        <div class="w-full flex items-center justify-between text-white bg-slate-900/80 px-4 py-2.5 rounded-xl border border-slate-800 backdrop-blur-sm">
+            <div class="min-w-0 pr-3">
+                <h4 id="lightbox-titulo" class="text-xs sm:text-sm font-bold truncate">Arquivo</h4>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <a id="lightbox-btn-download" href="#" target="_blank" download="" class="px-3 py-1 rounded-lg bg-brand-500 hover:bg-brand-400 text-night-950 text-xs font-bold transition flex items-center gap-1 cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    <span>Baixar</span>
+                </a>
+                <button type="button" onclick="fecharLightboxMidia()" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition text-sm cursor-pointer">
+                    ✕
+                </button>
+            </div>
+        </div>
+
+        <!-- Conteúdo de Mídia (Imagem ou Vídeo) -->
+        <div id="lightbox-midia-container" class="w-full max-h-[80vh] flex items-center justify-center rounded-2xl overflow-hidden bg-black/60 border border-slate-800 shadow-2xl">
+            <!-- Imagem ou Video injetado dinamicamente -->
+        </div>
     </div>
 </div>

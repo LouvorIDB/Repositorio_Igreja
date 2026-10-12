@@ -82,60 +82,145 @@ async function carregarAlmoxarifado() {
     }
 }
 
+let filtroStatusEquipamento = 'todos';
+let filtroBuscaEquipamento = '';
+let filtroBuscaWiki = '';
+
+function filtrarEquipamentosPorBusca(texto) {
+    filtroBuscaEquipamento = (texto || '').toLowerCase().trim();
+    renderizarEquipamentos();
+}
+window.filtrarEquipamentosPorBusca = filtrarEquipamentosPorBusca;
+
+function limparBuscaEquipamentos() {
+    filtroBuscaEquipamento = '';
+    const input = document.getElementById('input-busca-equipamentos');
+    if (input) input.value = '';
+    renderizarEquipamentos();
+}
+window.limparBuscaEquipamentos = limparBuscaEquipamentos;
+
+function selecionarFiltroStatusEquipamento(status) {
+    filtroStatusEquipamento = status || 'todos';
+
+    const statuses = ['todos', 'disponivel', 'em_uso', 'manutencao', 'quebrado'];
+    statuses.forEach(st => {
+        const btn = document.getElementById(`filtro-status-eq-${st}`);
+        if (btn) {
+            if (st === filtroStatusEquipamento) {
+                btn.className = 'px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer bg-brand-500 text-night-950 shadow-sm shadow-brand-500/20';
+            } else {
+                btn.className = 'px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700';
+            }
+        }
+    });
+
+    renderizarEquipamentos();
+}
+window.selecionarFiltroStatusEquipamento = selecionarFiltroStatusEquipamento;
+
+function filtrarWikiPorBusca(texto) {
+    filtroBuscaWiki = (texto || '').toLowerCase().trim();
+    renderizarDocsWiki();
+}
+window.filtrarWikiPorBusca = filtrarWikiPorBusca;
+
+function limparBuscaWiki() {
+    filtroBuscaWiki = '';
+    const input = document.getElementById('input-busca-wiki');
+    if (input) input.value = '';
+    renderizarDocsWiki();
+}
+window.limparBuscaWiki = limparBuscaWiki;
+
 function renderizarAlmoxarifado() {
     renderizarEquipamentos();
     renderizarDocsWiki();
+    atualizarBadgeTotalAlmoxarifado();
+}
+
+function atualizarBadgeTotalAlmoxarifado() {
+    const el = document.getElementById('badge-total-almoxarifado');
+    if (el) {
+        const totalEq = (almoxarifadoAssets || []).length;
+        const totalWk = (almoxarifadoDocs || []).length;
+        el.textContent = `${totalEq} itens • ${totalWk} tutoriais`;
+    }
 }
 
 function renderizarEquipamentos() {
     const container = document.getElementById('grid-equipamentos');
     if (!container) return;
 
-    if (!almoxarifadoAssets || almoxarifadoAssets.length === 0) {
+    let items = almoxarifadoAssets || [];
+
+    // Filtro por busca
+    if (filtroBuscaEquipamento) {
+        items = items.filter(item => {
+            const n = (item.name || '').toLowerCase();
+            const l = (item.location || '').toLowerCase();
+            const d = (item.description || '').toLowerCase();
+            return n.includes(filtroBuscaEquipamento) || l.includes(filtroBuscaEquipamento) || d.includes(filtroBuscaEquipamento);
+        });
+    }
+
+    // Filtro por status
+    if (filtroStatusEquipamento !== 'todos') {
+        items = items.filter(item => item.status === filtroStatusEquipamento);
+    }
+
+    if (items.length === 0) {
         container.innerHTML = `
-            <div class="col-span-full py-12 text-center bg-slate-900/40 border border-slate-800 rounded-2xl">
-                <p class="text-slate-400 text-sm font-medium">Nenhum equipamento ou patrimônio cadastrado.</p>
-                <p class="text-slate-500 text-xs mt-1">Líderes podem adicionar microfones, cabos, mesas de som e instrumentos.</p>
+            <div class="col-span-full py-16 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-night-900/40 space-y-2">
+                <span class="text-3xl block">📦</span>
+                <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Nenhum equipamento encontrado</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Tente ajustar o termo de busca ou altere o filtro de status acima.</p>
             </div>
         `;
         return;
     }
 
     const statusBadges = {
-        disponivel: { label: 'Disponível', bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-        em_uso: { label: 'Em Uso', bg: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-        manutencao: { label: 'Na Manutenção', bg: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-        quebrado: { label: 'Defeito / Quebrado', bg: 'bg-red-500/10 text-red-400 border-red-500/20' }
+        disponivel: { label: 'Disponível / OK', bg: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' },
+        em_uso: { label: 'Em Uso', bg: 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30' },
+        manutencao: { label: 'Na Manutenção', bg: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' },
+        quebrado: { label: 'Com Defeito', bg: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30' }
     };
 
     const podeEditar = usuarioPodeEditarAlmoxarifado();
 
-    container.innerHTML = almoxarifadoAssets.map(item => {
+    container.innerHTML = items.map(item => {
         const badge = statusBadges[item.status] || statusBadges.disponivel;
         const minNome = item.ministries ? item.ministries.name : 'Geral';
-        const minIcon = item.ministries?.icon || '📦';
+        const minIcon = item.ministries?.icon || '🏢';
 
         return `
-            <div class="bg-night-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg hover:border-slate-700/80 transition">
-                <div>
-                    <div class="flex items-start justify-between gap-2 mb-2">
-                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full border ${badge.bg}">
+            <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-4.5 flex flex-col justify-between space-y-3 shadow-sm hover:border-brand-500/60 dark:hover:border-brand-500/60 transition duration-200 group">
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border ${badge.bg}">
                             ${badge.label}
                         </span>
-                        <span class="text-xs text-slate-400 flex items-center gap-1">
-                            <span>${minIcon}</span> ${minNome}
+                        <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                            <span>${minIcon}</span> <span>${minNome}</span>
                         </span>
                     </div>
 
-                    <h4 class="text-base font-bold text-white">${item.name}</h4>
-                    ${item.location ? `<p class="text-xs text-liturge-400 font-medium mt-0.5">📍 ${item.location}</p>` : ''}
-                    ${item.description ? `<p class="text-xs text-slate-400 mt-2 line-clamp-3">${item.description}</p>` : ''}
+                    <h4 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">${item.name}</h4>
+                    ${item.location ? `
+                        <p class="text-xs text-brand-600 dark:text-brand-400 font-semibold flex items-center gap-1">
+                            <span>📍</span> <span>${item.location}</span>
+                        </p>
+                    ` : ''}
+                    ${item.description ? `
+                        <p class="text-xs text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed pt-1 border-t border-slate-100 dark:border-slate-800/80">${item.description}</p>
+                    ` : ''}
                 </div>
 
                 ${podeEditar ? `
-                <div class="flex justify-end gap-2 pt-2 border-t border-slate-800/80">
-                    <button onclick="editarEquipamento('${item.id}')" class="px-2.5 py-1 text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-md transition cursor-pointer">Editar</button>
-                    <button onclick="deletarEquipamento('${item.id}')" class="px-2.5 py-1 text-xs text-red-400 hover:text-red-300 bg-red-950/40 hover:bg-red-900/60 rounded-md transition cursor-pointer">Excluir</button>
+                <div class="flex items-center justify-end gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800/80">
+                    <button type="button" onclick="editarEquipamento('${item.id}')" class="px-2.5 py-1 text-xs text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition font-semibold cursor-pointer">Editar</button>
+                    <button type="button" onclick="deletarEquipamento('${item.id}')" class="px-2.5 py-1 text-xs text-red-600 dark:text-red-400 hover:text-red-700 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition font-semibold cursor-pointer">Excluir</button>
                 </div>
                 ` : ''}
             </div>
@@ -145,13 +230,31 @@ function renderizarEquipamentos() {
 
 function renderizarDocsWiki() {
     const container = document.getElementById('grid-docs-wiki');
+    const badgeWiki = document.getElementById('badge-total-wiki');
     if (!container) return;
 
-    if (!almoxarifadoDocs || almoxarifadoDocs.length === 0) {
+    let docs = almoxarifadoDocs || [];
+
+    // Filtro por busca
+    if (filtroBuscaWiki) {
+        docs = docs.filter(doc => {
+            const t = (doc.title || '').toLowerCase();
+            const d = (doc.description || '').toLowerCase();
+            const u = (doc.content_url || '').toLowerCase();
+            return t.includes(filtroBuscaWiki) || d.includes(filtroBuscaWiki) || u.includes(filtroBuscaWiki);
+        });
+    }
+
+    if (badgeWiki) {
+        badgeWiki.textContent = `${docs.length} tutorial${docs.length === 1 ? '' : 'is'}`;
+    }
+
+    if (docs.length === 0) {
         container.innerHTML = `
-            <div class="col-span-full py-12 text-center bg-slate-900/40 border border-slate-800 rounded-2xl">
-                <p class="text-slate-400 text-sm font-medium">Nenhum tutorial ou manual cadastrado na Wiki.</p>
-                <p class="text-slate-500 text-xs mt-1">Líderes podem cadastrar instruções de como ligar a mesa, senhas do roteador, PDFs e vídeos.</p>
+            <div class="col-span-full py-16 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-night-900/40 space-y-2">
+                <span class="text-3xl block">📚</span>
+                <p class="text-sm font-bold text-slate-700 dark:text-slate-300">Nenhum tutorial ou manual encontrado</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Líderes podem cadastrar checklists, senhas e instruções técnicas.</p>
             </div>
         `;
         return;
@@ -159,14 +262,15 @@ function renderizarDocsWiki() {
 
     const podeEditar = usuarioPodeEditarAlmoxarifado();
 
-    container.innerHTML = almoxarifadoDocs.map(doc => {
+    container.innerHTML = docs.map(doc => {
         const minNome = doc.ministries ? doc.ministries.name : 'Geral';
+        const minIcon = doc.ministries?.icon || '🏢';
         
         let linksHtml = '';
         let videosHtml = '';
         
         if (doc.content_url) {
-            const urls = doc.content_url.split(',').map(u => u.trim()).filter(u => u);
+            const urls = doc.content_url.split(',').map(u => u.trim()).filter(Boolean);
             
             urls.forEach((url, idx) => {
                 const isVideo = url.match(/\.(mp4|webm|ogg)(?:\?.*)?$/i);
@@ -178,49 +282,65 @@ function renderizarDocsWiki() {
                 if (ytMatch || isVideo) {
                     linkLabel = `🎬 Vídeo ${urls.length > 1 ? idx+1 : ''}`;
                     if (ytMatch && ytMatch[1]) {
-                        videosHtml += `<div class="mt-3 aspect-video rounded-lg overflow-hidden border border-slate-800">
-                                         <iframe class="w-full h-full" src="https://www.youtube.com/embed/${ytMatch[1]}" title="Video tutorial" frameborder="0" allowfullscreen></iframe>
-                                       </div>`;
+                        videosHtml += `
+                            <div class="mt-3 aspect-video rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner bg-black">
+                                <iframe class="w-full h-full" src="https://www.youtube.com/embed/${ytMatch[1]}" title="Video tutorial" frameborder="0" allowfullscreen></iframe>
+                            </div>
+                        `;
                     } else {
-                        videosHtml += `<div class="mt-3 aspect-video rounded-lg overflow-hidden border border-slate-800 bg-black">
-                                         <video class="w-full h-full" controls preload="metadata">
-                                             <source src="${url}" type="video/mp4">
-                                         </video>
-                                       </div>`;
+                        videosHtml += `
+                            <div class="mt-3 aspect-video rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-black shadow-inner">
+                                <video class="w-full h-full" controls preload="metadata">
+                                    <source src="${url}" type="video/mp4">
+                                </video>
+                            </div>
+                        `;
                     }
                 } else if (isImage) {
                     linkLabel = `🖼️ Imagem ${urls.length > 1 ? idx+1 : ''}`;
-                    videosHtml += `<div class="mt-3 rounded-lg overflow-hidden border border-slate-800 bg-black flex justify-center">
-                                     <img src="${url}" class="max-h-96 w-auto object-contain" alt="Guia anexo ${idx+1}">
-                                   </div>`;
+                    videosHtml += `
+                        <div class="mt-3 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-black flex justify-center">
+                            <img src="${url}" class="max-h-72 w-auto object-contain" alt="Guia anexo ${idx+1}">
+                        </div>
+                    `;
                 } else {
-                    linkLabel = `📄 Arquivo ${urls.length > 1 ? idx+1 : ''}`;
+                    linkLabel = `📄 Manual / PDF ${urls.length > 1 ? idx+1 : ''}`;
                 }
                 
-                linksHtml += `<a href="${url}" target="_blank" class="text-xs text-liturge-400 hover:text-liturge-300 hover:underline flex items-center gap-1 font-medium">${linkLabel} ↗</a>`;
+                linksHtml += `
+                    <a href="${url}" target="_blank" class="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline flex items-center gap-1">
+                        <span>${linkLabel}</span> <span>↗</span>
+                    </a>
+                `;
             });
         }
 
         return `
-            <div class="bg-night-900/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg hover:border-slate-700/80 transition">
-                <div>
-                    <div class="flex items-start justify-between gap-2 mb-2">
-                        <span class="text-xs text-slate-400 font-medium whitespace-nowrap">📁 ${minNome}</span>
-                        <div class="flex flex-col items-end gap-1">
+            <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between space-y-3 shadow-sm hover:border-brand-500/60 dark:hover:border-brand-500/60 transition duration-200">
+                <div class="space-y-2.5">
+                    <div class="flex items-start justify-between gap-2">
+                        <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                            <span>${minIcon}</span> <span>${minNome}</span>
+                        </span>
+                        <div class="flex flex-wrap items-center gap-2">
                             ${linksHtml}
                         </div>
                     </div>
 
-                    <h4 class="text-base font-bold text-white">${doc.title}</h4>
-                    ${doc.description ? `<p class="text-xs text-slate-300 mt-2 whitespace-pre-line leading-relaxed">${doc.description}</p>` : ''}
+                    <h4 class="text-base font-bold text-slate-900 dark:text-white">${doc.title}</h4>
+                    ${doc.description ? `
+                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-night-950/70 border border-slate-200 dark:border-slate-800/80">
+                            <p class="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed font-sans">${doc.description}</p>
+                        </div>
+                    ` : ''}
                     
                     ${videosHtml}
                 </div>
 
                 ${podeEditar ? `
-                <div class="flex justify-end gap-2 pt-2 border-t border-slate-800/80 mt-2">
-                    <button onclick="editarDocWiki('${doc.id}')" class="px-2.5 py-1 text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-md transition cursor-pointer">Editar</button>
-                    <button onclick="deletarDocWiki('${doc.id}')" class="px-2.5 py-1 text-xs text-red-400 hover:text-red-300 bg-red-950/40 hover:bg-red-900/60 rounded-md transition cursor-pointer">Excluir</button>
+                <div class="flex items-center justify-end gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800/80">
+                    <button type="button" onclick="editarDocWiki('${doc.id}')" class="px-2.5 py-1 text-xs text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition font-semibold cursor-pointer">Editar</button>
+                    <button type="button" onclick="deletarDocWiki('${doc.id}')" class="px-2.5 py-1 text-xs text-red-600 dark:text-red-400 hover:text-red-700 bg-red-500/10 hover:bg-red-500/20 rounded-lg transition font-semibold cursor-pointer">Excluir</button>
                 </div>
                 ` : ''}
             </div>
@@ -240,12 +360,12 @@ function mudarAbaAlmoxarifado(aba) {
 
     if (tabEquip && tabWiki) {
         tabEquip.className = isEquip 
-            ? "pb-3 text-sm font-bold text-liturge-400 border-b-2 border-liturge-500 transition cursor-pointer" 
-            : "pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition cursor-pointer";
+            ? "flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700" 
+            : "flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-transparent";
 
         tabWiki.className = !isEquip 
-            ? "pb-3 text-sm font-bold text-liturge-400 border-b-2 border-liturge-500 transition cursor-pointer" 
-            : "pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition cursor-pointer";
+            ? "flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm border border-slate-200 dark:border-slate-700" 
+            : "flex-1 py-2 px-3 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-transparent";
     }
 }
 
@@ -259,8 +379,16 @@ function usuarioPodeEditarAlmoxarifado() {
 
 function atualizarBotoesPermissaoAlmoxarifado() {
     const podeEditar = usuarioPodeEditarAlmoxarifado();
-    document.getElementById('btn-novo-equipamento')?.classList.toggle('hidden', !podeEditar);
-    document.getElementById('btn-novo-doc')?.classList.toggle('hidden', !podeEditar);
+    const btnNovoEq = document.getElementById('btn-novo-equipamento');
+    const btnNovoDoc = document.getElementById('btn-novo-doc');
+    if (btnNovoEq) {
+        btnNovoEq.classList.toggle('hidden', !podeEditar);
+        if (podeEditar) btnNovoEq.classList.add('flex');
+    }
+    if (btnNovoDoc) {
+        btnNovoDoc.classList.toggle('hidden', !podeEditar);
+        if (podeEditar) btnNovoDoc.classList.add('flex');
+    }
 }
 
 function popularSelectsMinisterioAlmoxarifado() {
@@ -479,6 +607,11 @@ async function deletarDocWiki(id) {
 
 window.carregarAlmoxarifado = carregarAlmoxarifado;
 window.mudarAbaAlmoxarifado = mudarAbaAlmoxarifado;
+window.filtrarEquipamentosPorBusca = filtrarEquipamentosPorBusca;
+window.limparBuscaEquipamentos = limparBuscaEquipamentos;
+window.selecionarFiltroStatusEquipamento = selecionarFiltroStatusEquipamento;
+window.filtrarWikiPorBusca = filtrarWikiPorBusca;
+window.limparBuscaWiki = limparBuscaWiki;
 window.abrirModalEquipamento = abrirModalEquipamento;
 window.fecharModalEquipamento = fecharModalEquipamento;
 window.abrirModalDocWiki = abrirModalDocWiki;
