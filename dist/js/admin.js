@@ -1901,6 +1901,7 @@ async function uploadArquivoSupabase(file, bucketName = 'media-inbox', subFolder
 
     return publicData?.publicUrl || null;
 }
+window.uploadArquivoSupabase = uploadArquivoSupabase;
 
 // ===================== ADMIN: CRIAÇÃO DE MÚSICA =====================
 

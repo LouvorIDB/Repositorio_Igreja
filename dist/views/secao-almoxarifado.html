@@ -23,20 +23,20 @@
                         Almoxarifado & Base de Conhecimento
                     </h2>
                     <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
-                        Controle de patrimônio, localização no templo e tutoriais técnicos dos ministérios.
+                        Controle de patrimônio com fotos, armários no templo e tutoriais em vídeo/manual.
                     </p>
                 </div>
             </div>
 
             <!-- Botões de Ação (Admin / Líderes) -->
             <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap self-start lg:self-auto shrink-0">
-                <button type="button" id="btn-novo-equipamento" onclick="abrirModalEquipamento()"
+                <button type="button" id="btn-novo-equipamento" onclick="abrirFormEquipamento()"
                     class="hidden px-3.5 py-2 sm:py-2.5 rounded-xl bg-brand-500 hover:bg-brand-400 text-night-950 text-xs font-bold transition items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm shadow-brand-500/20">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     <span>Novo Item</span>
                 </button>
 
-                <button type="button" id="btn-novo-doc" onclick="abrirModalDocWiki()"
+                <button type="button" id="btn-novo-doc" onclick="abrirFormWiki()"
                     class="hidden px-3.5 py-2 sm:py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                     <span>Novo Tutorial</span>
@@ -59,6 +59,95 @@
 
     <!-- SUB-SEÇÃO 1: EQUIPAMENTOS & PATRIMÔNIO -->
     <div id="subsecao-almox-equipamentos" class="space-y-4">
+
+        <!-- PAINEL DE FORMULÁRIO EM LINHA (EQUIPAMENTO) - SEM MODAIS FLUTUANTES -->
+        <div id="painel-form-equipamento" class="hidden bg-white dark:bg-night-900/95 border-2 border-brand-500/30 rounded-2xl p-4 sm:p-5 shadow-lg space-y-4 animate-fade-in">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">🛠️</span>
+                    <div>
+                        <h3 id="form-equipamento-titulo" class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Cadastrar Item no Almoxarifado</h3>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Preencha os dados e tire uma foto com a câmera do celular ou galeria</p>
+                    </div>
+                </div>
+                <button type="button" onclick="fecharFormEquipamento()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-bold cursor-pointer">✕</button>
+            </div>
+
+            <form id="form-equipamento" onsubmit="salvarEquipamento(event)" class="space-y-3.5">
+                <input type="hidden" id="equipamento-id">
+                <input type="hidden" id="equipamento-foto-url">
+
+                <!-- Campo Foto com Câmera ou Upload -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Foto do Equipamento</label>
+                    <div id="container-foto-equipamento-preview" class="hidden mb-2 relative w-full sm:w-60 h-36 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-950">
+                        <img id="img-preview-equipamento" src="" alt="Prévia do Equipamento" class="w-full h-full object-cover">
+                        <button type="button" onclick="removerFotoEquipamento()" class="absolute top-2 right-2 bg-black/70 hover:bg-red-600 text-white text-[11px] px-2 py-0.5 rounded-lg backdrop-blur-sm transition font-bold cursor-pointer">
+                            ✕ Remover Foto
+                        </button>
+                    </div>
+                    
+                    <div id="container-acoes-foto-equipamento" class="flex flex-wrap items-center gap-2">
+                        <!-- Botão Câmera (Galaxy S24 / Mobile direct camera trigger) -->
+                        <button type="button" onclick="document.getElementById('equipamento-camera-input').click()" 
+                            class="px-3 py-2 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 text-brand-600 dark:text-brand-400 border border-brand-500/25 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-xs">
+                            <span>📸</span> <span>Tirar Foto com a Câmera</span>
+                        </button>
+                        <input type="file" id="equipamento-camera-input" accept="image/*" capture="environment" class="hidden" onchange="lidarComUploadFotoEquipamento(this.files)">
+
+                        <!-- Botão Galeria / Arquivos -->
+                        <button type="button" onclick="document.getElementById('equipamento-foto-input').click()" 
+                            class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-xs">
+                            <span>🖼️</span> <span>Escolher da Galeria</span>
+                        </button>
+                        <input type="file" id="equipamento-foto-input" accept="image/*" class="hidden" onchange="lidarComUploadFotoEquipamento(this.files)">
+                    </div>
+
+                    <!-- Progresso do Upload da Foto -->
+                    <div id="equipamento-foto-progresso" class="hidden mt-2 text-xs text-brand-600 font-semibold flex items-center gap-2">
+                        <span class="animate-spin text-sm">⏳</span> <span>Enviando foto para a nuvem...</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Nome do Item / Equipamento *</label>
+                        <input type="text" id="equipamento-nome" required placeholder="Ex: Mesa de Som X32, Microfone Sem Fio 1" class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500 font-sans">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Localização no Templo / Armário</label>
+                        <input type="text" id="equipamento-local" placeholder="Ex: Rack Principal, Armário B - Gaveta 2" class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500 font-sans">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Ministério Responsável</label>
+                        <select id="equipamento-ministerio" class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-500 font-sans cursor-pointer"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Status de Conservação</label>
+                        <select id="equipamento-status" class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-500 font-sans cursor-pointer">
+                            <option value="disponivel">🟢 Disponível / OK</option>
+                            <option value="em_uso">🔵 Em Uso</option>
+                            <option value="manutencao">🟡 Na Manutenção</option>
+                            <option value="quebrado">🔴 Quebrado / Defeito</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Observações Técnicas / Cabos / Detalhes</label>
+                    <textarea id="equipamento-desc" rows="2" placeholder="Detalhes de conservação, cabos que acompanham, etc." class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500 font-sans"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="fecharFormEquipamento()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">Cancelar</button>
+                    <button type="submit" id="btn-salvar-equipamento" class="px-4 py-2 bg-brand-500 hover:bg-brand-400 text-night-950 rounded-xl text-xs font-bold transition shadow-sm shadow-brand-500/20 cursor-pointer active:scale-95">Salvar Item</button>
+                </div>
+            </form>
+        </div>
+
         <!-- Barra de Busca e Filtros de Status -->
         <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
             <!-- Busca por Nome / Local -->
@@ -94,9 +183,9 @@
             </div>
         </div>
 
-        <!-- Grade de Cards de Equipamentos -->
-        <div id="grid-equipamentos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div class="col-span-full py-16 text-center text-slate-400 text-xs">
+        <!-- LISTA COMPACTA DE EQUIPAMENTOS (ESTILO MÚSICAS) -->
+        <div id="grid-equipamentos" class="space-y-2 sm:space-y-2.5">
+            <div class="py-16 text-center text-slate-400 text-xs">
                 Carregando equipamentos e patrimônio...
             </div>
         </div>
@@ -104,6 +193,94 @@
 
     <!-- SUB-SEÇÃO 2: MANUAIS E WIKI -->
     <div id="subsecao-almox-wiki" class="hidden space-y-4">
+
+        <!-- PAINEL DE FORMULÁRIO EM LINHA (WIKI / TUTORIAL) - SEM MODAIS FLUTUANTES -->
+        <div id="painel-form-wiki" class="hidden bg-white dark:bg-night-900/95 border-2 border-brand-500/30 rounded-2xl p-4 sm:p-5 shadow-lg space-y-4 animate-fade-in">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">📚</span>
+                    <div>
+                        <h3 id="form-doc-titulo" class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Cadastrar Tutorial ou Manual</h3>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Grave um vídeo tutorial com a câmera, envie arquivos ou escreva instruções</p>
+                    </div>
+                </div>
+                <button type="button" onclick="fecharFormWiki()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-bold cursor-pointer">✕</button>
+            </div>
+
+            <form id="form-doc-wiki" onsubmit="salvarDocWiki(event)" class="space-y-3.5">
+                <input type="hidden" id="doc-id">
+                <input type="hidden" id="doc-url">
+                <input type="hidden" id="doc-tipo" value="video_link">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Título do Manual / Tutorial *</label>
+                        <input type="text" id="doc-titulo-input" required placeholder="Ex: Como ligar a mesa de som, Senhas da transmissão" class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500 font-sans">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Ministério Responsável</label>
+                        <select id="doc-ministerio" class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-500 font-sans cursor-pointer"></select>
+                    </div>
+                </div>
+
+                <!-- Área de Mídia (Gravar Vídeo com Câmera ou Upload de Arquivo) -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">Vídeo Tutorial ou Anexo</label>
+                    
+                    <div id="container-midia-wiki-preview" class="hidden mb-2 relative w-full sm:w-80 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-black">
+                        <video id="video-preview-wiki" class="w-full aspect-video hidden" controls preload="metadata"></video>
+                        <div id="file-preview-wiki-badge" class="p-3 text-xs text-white flex items-center justify-between">
+                            <span id="file-preview-wiki-name" class="truncate font-semibold">arquivo</span>
+                            <button type="button" onclick="removerMidiaWiki()" class="bg-red-600 hover:bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-lg transition font-bold cursor-pointer">✕ Remover</button>
+                        </div>
+                    </div>
+
+                    <div id="container-acoes-midia-wiki" class="flex flex-wrap items-center gap-2">
+                        <!-- Gravar Vídeo com Câmera (Galaxy S24 / Mobile camera) -->
+                        <button type="button" onclick="document.getElementById('doc-camera-video-input').click()"
+                            class="px-3 py-2 rounded-xl bg-brand-500/10 hover:bg-brand-500/20 text-brand-600 dark:text-brand-400 border border-brand-500/25 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-xs">
+                            <span>🎥</span> <span>Gravar Vídeo (Câmera)</span>
+                        </button>
+                        <input type="file" id="doc-camera-video-input" accept="video/*" capture="environment" class="hidden" onchange="lidarComUploadMidiaWiki(this.files)">
+
+                        <!-- Enviar Vídeo ou Arquivo (Galeria / Arquivos) -->
+                        <button type="button" onclick="document.getElementById('doc-arquivo-input').click()"
+                            class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-xs">
+                            <span>📁</span> <span>Enviar Arquivo / Vídeo</span>
+                        </button>
+                        <input type="file" id="doc-arquivo-input" accept="video/*,image/*,application/pdf" class="hidden" onchange="lidarComUploadMidiaWiki(this.files)">
+
+                        <!-- Botão de Link Externo Opcional (YouTube) -->
+                        <button type="button" onclick="alternarCampoLinkExternoWiki()"
+                            class="px-2.5 py-2 rounded-xl text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 text-xs font-medium transition cursor-pointer">
+                            <span>🔗 Ou link externo</span>
+                        </button>
+                    </div>
+
+                    <!-- Campo Link Externo Opcional -->
+                    <div id="div-doc-link-externo" class="hidden mt-2">
+                        <input type="text" id="doc-link-externo-input" oninput="atualizarLinkExternoWiki(this.value)" placeholder="Cole o link do YouTube, Google Drive ou Canva aqui..."
+                            class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500 font-sans">
+                    </div>
+
+                    <!-- Progresso Upload Wiki -->
+                    <div id="doc-upload-progresso" class="hidden mt-2 text-xs text-brand-600 font-semibold flex items-center gap-2">
+                        <span class="animate-spin text-sm">⏳</span> <span>Enviando mídia para a nuvem...</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Passo a Passo / Instruções em Texto / Senhas</label>
+                    <textarea id="doc-desc" rows="3" placeholder="Instruções passo a passo, senhas do roteador, checklist de encerramento de culto..." class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500 font-sans"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="fecharFormWiki()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">Cancelar</button>
+                    <button type="submit" id="btn-salvar-doc" class="px-4 py-2 bg-brand-500 hover:bg-brand-400 text-night-950 rounded-xl text-xs font-bold transition shadow-sm shadow-brand-500/20 cursor-pointer active:scale-95">Salvar Tutorial</button>
+                </div>
+            </form>
+        </div>
+
         <!-- Barra de Busca da Wiki -->
         <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 sm:p-4 shadow-sm flex items-center justify-between gap-3">
             <div class="relative flex-1">
@@ -117,113 +294,11 @@
             </span>
         </div>
 
-        <!-- Grade de Manuais e Documentos -->
-        <div id="grid-docs-wiki" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="col-span-full py-16 text-center text-slate-400 text-xs">
+        <!-- LISTA COMPACTA DE MANUAIS E WIKI (ESTILO MÚSICAS) -->
+        <div id="grid-docs-wiki" class="space-y-2 sm:space-y-2.5">
+            <div class="py-16 text-center text-slate-400 text-xs">
                 Carregando tutoriais e manuais técnicos...
             </div>
         </div>
     </div>
 </section>
-
-<!-- MODAL CADASTRAR / EDITAR EQUIPAMENTO -->
-<div id="modal-equipamento" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-night-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-        <h3 id="modal-equipamento-titulo" class="text-base font-bold text-slate-900 dark:text-white">Cadastrar Item no Almoxarifado</h3>
-        
-        <form id="form-equipamento" onsubmit="salvarEquipamento(event)" class="space-y-3">
-            <input type="hidden" id="equipamento-id">
-            
-            <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Nome do Item / Equipamento</label>
-                <input type="text" id="equipamento-nome" required placeholder="Ex: Mesa de Som X32, Microfone Sem Fio 1" class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500 font-sans">
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Ministério</label>
-                    <select id="equipamento-ministerio" class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-500 font-sans cursor-pointer"></select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Status</label>
-                    <select id="equipamento-status" class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-500 font-sans cursor-pointer">
-                        <option value="disponivel">🟢 Disponível / OK</option>
-                        <option value="em_uso">🔵 Em Uso</option>
-                        <option value="manutencao">🟡 Na Manutenção</option>
-                        <option value="quebrado">🔴 Quebrado / Defeito</option>
-                    </select>
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Localização / Armário</label>
-                <input type="text" id="equipamento-local" placeholder="Ex: Rack Principal, Armário B - Gaveta 2" class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500 font-sans">
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Observações / Detalhes</label>
-                <textarea id="equipamento-desc" rows="2" placeholder="Detalhes de conservação, cabos, etc." class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500 font-sans"></textarea>
-            </div>
-
-            <div class="flex justify-end gap-2.5 pt-2">
-                <button type="button" onclick="fecharModalEquipamento()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">Cancelar</button>
-                <button type="submit" id="btn-salvar-equipamento" class="px-4 py-2 bg-brand-500 hover:bg-brand-400 text-night-950 rounded-xl text-xs font-bold transition shadow-md shadow-brand-500/20 cursor-pointer">Salvar Item</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- MODAL CADASTRAR / EDITAR WIKI -->
-<div id="modal-doc-wiki" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-night-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-        <h3 id="modal-doc-titulo" class="text-base font-bold text-slate-900 dark:text-white">Cadastrar Tutorial ou Manual</h3>
-        
-        <form id="form-doc-wiki" onsubmit="salvarDocWiki(event)" class="space-y-3">
-            <input type="hidden" id="doc-id">
-            
-            <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Título do Documento / Manual</label>
-                <input type="text" id="doc-titulo-input" required placeholder="Ex: Senhas da Transmissão, Como ligar a mesa" class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500 font-sans">
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Ministério</label>
-                    <select id="doc-ministerio" class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-500 font-sans cursor-pointer"></select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Tipo de Conteúdo</label>
-                    <select id="doc-tipo" onchange="verificarTipoDocWiki()" class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-500 font-sans cursor-pointer">
-                        <option value="wiki_texto">📝 Texto / Guia Rápido</option>
-                        <option value="manual_pdf">📄 Link PDF / Drive</option>
-                        <option value="video_link">🎬 Vídeo Tutorial</option>
-                    </select>
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Link do Arquivo / Vídeo (YouTube ou Nuvem)</label>
-                <input type="text" id="doc-url" placeholder="https://youtube.com/... (ou link direto)" class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500 font-sans">
-                
-                <div id="div-doc-media-select" class="mt-2 hidden border-t border-slate-200 dark:border-slate-800 pt-2">
-                    <label class="block text-xs font-semibold text-brand-600 dark:text-brand-400 mb-1 flex items-center gap-1">
-                        <span>📁</span> Ou escolha os arquivos da Nuvem (Segure CTRL para vários)
-                    </label>
-                    <select id="doc-media-select" multiple onchange="selecionarMidiaWiki()" class="w-full h-24 bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:border-brand-500 font-sans overflow-y-auto cursor-pointer">
-                        <option value="" disabled>Carregando arquivos...</option>
-                    </select>
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Conteúdo / Instruções em Texto</label>
-                <textarea id="doc-desc" rows="3" placeholder="Passo a passo, senhas do roteador, checklist de encerramento..." class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-brand-500 font-sans"></textarea>
-            </div>
-
-            <div class="flex justify-end gap-2.5 pt-2">
-                <button type="button" onclick="fecharModalDocWiki()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer">Cancelar</button>
-                <button type="submit" id="btn-salvar-doc" class="px-4 py-2 bg-brand-500 hover:bg-brand-400 text-night-950 rounded-xl text-xs font-bold transition shadow-md shadow-brand-500/20 cursor-pointer">Salvar Documento</button>
-            </div>
-        </form>
-    </div>
-</div>
