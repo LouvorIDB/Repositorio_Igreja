@@ -163,7 +163,7 @@ async function carregarAnalytics() {
         const dataFimStr = document.getElementById('analytics-data-fim')?.value || '';
 
         // Buscar cultos no banco para filtrar por data e church_id
-        let queryServices = supabaseClient.from('services').select('id, date, church_id');
+        let queryServices = supabaseClient.from('services').select('id, date, title, notes, singers, singers_list, church_id');
         if (currentChurchId) {
             queryServices = queryServices.eq('church_id', currentChurchId);
         }
@@ -179,6 +179,10 @@ async function carregarAnalytics() {
 
         const validServiceIds = servicesFiltrados.map(s => s.id);
         const totalCultos = servicesFiltrados.length;
+        const servicesMap = {};
+        servicesFiltrados.forEach(s => {
+            servicesMap[s.id] = s;
+        });
 
         // Atualizar KPIs Base
         const totalRepertorio = (window.dadosGlobais?.repertorio || []).length;
@@ -199,35 +203,85 @@ async function carregarAnalytics() {
         if (elRepertorioAtivo) elRepertorioAtivo.textContent = totalRepertorio;
         if (elTotalVoluntarios) elTotalVoluntarios.textContent = totalVoluntarios;
 
-        // 3. Buscar e filtrar dados de Músicas (service_songs)
+        // 3. Buscar dados de Escalas (service_scales)
+        let queryScales = supabaseClient.from('service_scales').select('*, profiles(id, name, ministry_id), ministry_roles(id, name, ministry_id)');
+        const { data: serviceScalesData } = await queryScales;
+
+        const scalesByServiceId = {};
+        (serviceScalesData || []).forEach(sc => {
+            if (!scalesByServiceId[sc.service_id]) {
+                scalesByServiceId[sc.service_id] = [];
+            }
+            scalesByServiceId[sc.service_id].push(sc);
+        });
+
+        // 4. Buscar e filtrar dados de Músicas (service_songs)
         let topMusicas = [];
         let totalExecucoes = 0;
 
         if (!isLiderNaoLouvor) {
-            let querySongs = supabaseClient.from('service_songs').select('*, song_versions(songs(title))');
+            let querySongs = supabaseClient.from('service_songs').select('*, song_versions(key, songs(id, title, artist))');
             const { data: serviceSongsData } = await querySongs;
 
             const songsFiltradas = (serviceSongsData || []).filter(ss => validServiceIds.includes(ss.service_id));
-            const musicasContador = {};
+            const musicasMap = {};
 
             songsFiltradas.forEach(item => {
                 const title = item.song_versions?.songs?.title || item.song_name || item.title || 'Música';
-                musicasContador[title] = (musicasContador[title] || 0) + 1;
+                const tomTocado = item.key || item.tom || item.song_versions?.key || '';
+                const serviceId = item.service_id;
+                const s = servicesMap[serviceId];
+
+                if (!musicasMap[title]) {
+                    musicasMap[title] = {
+                        title: title,
+                        count: 0,
+                        execucoes: []
+                    };
+                }
+
+                musicasMap[title].count++;
                 totalExecucoes++;
+
+                if (s) {
+                    const scalesDoCulto = scalesByServiceId[serviceId] || [];
+                    const cultoProcessado = (window.cultosProcessados || []).find(c => {
+                        if (c.playlistId && String(c.playlistId) === String(serviceId)) return true;
+                        if (s.date && c.dataStr) {
+                            const sDOnly = s.date.split('T')[0];
+                            const [sAno, sMes, sDia] = sDOnly.split('-');
+                            if (c.dataStr.startsWith(`${sDia}/${sMes}`)) return true;
+                        }
+                        return false;
+                    });
+
+                    const escalaExtraida = extrairEscalaDoCulto(s, scalesDoCulto, cultoProcessado);
+
+                    musicasMap[title].execucoes.push({
+                        serviceId: serviceId,
+                        date: s.date || '',
+                        title: s.title || (cultoProcessado ? cultoProcessado.nome : 'Culto'),
+                        diaSemana: cultoProcessado ? cultoProcessado.diaSemana : '',
+                        tom: tomTocado,
+                        escala: escalaExtraida
+                    });
+                }
             });
 
-            todasMusicasExecutadas = Object.entries(musicasContador)
-                .sort((a, b) => b[1] - a[1]);
+            // Ordenar execuções de cada música pela data mais recente
+            Object.values(musicasMap).forEach(m => {
+                m.execucoes.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+            });
+
+            todasMusicasExecutadas = Object.values(musicasMap)
+                .sort((a, b) => b.count - a.count)
+                .map(m => [m.title, m.count, m.execucoes]);
 
             topMusicas = todasMusicasExecutadas.slice(0, 5);
         }
 
         const elTotalMusicasTocadas = document.getElementById('kpi-total-musicas-tocadas');
         if (elTotalMusicasTocadas) elTotalMusicasTocadas.textContent = totalExecucoes;
-
-        // 4. Buscar e filtrar dados de Escalas (service_scales)
-        let queryScales = supabaseClient.from('service_scales').select('*, profiles(id, name, ministry_id), ministry_roles(id, name, ministry_id)');
-        const { data: serviceScalesData } = await queryScales;
 
         const todosVoluntarios = window.dadosGlobais?.voluntarios || [];
         const todosMinisterios = window.dadosGlobais?.ministries || [];
@@ -425,13 +479,181 @@ function fecharModalTodasMusicasAnalytics() {
     if (modal) modal.classList.add('hidden');
 }
 
+// ===================== FUNÇÕES AUXILIARES DE ESCALA E DATA =====================
+
+function extrairIconeFuncao(roleStr) {
+    if (typeof window.extrairIconeFuncao === 'function') {
+        return window.extrairIconeFuncao(roleStr);
+    }
+    const r = (roleStr || '').toLowerCase();
+    if (r.includes('bateria')) return '🥁';
+    if (r.includes('violao') || r.includes('violão') || r.includes('guitarra')) return '🎸';
+    if (r.includes('baixo')) return '🎸';
+    if (r.includes('teclado') || r.includes('piano')) return '🎹';
+    if (r.includes('vocal') || r.includes('cantor') || r.includes('voz')) return '🎤';
+    if (r.includes('midia') || r.includes('mídia') || r.includes('projec') || r.includes('slide')) return '💻';
+    if (r.includes('som') || r.includes('audio') || r.includes('áudio') || r.includes('mesa')) return '🎛️';
+    if (r.includes('pastor') || r.includes('pregad') || r.includes('bispo')) return '✝️';
+    if (r.includes('recep') || r.includes('boas')) return '🤝';
+    if (r.includes('kids') || r.includes('infantil')) return '🧒';
+    return '👤';
+}
+
+function extrairEscalaDoCulto(service, scalesDoServico, cultoProcessado) {
+    const escalaList = [];
+    const jaAdicionados = new Set();
+
+    // 1. Relacional service_scales (Fonte Primária moderna)
+    if (scalesDoServico && scalesDoServico.length > 0) {
+        scalesDoServico.forEach(sc => {
+            const nomeVoluntario = sc.profiles ? sc.profiles.name : (sc.profile_name || '');
+            const nomeFuncao = sc.ministry_roles ? sc.ministry_roles.name : (sc.role_name || '');
+            if (nomeVoluntario) {
+                const chave = `${nomeFuncao || 'Voluntário'}:${nomeVoluntario}`.toLowerCase();
+                if (!jaAdicionados.has(chave)) {
+                    jaAdicionados.add(chave);
+                    escalaList.push({
+                        role: nomeFuncao || 'Escalado',
+                        name: nomeVoluntario,
+                        icon: extrairIconeFuncao(nomeFuncao)
+                    });
+                }
+            }
+        });
+    }
+
+    // 2. Fallback de cultoProcessado (se disponível na memória do app)
+    if (cultoProcessado && cultoProcessado.groupedEscala) {
+        Object.values(cultoProcessado.groupedEscala).forEach(group => {
+            if (group.cleanParts && Array.isArray(group.cleanParts)) {
+                group.cleanParts.forEach(part => {
+                    const [rolePart, namePart] = part.split(':').map(s => s.trim());
+                    if (namePart) {
+                        const chave = `${rolePart}:${namePart}`.toLowerCase();
+                        if (!jaAdicionados.has(chave)) {
+                            jaAdicionados.add(chave);
+                            escalaList.push({
+                                role: rolePart,
+                                name: namePart,
+                                icon: extrairIconeFuncao(rolePart)
+                            });
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    // 3. Fallback de service.notes (JSON legado)
+    if (service && service.notes) {
+        try {
+            const parsed = typeof service.notes === 'string' ? JSON.parse(service.notes) : service.notes;
+            if (parsed.escala && typeof parsed.escala === 'object') {
+                Object.entries(parsed.escala).forEach(([papel, nome]) => {
+                    if (nome) {
+                        const chave = `${papel}:${nome}`.toLowerCase();
+                        if (!jaAdicionados.has(chave)) {
+                            jaAdicionados.add(chave);
+                            escalaList.push({
+                                role: papel.charAt(0).toUpperCase() + papel.slice(1),
+                                name: String(nome),
+                                icon: extrairIconeFuncao(papel)
+                            });
+                        }
+                    }
+                });
+            }
+            if (parsed.cantores && Array.isArray(parsed.cantores)) {
+                parsed.cantores.forEach(c => {
+                    if (c) {
+                        const chave = `vocalista:${c}`.toLowerCase();
+                        if (!jaAdicionados.has(chave)) {
+                            jaAdicionados.add(chave);
+                            escalaList.push({
+                                role: 'Vocalista',
+                                name: String(c),
+                                icon: '🎤'
+                            });
+                        }
+                    }
+                });
+            }
+        } catch(e) {}
+    }
+
+    // 4. Fallback de service.singers_list ou service.singers
+    if (service && (service.singers_list || service.singers)) {
+        const rawSingers = (service.singers_list || service.singers).split(',').map(s => s.trim()).filter(Boolean);
+        rawSingers.forEach(c => {
+            const chave = `vocalista:${c}`.toLowerCase();
+            if (!jaAdicionados.has(chave)) {
+                jaAdicionados.add(chave);
+                escalaList.push({
+                    role: 'Vocalista',
+                    name: c,
+                    icon: '🎤'
+                });
+            }
+        });
+    }
+
+    return escalaList;
+}
+
+function formatarDataCultoExecucao(dateStr, title, diaSemanaFallback) {
+    let textoData = '';
+    let diaSemana = diaSemanaFallback || '';
+
+    if (dateStr) {
+        const dClean = dateStr.split('T')[0];
+        const partes = dClean.split('-');
+        if (partes.length === 3) {
+            const ano = parseInt(partes[0], 10);
+            const mes = parseInt(partes[1], 10);
+            const dia = parseInt(partes[2], 10);
+            if (!isNaN(ano) && !isNaN(mes) && !isNaN(dia)) {
+                const dObj = new Date(ano, mes - 1, dia);
+                const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+                diaSemana = diasSemana[dObj.getDay()] || diaSemana;
+                textoData = `${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}/${ano}`;
+            }
+        }
+    }
+
+    if (textoData && diaSemana) {
+        return `${textoData} • ${diaSemana}${title ? ` (${title})` : ''}`;
+    } else if (textoData) {
+        return `${textoData}${title ? ` • ${title}` : ''}`;
+    }
+    return title || 'Culto';
+}
+
+function toggleAcordeaoMusicaAnalytics(accId) {
+    const panel = document.getElementById(`panel-${accId}`);
+    const chevron = document.getElementById(`chevron-${accId}`);
+    const btn = document.getElementById(`btn-acc-${accId}`);
+    if (!panel) return;
+
+    const isHidden = panel.classList.contains('hidden');
+
+    if (isHidden) {
+        panel.classList.remove('hidden');
+        if (chevron) chevron.classList.add('rotate-180');
+        if (btn) btn.setAttribute('aria-expanded', 'true');
+    } else {
+        panel.classList.add('hidden');
+        if (chevron) chevron.classList.remove('rotate-180');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+    }
+}
+
 function renderizarListaMusicasAnalyticsModal(lista) {
     const container = document.getElementById('container-lista-musicas-analytics');
     const subtitulo = document.getElementById('subtitulo-todas-musicas-analytics');
     if (!container) return;
 
     if (subtitulo) {
-        subtitulo.textContent = `${todasMusicasExecutadas.length} músicas diferentes executadas no período`;
+        subtitulo.textContent = `${todasMusicasExecutadas.length} músicas diferentes executadas • Toque para ver datas e escalas`;
     }
 
     if (!lista || lista.length === 0) {
@@ -447,7 +669,9 @@ function renderizarListaMusicasAnalyticsModal(lista) {
     container.innerHTML = lista.map((item, idx) => {
         const title = item[0];
         const count = item[1];
+        const execucoes = item[2] || [];
         const rank = idx + 1;
+        const accId = `acc-musica-${idx}`;
 
         let badgeCor = 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800';
         let medalhaIcon = '';
@@ -463,17 +687,93 @@ function renderizarListaMusicasAnalyticsModal(lista) {
             medalhaIcon = '🥉 ';
         }
 
-        return `
-            <div class="flex items-center justify-between p-3 sm:p-3.5 bg-slate-50 dark:bg-night-950/80 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 hover:border-brand-500/40 transition gap-3 shadow-xs">
-                <div class="flex items-center gap-3 min-w-0">
-                    <span class="text-xs font-mono px-2 py-0.5 rounded-lg border shrink-0 flex items-center gap-1 ${badgeCor}">
-                        ${medalhaIcon}#${rank}
-                    </span>
-                    <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">${title}</span>
+        // Renderização detalhada dos dias e das escalas dentro do acordeão
+        let htmlExecucoes = '';
+        if (execucoes.length === 0) {
+            htmlExecucoes = `
+                <div class="p-3 rounded-xl bg-slate-100/50 dark:bg-night-950/50 border border-slate-200/50 dark:border-slate-800/50 text-center">
+                    <p class="text-xs text-slate-400 italic">Histórico detalhado de cultos não registrado para esta música no período.</p>
                 </div>
-                <span class="text-xs font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20 shrink-0">
-                    ${count} ${count === 1 ? 'culto' : 'cultos'}
-                </span>
+            `;
+        } else {
+            htmlExecucoes = execucoes.map(ex => {
+                const dataFormatada = formatarDataCultoExecucao(ex.date, ex.title, ex.diaSemana);
+                
+                // Badges da escala
+                let htmlEscala = '';
+                if (ex.escala && ex.escala.length > 0) {
+                    htmlEscala = `
+                        <div class="flex flex-wrap gap-1.5 pt-1">
+                            ${ex.escala.map(esc => `
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200/90 dark:border-slate-800 shadow-2xs">
+                                    <span>${esc.icon || '👤'}</span>
+                                    <span class="text-slate-400 dark:text-slate-500 font-normal">${esc.role}:</span>
+                                    <span class="font-bold text-slate-900 dark:text-white">${esc.name}</span>
+                                </span>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    htmlEscala = `
+                        <p class="text-[11px] text-slate-400 italic pt-0.5">Sem voluntários registrados na escala deste dia.</p>
+                    `;
+                }
+
+                return `
+                    <div class="p-3 rounded-xl bg-slate-100/80 dark:bg-night-950/90 border border-slate-200/80 dark:border-slate-800/80 space-y-2 transition">
+                        <div class="flex items-center justify-between flex-wrap gap-2 pb-1.5 border-b border-slate-200/60 dark:border-slate-800/60">
+                            <div class="flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-md bg-brand-500/15 text-brand-600 dark:text-brand-400 flex items-center justify-center text-xs">📅</span>
+                                <span class="text-xs font-bold text-slate-900 dark:text-white">${dataFormatada}</span>
+                            </div>
+                            ${ex.tom ? `<span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">Tom: ${ex.tom}</span>` : ''}
+                        </div>
+                        <div>
+                            <p class="text-[10px] uppercase font-bold tracking-wider text-slate-400 dark:text-slate-500 mb-1 flex items-center gap-1">
+                                <span>👥</span> Equipe Escalada:
+                            </p>
+                            ${htmlEscala}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        return `
+            <div class="rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50 dark:bg-night-950/80 overflow-hidden shadow-xs transition hover:border-brand-500/40">
+                <!-- CABEÇALHO DO ACORDEÃO (CLICÁVEL) -->
+                <button type="button"
+                    onclick="toggleAcordeaoMusicaAnalytics('${accId}')"
+                    class="w-full flex items-center justify-between p-3 sm:p-3.5 text-left cursor-pointer transition select-none hover:bg-slate-100/60 dark:hover:bg-slate-800/40 gap-3"
+                    aria-expanded="false"
+                    id="btn-acc-${accId}">
+                    
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="text-xs font-mono px-2 py-0.5 rounded-lg border shrink-0 flex items-center gap-1 ${badgeCor}">
+                            ${medalhaIcon}#${rank}
+                        </span>
+                        <div class="min-w-0">
+                            <span class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate block">${title}</span>
+                            <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Toque para ver cultos e escalas</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="text-xs font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20">
+                            ${count} ${count === 1 ? 'culto' : 'cultos'}
+                        </span>
+                        <div id="chevron-${accId}" class="w-6 h-6 rounded-lg bg-slate-200/70 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-transform duration-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </button>
+
+                <!-- CORPO DO ACORDEÃO (PAINEL EXPANSÍVEL) -->
+                <div id="panel-${accId}" class="hidden border-t border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-night-900/60 p-3 sm:p-4 space-y-2.5">
+                    ${htmlExecucoes}
+                </div>
             </div>
         `;
     }).join('');
@@ -498,3 +798,4 @@ window.aplicarFiltroCustomizadoAnalytics = aplicarFiltroCustomizadoAnalytics;
 window.abrirModalTodasMusicasAnalytics = abrirModalTodasMusicasAnalytics;
 window.fecharModalTodasMusicasAnalytics = fecharModalTodasMusicasAnalytics;
 window.filtrarMusicasAnalyticsModal = filtrarMusicasAnalyticsModal;
+window.toggleAcordeaoMusicaAnalytics = toggleAcordeaoMusicaAnalytics;
