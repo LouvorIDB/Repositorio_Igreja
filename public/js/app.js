@@ -1278,12 +1278,6 @@ function renderizarCultos(rows) {
     atualizarContadoresFiltro();
     aplicarFiltroCultosRender(window.filtroCultosAtual || 'todos');
 
-    // Se usuário tiver permissão de criar cultos, exibe o botão
-    const btnNovoCulto = document.getElementById('acoes-admin-cultos-header');
-    if (btnNovoCulto) {
-        const canCriarCulto = hasPermission('criar_culto') || hasPermission('gerenciar_cultos');
-        btnNovoCulto.classList.toggle('hidden', !canCriarCulto);
-    }
 }
 
 function atualizarContadoresFiltro() {

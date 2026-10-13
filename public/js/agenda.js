@@ -795,18 +795,6 @@ function selecionarDiaCalendario(dataStr, scrollParaPainel = true) {
                         <h5 class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">Dia livre na programação</h5>
                         <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Nenhum culto ou evento agendado para este dia.</p>
                     </div>
-                    ${isLiderOuAdmin ? `
-                        <div class="flex items-center justify-center gap-2 pt-1 flex-wrap">
-                            <button type="button" onclick="window.pendingDataClick = '${dataStr}'; mostrarFormCulto(null);"
-                                class="px-3 py-1.5 rounded-lg bg-brand-500/15 hover:bg-brand-500/25 text-brand-700 dark:text-brand-300 border border-brand-500/30 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer">
-                                <span>+ Criar Culto</span>
-                            </button>
-                            <button type="button" onclick="abrirModalEventoAdmin(null, '${dataStr}')"
-                                class="px-3 py-1.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/25 text-purple-700 dark:text-purple-300 border border-purple-500/30 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer">
-                                <span>+ Criar Evento</span>
-                            </button>
-                        </div>
-                    ` : ''}
                 </div>
             `;
         } else {
@@ -903,12 +891,6 @@ function selecionarDiaCalendario(dataStr, scrollParaPainel = true) {
                                 class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium transition cursor-pointer flex items-center gap-1">
                                 <span>📲 Sincronizar</span>
                             </button>
-                            ${isLiderOuAdmin ? `
-                                <button type="button" onclick="abrirModalEventoAdmin('${evt.id}')"
-                                    class="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition cursor-pointer" title="Editar">
-                                    ✏️
-                                </button>
-                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -1069,18 +1051,7 @@ function renderizarListaEventosProximos() {
         const parts = (evt.date || '').split('-');
         const dataFmt = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : evt.date;
 
-        const acoesBtn = podeEditar ? (
-            evt.is_service ? `
-                <div class="flex items-center gap-1">
-                    <button onclick="editarEventoPorId('${evt.id}', '${evt.date}')" class="text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 text-xs" title="Editar Culto">✏️</button>
-                </div>
-            ` : `
-                <div class="flex items-center gap-1">
-                    <button onclick="abrirModalEventoAdmin('${evt.id}')" class="text-slate-400 hover:text-slate-900 dark:hover:text-white p-1 text-xs" title="Editar">✏️</button>
-                    <button onclick="excluirEventoAgenda('${evt.id}')" class="text-slate-400 hover:text-red-500 p-1 text-xs" title="Excluir">🗑️</button>
-                </div>
-            `
-        ) : '';
+        const acoesBtn = '';
 
         const isEscalado = !!evt.user_escalado;
         let cardBorda = 'border-slate-200 dark:border-slate-800 bg-white dark:bg-night-900/70';
@@ -1182,49 +1153,13 @@ function abrirModalDetalhesDia(dataStr) {
 
     // CENÁRIO A: NENHUMA PROGRAMAÇÃO NO DIA
     if (totalItens === 0) {
-        if (isLiderOuAdmin) {
-            containerConteudo.innerHTML = `
-                <div class="text-center py-5 space-y-4">
-                    <div class="w-14 h-14 bg-slate-900 border border-slate-700/80 rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-inner text-slate-300">
-                        🗓️
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-white">Nenhuma programação neste dia</h3>
-                        <p class="text-xs text-slate-400 mt-1">O que você gostaria de criar para <strong>${dataFmt}</strong>?</p>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                        <button onclick="fecharModalDetalhesDia(); window.pendingDataClick = '${dataStr}'; mostrarFormCulto(null);" 
-                            class="bg-gradient-to-br from-brand-950/80 to-slate-900 hover:from-brand-900/80 hover:to-slate-800 border border-brand-500/40 hover:border-brand-400 p-4 rounded-xl text-left transition group shadow-md flex flex-col justify-between">
-                            <div>
-                                <span class="text-2xl block mb-1">⛪</span>
-                                <h4 class="text-sm font-bold text-white group-hover:text-brand-300">Criar Culto</h4>
-                                <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">Configurar escalas de ministérios, vocal e repertório de músicas.</p>
-                            </div>
-                            <span class="text-xs font-semibold text-brand-400 mt-3 flex items-center gap-1">Prosseguir ➔</span>
-                        </button>
-
-                        <button onclick="fecharModalDetalhesDia(); abrirModalEventoAdmin(null, '${dataStr}');" 
-                            class="bg-gradient-to-br from-purple-950/80 to-slate-900 hover:from-purple-900/80 hover:to-slate-800 border border-purple-500/40 hover:border-purple-400 p-4 rounded-xl text-left transition group shadow-md flex flex-col justify-between">
-                            <div>
-                                <span class="text-2xl block mb-1">🎉</span>
-                                <h4 class="text-sm font-bold text-white group-hover:text-purple-300">Criar Evento</h4>
-                                <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">Cadastrar conferência, vigília, retiro com foto de divulgação.</p>
-                            </div>
-                            <span class="text-xs font-semibold text-purple-400 mt-3 flex items-center gap-1">Prosseguir ➔</span>
-                        </button>
-                    </div>
-                </div>
-            `;
-        } else {
-            containerConteudo.innerHTML = `
-                <div class="text-center py-8 space-y-2">
-                    <span class="text-3xl">☕</span>
-                    <p class="text-sm font-semibold text-slate-300">Nenhuma programação agendada</p>
-                    <p class="text-xs text-slate-500">Não há cultos ou eventos marcados para este dia.</p>
-                </div>
-            `;
-        }
+        containerConteudo.innerHTML = `
+            <div class="text-center py-8 space-y-2">
+                <span class="text-3xl">☕</span>
+                <p class="text-sm font-semibold text-slate-300">Nenhuma programação agendada</p>
+                <p class="text-xs text-slate-500">Não há cultos ou eventos marcados para este dia.</p>
+            </div>
+        `;
     } else {
         // CENÁRIO B: JÁ EXISTEM ITENS NO DIA
         let html = '<div class="space-y-3">';
@@ -1233,12 +1168,6 @@ function abrirModalDetalhesDia(dataStr) {
         // Renderizar Cultos
         cultosDoDia.forEach(s => {
             const timeStr = s.date && s.date.includes('T') ? s.date.split('T')[1].substring(0, 5) : (s.time || '');
-            const rows = window.dadosGlobais?.cultos || [];
-            let cIndex = rows.findIndex(row => row[8] === s.id);
-            if (cIndex === -1 && s.title) {
-                cIndex = rows.findIndex(row => row[0] === s.title);
-            }
-            const editAction = cIndex !== -1 ? `mostrarFormCulto(${cIndex})` : `window.pendingDataClick = '${dataStr}'; mostrarFormCulto(null);`;
 
             let sLoc = s.location || '';
             if (!sLoc && s.notes) {
@@ -1291,17 +1220,6 @@ function abrirModalDetalhesDia(dataStr) {
                             title="Adicionar este culto à minha agenda">
                             <span>📲</span> <span>Exportar Agenda</span>
                         </button>
-                        ${isLiderOuAdmin ? `
-                            <button onclick="fecharModalDetalhesDia(); ${editAction}" 
-                                class="bg-brand-600 hover:bg-brand-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer shadow-sm">
-                                <span>✏️</span> <span>Editar</span>
-                            </button>
-                            <button onclick="excluirCulto('${s.id}')" 
-                                class="bg-slate-800 hover:bg-red-700 text-slate-400 hover:text-white border border-slate-700 hover:border-red-600 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer" 
-                                title="Excluir este culto">
-                                <span>🗑️</span>
-                            </button>
-                        ` : ''}
                     </div>
                 </div>
             `;
@@ -1334,43 +1252,12 @@ function abrirModalDetalhesDia(dataStr) {
                             title="Adicionar este evento à minha agenda">
                             <span>📲</span> <span>Exportar Agenda</span>
                         </button>
-                        ${isLiderOuAdmin ? `
-                            <button onclick="fecharModalDetalhesDia(); abrirModalEventoAdmin('${evt.id}');" 
-                                class="bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer shadow-sm">
-                                <span>✏️</span> <span>Editar</span>
-                            </button>
-                            <button onclick="excluirEventoAgenda('${evt.id}')" 
-                                class="bg-slate-800 hover:bg-red-700 text-slate-400 hover:text-white border border-slate-700 hover:border-red-600 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer" 
-                                title="Excluir este evento">
-                                <span>🗑️</span>
-                            </button>
-                        ` : ''}
                     </div>
                 </div>
             `;
         });
 
         html += `</div>`;
-
-        // Se for admin ou líder, disponibilizar botões de criação para adicionar mais um
-        if (isLiderOuAdmin) {
-            html += `
-                <div class="mt-4 pt-3 border-t border-slate-700/60 space-y-2">
-                    <p class="text-xs font-semibold text-slate-400">➕ Adicionar nova programação neste dia:</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="fecharModalDetalhesDia(); window.pendingDataClick = '${dataStr}'; mostrarFormCulto(null);"
-                            class="bg-slate-800 hover:bg-brand-900/60 text-slate-200 hover:text-brand-300 border border-slate-700 hover:border-brand-500/60 p-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm">
-                            <span>⛪</span> Criar Culto
-                        </button>
-                        <button onclick="fecharModalDetalhesDia(); abrirModalEventoAdmin(null, '${dataStr}');"
-                            class="bg-slate-800 hover:bg-purple-900/60 text-slate-200 hover:text-purple-300 border border-slate-700 hover:border-purple-500/60 p-2.5 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm">
-                            <span>🎉</span> Criar Evento
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
         containerConteudo.innerHTML = html;
     }
 
@@ -1431,33 +1318,50 @@ function removerImagemEvento() {
 }
 
 /**
- * Modal de cadastro/edição de evento
+ * Visão Dedicada de cadastro/edição de evento no Admin (sem modal flutuante)
  */
-function abrirModalEventoAdmin(eventoId = null, dataStr = null) {
-    const modal = document.getElementById('modal-evento-admin');
-    if (!modal) return;
+function abrirEditorEventoAdmin(eventoId = null, dataStr = null) {
+    const hub = document.getElementById('admin-cultos-eventos-hub');
+    const visaoRecorrente = document.getElementById('admin-visao-recorrente-editor');
+    const visaoEvento = document.getElementById('admin-visao-evento-editor');
+    if (!visaoEvento) return;
 
-    document.getElementById('evento-id').value = eventoId || '';
-    document.getElementById('evento-titulo').value = '';
-    document.getElementById('evento-data').value = dataStr || new Date().toISOString().split('T')[0];
-    document.getElementById('evento-hora').value = '19:30';
-    document.getElementById('evento-local').value = '';
-    document.getElementById('evento-descricao').value = '';
+    if (hub) hub.classList.add('hidden');
+    if (visaoRecorrente) visaoRecorrente.classList.add('hidden');
+    visaoEvento.classList.remove('hidden');
+
+    const inpId = document.getElementById('evento-id');
+    const inpTitulo = document.getElementById('evento-titulo');
+    const inpData = document.getElementById('evento-data');
+    const inpHora = document.getElementById('evento-hora');
+    const inpLocal = document.getElementById('evento-local');
+    const inpDesc = document.getElementById('evento-descricao');
+
+    if (inpId) inpId.value = eventoId || '';
+    if (inpTitulo) inpTitulo.value = '';
+    if (inpData) inpData.value = dataStr || new Date().toISOString().split('T')[0];
+    if (inpHora) inpHora.value = '19:30';
+    if (inpLocal) inpLocal.value = '';
+    if (inpDesc) inpDesc.value = '';
     removerImagemEvento();
+
+    const tituloEl = document.getElementById('admin-evento-editor-titulo');
 
     if (eventoId) {
         const eventos = obterEventosIgreja();
         const evt = eventos.find(e => e.id === eventoId);
         if (evt) {
-            document.getElementById('evento-titulo').value = evt.title || '';
-            document.getElementById('evento-data').value = evt.date || '';
-            document.getElementById('evento-hora').value = evt.time || '';
-            document.getElementById('evento-local').value = evt.location || '';
-            document.getElementById('evento-descricao').value = evt.description || '';
+            if (tituloEl) tituloEl.innerHTML = `<span>🎉</span> Editar Evento: ${evt.title}`;
+            if (inpTitulo) inpTitulo.value = evt.title || '';
+            if (inpData) inpData.value = evt.date || '';
+            if (inpHora) inpHora.value = evt.time || '';
+            if (inpLocal) inpLocal.value = evt.location || '';
+            if (inpDesc) inpDesc.value = evt.description || '';
 
             if (evt.image_url) {
                 currentEventoImageUrl = evt.image_url;
-                document.getElementById('evento-imagem-url').value = evt.image_url;
+                const inpImgUrl = document.getElementById('evento-imagem-url');
+                if (inpImgUrl) inpImgUrl.value = evt.image_url;
                 const img = document.getElementById('evento-imagem-preview');
                 const container = document.getElementById('evento-imagem-preview-container');
                 if (img && container) {
@@ -1466,14 +1370,32 @@ function abrirModalEventoAdmin(eventoId = null, dataStr = null) {
                 }
             }
         }
+    } else {
+        if (tituloEl) tituloEl.innerHTML = `<span>🎉</span> Cadastrar Evento Especial`;
     }
 
-    modal.classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+window.abrirEditorEventoAdmin = abrirEditorEventoAdmin;
+
+function fecharEditorEventoAdmin() {
+    const visaoEvento = document.getElementById('admin-visao-evento-editor');
+    const hub = document.getElementById('admin-cultos-eventos-hub');
+    if (visaoEvento) visaoEvento.classList.add('hidden');
+    if (hub) hub.classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.fecharEditorEventoAdmin = fecharEditorEventoAdmin;
+
+function abrirModalEventoAdmin(eventoId = null, dataStr = null) {
+    abrirEditorEventoAdmin(eventoId, dataStr);
+}
+window.abrirModalEventoAdmin = abrirModalEventoAdmin;
 
 function fecharModalEventoAdmin() {
-    document.getElementById('modal-evento-admin')?.classList.add('hidden');
+    fecharEditorEventoAdmin();
 }
+window.fecharModalEventoAdmin = fecharModalEventoAdmin;
 
 /**
  * Salvar evento (Admin/Líder)
@@ -1551,6 +1473,7 @@ async function salvarEventoAdmin(e) {
 
         fecharModalEventoAdmin();
         carregarAgenda();
+        if (typeof renderizarAdminCultosEventos === 'function') renderizarAdminCultosEventos();
 
         if (typeof mostrarToast === 'function') mostrarToast('Evento salvo com sucesso!', 'sucesso');
     } catch (err) {
@@ -1574,6 +1497,7 @@ function excluirEventoAgenda(eventoId) {
     salvarEventosMemoria(churchId);
 
     carregarAgenda();
+    if (typeof renderizarAdminCultosEventos === 'function') renderizarAdminCultosEventos();
     if (typeof mostrarToast === 'function') mostrarToast('Evento excluído.', 'info');
 }
 
@@ -1642,11 +1566,21 @@ function navegarCalendarioAdmin(delta) {
     renderizarAdminCultosEventos();
 }
 
+function navegarHojeAdmin() {
+    const hoje = new Date();
+    mesAtualAdmin = hoje.getMonth();
+    anoAtualAdmin = hoje.getFullYear();
+    const dataHojeStr = `${anoAtualAdmin}-${String(mesAtualAdmin + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+    window.adminDiaSelecionadoStr = dataHojeStr;
+    renderizarAdminCultosEventos();
+}
+window.navegarHojeAdmin = navegarHojeAdmin;
+
 async function renderizarAdminCultosEventos() {
     const containerMain = document.getElementById('calendario-admin-container');
     if (!containerMain) return;
 
-    // Atualiza label
+    // Atualiza label do mês
     const mesesStr = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     const label = document.getElementById('label-mes-calendario');
     if (label) label.textContent = `${mesesStr[mesAtualAdmin]} ${anoAtualAdmin}`;
@@ -1661,15 +1595,6 @@ async function renderizarAdminCultosEventos() {
             todosServicosEEventos.push(e);
         }
     });
-
-    // Container do calendário
-    const container = containerMain;
-
-    const tituloMesAno = document.getElementById('calendario-mes-ano-admin');
-    if (tituloMesAno) {
-        const nomesMeses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-        tituloMesAno.textContent = `${nomesMeses[mesAtualAdmin]} ${anoAtualAdmin}`;
-    }
 
     const primeiroDia = new Date(anoAtualAdmin, mesAtualAdmin, 1).getDay();
     const ultimoDia = new Date(anoAtualAdmin, mesAtualAdmin + 1, 0).getDate();
@@ -1718,11 +1643,14 @@ async function renderizarAdminCultosEventos() {
             }
         }
 
-        // Ao clicar em uma data no calendário do admin, abrir sempre o modal de seleção do dia
-        let acaoClique = `abrirModalDetalhesDia('${dataStr}')`;
+        const isSelected = (window.adminDiaSelecionadoStr === dataStr);
+        const borderSelectedClass = isSelected ? "ring-2 ring-liturge-500 border-liturge-400 shadow-md" : "";
+
+        // Ao clicar em uma data no calendário do admin, seleciona o dia e renderiza os cards no painel lateral sem popup modal
+        const acaoClique = `selecionarDiaCalendarioAdmin('${dataStr}')`;
 
         html += `
-            <div onclick="${acaoClique}" class="rounded-xl p-2 border flex flex-col items-center justify-center min-h-[52px] ${bgClass}">
+            <div data-admin-dia-cell="${dataStr}" onclick="${acaoClique}" class="rounded-xl p-2 border flex flex-col items-center justify-center min-h-[52px] ${bgClass} ${borderSelectedClass}">
                 <span class="text-sm font-semibold">${d}</span>
                 <div class="flex gap-1">${indicator}</div>
             </div>
@@ -1730,13 +1658,278 @@ async function renderizarAdminCultosEventos() {
     }
 
     html += `</div>`;
-    container.innerHTML = html;
+    containerMain.innerHTML = html;
+
+    // Garantir que um dia esteja selecionado no mês atual
+    const prefixoMes = `${anoAtualAdmin}-${String(mesAtualAdmin + 1).padStart(2, '0')}`;
+    if (!window.adminDiaSelecionadoStr || !window.adminDiaSelecionadoStr.startsWith(prefixoMes)) {
+        const hoje = new Date();
+        const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+        if (hojeStr.startsWith(prefixoMes)) {
+            window.adminDiaSelecionadoStr = hojeStr;
+        } else {
+            window.adminDiaSelecionadoStr = `${prefixoMes}-01`;
+        }
+    }
+    selecionarDiaCalendarioAdmin(window.adminDiaSelecionadoStr);
 
     // Atualiza barras laterais
     renderizarEventosLateral(todosServicosEEventos);
     carregarE_RenderizarCultosRecorrentes();
     if (typeof carregarMesAtivoUI === 'function') carregarMesAtivoUI();
 }
+
+/**
+ * Seleciona um dia no calendário do Admin e atualiza o painel lateral com cards compactos
+ */
+function selecionarDiaCalendarioAdmin(dataStr) {
+    window.adminDiaSelecionadoStr = dataStr;
+    renderizarDetalhesDiaAdmin(dataStr);
+    
+    // Atualiza anel visual de seleção no calendário
+    const container = document.getElementById('calendario-admin-container');
+    if (container) {
+        container.querySelectorAll('[data-admin-dia-cell]').forEach(cell => {
+            if (cell.getAttribute('data-admin-dia-cell') === dataStr) {
+                cell.classList.add('ring-2', 'ring-liturge-500', 'border-liturge-400', 'shadow-md');
+            } else {
+                cell.classList.remove('ring-2', 'ring-liturge-500', 'border-liturge-400', 'shadow-md');
+            }
+        });
+    }
+}
+window.selecionarDiaCalendarioAdmin = selecionarDiaCalendarioAdmin;
+
+/**
+ * Renderiza os cards compactos dos cultos e eventos do dia selecionado
+ */
+function renderizarDetalhesDiaAdmin(dataStr) {
+    const tituloEl = document.getElementById('admin-detalhe-dia-titulo');
+    const container = document.getElementById('admin-detalhe-dia-lista');
+    if (!container) return;
+
+    if (!dataStr) {
+        if (tituloEl) tituloEl.textContent = 'Selecione um dia no calendário';
+        container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Nenhum dia selecionado.</p>';
+        return;
+    }
+
+    const parts = dataStr.split('-');
+    if (parts.length !== 3) return;
+    const ano = parseInt(parts[0], 10);
+    const mes = parseInt(parts[1], 10);
+    const dia = parseInt(parts[2], 10);
+    const dateObj = new Date(ano, mes - 1, dia);
+    const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const diaSemana = diasSemana[dateObj.getDay()] || '';
+    const dataFmt = `${parts[2]}/${parts[1]}/${parts[0]}`;
+    const tagDiaMes = `${parts[2]}/${parts[1]}`;
+
+    if (tituloEl) {
+        tituloEl.textContent = `${diaSemana}, ${dataFmt}`;
+    }
+
+    // 1. Obter cultos do dia
+    const rawServices = window.dadosGlobais?.services || [];
+    let cultosDoDia = rawServices.filter(s => s.date && s.date.startsWith(dataStr));
+
+    // Fallback cultos do array tabular
+    const rowsCultos = window.dadosGlobais?.cultos || [];
+    let blocosCultosTabular = [];
+    if (window.cultosProcessados && window.cultosProcessados.length > 0) {
+        blocosCultosTabular = window.cultosProcessados.filter(c => c.dataStr === tagDiaMes || (c.nome && c.nome.includes(tagDiaMes)));
+    } else {
+        for (let i = 0; i < rowsCultos.length; i++) {
+            const col0 = rowsCultos[i][0] ? String(rowsCultos[i][0]) : '';
+            if ((col0.includes('CULTO DE') || col0.includes('CULTO ')) && col0.includes(tagDiaMes)) {
+                blocosCultosTabular.push({
+                    startIndex: i,
+                    serviceId: rowsCultos[i][8] || null,
+                    nome: col0,
+                    dataStr: tagDiaMes,
+                    horario: rowsCultos[i][5] || '19:00',
+                    songs: [],
+                    escala: []
+                });
+            }
+        }
+    }
+
+    // 2. Obter eventos do dia
+    const todosEventos = typeof obterEventosIgreja === 'function' ? obterEventosIgreja() : [];
+    const evtsDoDia = todosEventos.filter(e => e.date === dataStr || (e.date && e.date.startsWith(dataStr)));
+
+    let html = '';
+
+    // Renderizar Cultos do Dia
+    if (blocosCultosTabular.length > 0) {
+        blocosCultosTabular.forEach(c => {
+            const nomeLimpo = (c.nome || 'Culto de Louvor').replace(/ - OCULTO/i, '').replace(/ - EM MONTAGEM/i, '').trim();
+            const numMusicas = c.songs ? c.songs.length : 0;
+            const numEscalados = c.escala ? c.escala.length : 0;
+            const horario = c.horario || '19:00';
+            const sId = c.serviceId || (c.startIndex !== null && rowsCultos[c.startIndex] ? rowsCultos[c.startIndex][8] : '');
+
+            html += `
+                <div class="bg-night-950 border border-slate-800 hover:border-liturge-500/50 rounded-2xl p-3.5 shadow-sm transition space-y-2.5">
+                    <div class="flex items-start justify-between gap-2.5">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-8 h-8 rounded-xl bg-liturge-500/15 border border-liturge-500/30 text-liturge-400 flex items-center justify-center text-base shrink-0 font-bold">
+                                ⛪
+                            </div>
+                            <div class="min-w-0">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-liturge-400 block leading-tight">Culto de Louvor</span>
+                                <h4 class="text-xs sm:text-sm font-bold text-white truncate max-w-[200px]" title="${nomeLimpo}">${nomeLimpo}</h4>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-night-900 border border-slate-800 text-slate-300 shrink-0">
+                            ${horario}
+                        </span>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-400">
+                        ${numMusicas > 0 ? `<span class="bg-night-900 px-2 py-0.5 rounded-lg border border-slate-800 text-slate-300">🎵 ${numMusicas} ${numMusicas === 1 ? 'música' : 'músicas'}</span>` : ''}
+                        ${numEscalados > 0 ? `<span class="bg-night-900 px-2 py-0.5 rounded-lg border border-slate-800 text-slate-300">👥 ${numEscalados} escalados</span>` : ''}
+                        <span class="bg-night-900 px-2 py-0.5 rounded-lg border border-slate-800 text-slate-400">📍 Templo Principal</span>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/80">
+                        <button type="button" onclick="abrirEditorCultoAdmin(${c.startIndex})"
+                            class="px-3 py-1.5 rounded-xl bg-night-900 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 text-xs font-semibold flex items-center gap-1 transition cursor-pointer">
+                            <span>✏️</span> Editar
+                        </button>
+                        <button type="button" onclick="confirmarExcluirCultoAdmin(${c.startIndex}, '${sId}')"
+                            class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold flex items-center gap-1 transition cursor-pointer" title="Excluir culto">
+                            <span>🗑️</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    } else if (cultosDoDia.length > 0) {
+        cultosDoDia.forEach(s => {
+            const idx = (rowsCultos || []).findIndex(row => row[8] === s.id);
+            let horario = s.time || '19:00';
+            if (s.date && s.date.includes('T')) {
+                const hPart = s.date.split('T')[1];
+                if (hPart) horario = hPart.substring(0, 5);
+            }
+
+            html += `
+                <div class="bg-night-950 border border-slate-800 hover:border-liturge-500/50 rounded-2xl p-3.5 shadow-sm transition space-y-2.5">
+                    <div class="flex items-start justify-between gap-2.5">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-8 h-8 rounded-xl bg-liturge-500/15 border border-liturge-500/30 text-liturge-400 flex items-center justify-center text-base shrink-0 font-bold">
+                                ⛪
+                            </div>
+                            <div class="min-w-0">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-liturge-400 block leading-tight">Culto Programado</span>
+                                <h4 class="text-xs sm:text-sm font-bold text-white truncate max-w-[200px]" title="${s.title}">${s.title}</h4>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-night-900 border border-slate-800 text-slate-300 shrink-0">
+                            ${horario}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/80">
+                        <button type="button" onclick="abrirEditorCultoAdmin(${idx !== -1 ? idx : null})"
+                            class="px-3 py-1.5 rounded-xl bg-night-900 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 text-xs font-semibold flex items-center gap-1 transition cursor-pointer">
+                            <span>✏️</span> Editar
+                        </button>
+                        <button type="button" onclick="confirmarExcluirCultoAdmin(${idx !== -1 ? idx : null}, '${s.id}')"
+                            class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold flex items-center gap-1 transition cursor-pointer" title="Excluir culto">
+                            <span>🗑️</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // Renderizar Eventos do Dia
+    if (evtsDoDia.length > 0) {
+        evtsDoDia.forEach(evt => {
+            html += `
+                <div class="bg-night-950 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-3.5 shadow-sm transition space-y-2.5">
+                    <div class="flex items-start justify-between gap-2.5">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center text-base shrink-0 font-bold">
+                                🎉
+                            </div>
+                            <div class="min-w-0">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400 block leading-tight">Evento Especial</span>
+                                <h4 class="text-xs sm:text-sm font-bold text-white truncate max-w-[200px]" title="${evt.title}">${evt.title}</h4>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-night-900 border border-slate-800 text-slate-300 shrink-0">
+                            ${evt.time || '19:30'}
+                        </span>
+                    </div>
+
+                    ${evt.image_url ? `
+                        <div class="rounded-xl overflow-hidden border border-slate-800 max-h-28">
+                            <img src="${evt.image_url}" alt="${evt.title}" class="w-full h-full object-cover">
+                        </div>
+                    ` : ''}
+
+                    <div class="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-400">
+                        <span class="bg-night-900 px-2 py-0.5 rounded-lg border border-slate-800 text-slate-400">📍 ${evt.location || 'Templo Principal'}</span>
+                    </div>
+                    ${evt.description ? `<p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">${evt.description}</p>` : ''}
+
+                    <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800/80">
+                        <button type="button" onclick="abrirEditorEventoAdmin('${evt.id}')"
+                            class="px-3 py-1.5 rounded-xl bg-night-900 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 text-xs font-semibold flex items-center gap-1 transition cursor-pointer">
+                            <span>✏️</span> Editar
+                        </button>
+                        <button type="button" onclick="excluirEventoAgenda('${evt.id}')"
+                            class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-semibold flex items-center gap-1 transition cursor-pointer" title="Excluir evento">
+                            <span>🗑️</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    if (blocosCultosTabular.length === 0 && cultosDoDia.length === 0 && evtsDoDia.length === 0) {
+        html = `
+            <div class="bg-night-950/60 border border-dashed border-slate-800 rounded-2xl p-5 text-center space-y-3">
+                <div class="w-9 h-9 rounded-xl bg-slate-800/60 text-slate-400 flex items-center justify-center text-lg mx-auto">
+                    📅
+                </div>
+                <div>
+                    <p class="text-xs font-semibold text-slate-300">Nenhum culto ou evento agendado</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Utilize os botões abaixo para programar este dia.</p>
+                </div>
+                <div class="flex items-center justify-center gap-2 pt-1">
+                    <button type="button" onclick="abrirEditorCultoAdmin(null, '${dataStr}')"
+                        class="px-3 py-1.5 rounded-xl bg-liturge-500/15 hover:bg-liturge-500/25 text-liturge-400 border border-liturge-500/30 text-xs font-semibold transition cursor-pointer">
+                        + Culto
+                    </button>
+                    <button type="button" onclick="abrirEditorEventoAdmin(null, '${dataStr}')"
+                        class="px-3 py-1.5 rounded-xl bg-night-900 hover:bg-slate-800 text-slate-300 border border-slate-700/80 text-xs font-semibold transition cursor-pointer">
+                        + Evento
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    container.innerHTML = html;
+}
+window.renderizarDetalhesDiaAdmin = renderizarDetalhesDiaAdmin;
+
+function confirmarExcluirCultoAdmin(idx, serviceId) {
+    if (!confirm('Deseja realmente excluir este culto e sua programação?')) return;
+    if (typeof excluirCulto === 'function') {
+        excluirCulto(serviceId || idx);
+    } else if (typeof window.excluirCulto === 'function') {
+        window.excluirCulto(serviceId || idx);
+    }
+}
+window.confirmarExcluirCultoAdmin = confirmarExcluirCultoAdmin;
 
 function editarEventoPorId(serviceId, dateStr = '') {
     if (dateStr) window.pendingDataClick = dateStr;
@@ -1765,7 +1958,7 @@ function renderizarEventosLateral(eventos) {
         let dStr = evt.date ? evt.date.split('T')[0] : '';
         let horaFormatada = evt.time || '';
         
-        // Extração 100% literal da data e do horário
+        // Extração literal da data e do horário
         if (evt.date && evt.date.includes('T')) {
             const parts = evt.date.split('T');
             const p = parts[0].split('-');
@@ -1793,9 +1986,15 @@ function renderizarEventosLateral(eventos) {
                     </p>
                 </div>
                 <div class="flex gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition shrink-0">
-                    <button onclick="editarEventoPorId('${evt.id}', '${evt.date}')" class="text-slate-400 hover:text-liturge-400 p-1 transition" title="Editar Evento">
+                    <button onclick="abrirEditorEventoAdmin('${evt.id}')" class="text-slate-400 hover:text-liturge-400 p-1 transition cursor-pointer" title="Editar Evento">
                         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                        </svg>
+                    </button>
+                    <button onclick="excluirEventoAgenda('${evt.id}')" class="text-slate-400 hover:text-rose-400 p-1 transition cursor-pointer" title="Excluir Evento">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                         </svg>
                     </button>
                 </div>
@@ -1803,7 +2002,6 @@ function renderizarEventosLateral(eventos) {
         `;
     }).join('');
 }
-
 
 /**
  * REGRAS DE CULTOS RECORRENTES (SaaS / Supabase)
@@ -1835,15 +2033,15 @@ async function carregarE_RenderizarCultosRecorrentes() {
         const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
         container.innerHTML = regras.map(r => `
-            <div class="bg-slate-900 border border-slate-800 p-3 rounded-lg">
-                <div class="flex items-start justify-between mb-1">
-                    <p class="text-xs font-bold text-indigo-300">${r.name}</p>
-                    <div class="flex gap-2">
-                        <button onclick="gerarCultosDaRegra('${r.id}')" class="text-[10px] bg-indigo-900/50 text-indigo-300 px-1.5 py-0.5 rounded hover:bg-indigo-800">Gerar</button>
-                        <button onclick="excluirRegraRecorrente('${r.id}')" class="text-red-400 hover:text-red-300 text-[10px]">🗑️</button>
-                    </div>
+            <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                    <p class="text-xs font-bold text-liturge-400 truncate">${r.name}</p>
+                    <p class="text-[10px] text-slate-400">${diasSemana[r.day_of_week]} às ${r.time} • ${r.location || '-'}</p>
                 </div>
-                <p class="text-[10px] text-slate-400">${diasSemana[r.day_of_week]} às ${r.time} • ${r.location || '-'}</p>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button onclick="gerarCultosDaRegra('${r.id}')" class="text-[10px] bg-liturge-500/15 hover:bg-liturge-500/25 text-liturge-400 border border-liturge-500/30 px-2 py-0.5 rounded-lg font-bold transition cursor-pointer">Gerar</button>
+                    <button onclick="excluirRegraRecorrente('${r.id}')" class="text-rose-400 hover:text-rose-300 text-xs p-1 cursor-pointer" title="Excluir regra">🗑️</button>
+                </div>
             </div>
         `).join('');
 
@@ -1853,15 +2051,101 @@ async function carregarE_RenderizarCultosRecorrentes() {
     }
 }
 
-function abrirModalCultoRecorrenteAdmin() {
-    const modal = document.getElementById('modal-culto-recorrente-admin');
-    if (modal) modal.classList.remove('hidden');
+/**
+ * Gerenciador de Regras Recorrentes em tela dedicada (sem modal flutuante)
+ */
+function abrirEditorRecorrenteAdmin() {
+    const hub = document.getElementById('admin-cultos-eventos-hub');
+    const visaoEvento = document.getElementById('admin-visao-evento-editor');
+    const visaoRecorrente = document.getElementById('admin-visao-recorrente-editor');
+    if (!visaoRecorrente) return;
+
+    if (hub) hub.classList.add('hidden');
+    if (visaoEvento) visaoEvento.classList.add('hidden');
+    visaoRecorrente.classList.remove('hidden');
+
+    renderizarRecorrentesGerenciador();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+window.abrirEditorRecorrenteAdmin = abrirEditorRecorrenteAdmin;
+
+function fecharEditorRecorrenteAdmin() {
+    const visaoRecorrente = document.getElementById('admin-visao-recorrente-editor');
+    const hub = document.getElementById('admin-cultos-eventos-hub');
+    if (visaoRecorrente) visaoRecorrente.classList.add('hidden');
+    if (hub) hub.classList.remove('hidden');
+    carregarE_RenderizarCultosRecorrentes();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.fecharEditorRecorrenteAdmin = fecharEditorRecorrenteAdmin;
+
+function abrirModalCultoRecorrenteAdmin() {
+    abrirEditorRecorrenteAdmin();
+}
+window.abrirModalCultoRecorrenteAdmin = abrirModalCultoRecorrenteAdmin;
 
 function fecharModalCultoRecorrenteAdmin() {
-    const modal = document.getElementById('modal-culto-recorrente-admin');
-    if (modal) modal.classList.add('hidden');
+    fecharEditorRecorrenteAdmin();
 }
+window.fecharModalCultoRecorrenteAdmin = fecharModalCultoRecorrenteAdmin;
+
+async function renderizarRecorrentesGerenciador() {
+    const container = document.getElementById('admin-recorrentes-gerenciador-lista');
+    if (!container) return;
+
+    try {
+        container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Carregando regras cadastradas...</p>';
+        const churchId = obterChurchIdAtual();
+        let regras = [];
+        if (supabaseClient && churchId) {
+            const { data, error } = await supabaseClient
+                .from('recurrent_services')
+                .select('*')
+                .eq('church_id', churchId)
+                .order('day_of_week', { ascending: true });
+            if (!error && data) regras = data;
+        }
+
+        if (regras.length === 0) {
+            container.innerHTML = `
+                <div class="bg-night-950 border border-slate-800 p-6 rounded-2xl text-center space-y-2">
+                    <span class="text-2xl">🔄</span>
+                    <p class="text-xs font-semibold text-slate-300">Nenhuma regra recorrente cadastrada.</p>
+                    <p class="text-[11px] text-slate-500">Cadastre uma regra ao lado para automatizar seus cultos fixos semanais.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const diasSemana = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+
+        container.innerHTML = regras.map(r => `
+            <div class="bg-night-950 border border-slate-800 hover:border-slate-700 p-3.5 rounded-2xl flex items-center justify-between gap-3 group transition">
+                <div class="min-w-0">
+                    <h4 class="text-xs sm:text-sm font-bold text-white truncate">${r.name}</h4>
+                    <p class="text-[11px] text-liturge-400 font-medium mt-0.5">
+                        🗓️ Toda semana: ${diasSemana[r.day_of_week]} às ${r.time}
+                    </p>
+                    ${r.location ? `<p class="text-[10px] text-slate-400 mt-0.5">📍 ${r.location}</p>` : ''}
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="gerarCultosDaRegra('${r.id}')"
+                        class="px-3 py-1.5 rounded-xl bg-liturge-500/15 hover:bg-liturge-500/25 text-liturge-400 border border-liturge-500/30 text-xs font-bold transition cursor-pointer">
+                        Gerar Cultos
+                    </button>
+                    <button type="button" onclick="excluirRegraRecorrente('${r.id}')"
+                        class="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-bold transition cursor-pointer" title="Excluir regra">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    } catch(e) {
+        console.error(e);
+        container.innerHTML = '<p class="text-xs text-rose-400 text-center py-4">Erro ao carregar regras recorrentes.</p>';
+    }
+}
+window.renderizarRecorrentesGerenciador = renderizarRecorrentesGerenciador;
 
 // Salva a regra e já gera os próximos cultos
 async function salvarCultoRecorrenteAdmin(e) {
@@ -1971,6 +2255,8 @@ async function gerarCultosDaRegra(regraId) {
             if (typeof mostrarToast === 'function') mostrarToast(`Cultos gerados com sucesso!`, 'sucesso');
             if (typeof carregarDados === 'function') await carregarDados();
             renderizarAdminCultosEventos();
+            if (typeof renderizarRecorrentesGerenciador === 'function') renderizarRecorrentesGerenciador();
+            if (typeof carregarE_RenderizarCultosRecorrentes === 'function') carregarE_RenderizarCultosRecorrentes();
         }
     } catch(err) {
         console.error(err);
@@ -1982,6 +2268,9 @@ async function excluirRegraRecorrente(regraId) {
         try {
             await supabaseClient.from('recurrent_services').delete().eq('id', regraId);
             renderizarAdminCultosEventos();
+            if (typeof renderizarRecorrentesGerenciador === 'function') renderizarRecorrentesGerenciador();
+            if (typeof carregarE_RenderizarCultosRecorrentes === 'function') carregarE_RenderizarCultosRecorrentes();
+            if (typeof mostrarToast === 'function') mostrarToast('Regra excluída com sucesso.', 'info');
         } catch(err) {
             console.error(err);
         }
@@ -2069,6 +2358,15 @@ window.abrirModalDetalhesDia = abrirModalDetalhesDia;
 window.fecharModalDetalhesDia = fecharModalDetalhesDia;
 window.abrirModalEventoAdmin = abrirModalEventoAdmin;
 window.fecharModalEventoAdmin = fecharModalEventoAdmin;
+window.abrirEditorEventoAdmin = abrirEditorEventoAdmin;
+window.fecharEditorEventoAdmin = fecharEditorEventoAdmin;
+window.abrirEditorRecorrenteAdmin = abrirEditorRecorrenteAdmin;
+window.fecharEditorRecorrenteAdmin = fecharEditorRecorrenteAdmin;
+window.renderizarRecorrentesGerenciador = renderizarRecorrentesGerenciador;
+window.selecionarDiaCalendarioAdmin = selecionarDiaCalendarioAdmin;
+window.renderizarDetalhesDiaAdmin = renderizarDetalhesDiaAdmin;
+window.confirmarExcluirCultoAdmin = confirmarExcluirCultoAdmin;
+window.navegarHojeAdmin = navegarHojeAdmin;
 window.salvarEventoAdmin = salvarEventoAdmin;
 window.excluirEventoAgenda = excluirEventoAgenda;
 window.previewImagemEventoArquivo = previewImagemEventoArquivo;

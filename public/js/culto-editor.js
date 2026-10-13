@@ -237,7 +237,7 @@ function inicializarCalendarioCulto(dataInicialStr) {
     });
 }
 
-window.origemCultoEditor = 'lista'; // 'lista' ou 'detalhe'
+window.origemCultoEditor = 'lista'; // 'lista', 'detalhe' ou 'admin'
 
 function abrirModalCriarCulto() {
     mostrarFormCulto(null);
@@ -252,6 +252,14 @@ function voltarDoEditorCulto() {
     if (vEditor) vEditor.classList.add('hidden');
     const modalLegacy = document.getElementById('modal-culto');
     if (modalLegacy) modalLegacy.classList.add('hidden');
+
+    if (window.origemCultoEditor === 'admin') {
+        const painelAdmin = document.getElementById('painel-admin');
+        if (painelAdmin) painelAdmin.classList.remove('hidden');
+        if (typeof renderizarAdminCultosEventos === 'function') renderizarAdminCultosEventos();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
 
     if (window.origemCultoEditor === 'detalhe' && window.cultoAtualIndex !== null && window.cultoAtualIndex !== undefined) {
         if (typeof abrirDetalhesCulto === 'function') {
@@ -272,6 +280,32 @@ function voltarDoEditorCulto() {
 function fecharModalCulto() {
     voltarDoEditorCulto();
 }
+
+function abrirEditorCultoAdmin(startIndex = null, dataStr = null) {
+    window.origemCultoEditor = 'admin';
+    const painelAdmin = document.getElementById('painel-admin');
+    if (painelAdmin) painelAdmin.classList.add('hidden');
+
+    mostrarFormCulto(startIndex);
+
+    if (dataStr && startIndex === null) {
+        const inpData = document.getElementById('culto-data');
+        if (inpData) {
+            const parts = dataStr.split('-');
+            if (parts.length === 3) {
+                const dataFmt = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                inpData.value = dataFmt;
+                if (typeof flatpickrInstancia !== 'undefined' && flatpickrInstancia) {
+                    flatpickrInstancia.setDate(dataFmt);
+                }
+            }
+        }
+    }
+
+    const txtVoltar = document.getElementById('culto-editor-btn-voltar-texto');
+    if (txtVoltar) txtVoltar.textContent = 'Voltar ao Painel Admin';
+}
+window.abrirEditorCultoAdmin = abrirEditorCultoAdmin;
 
 function mostrarFormCulto(startIndex) {
     cultoEditandoIndex = startIndex;
@@ -294,7 +328,9 @@ function mostrarFormCulto(startIndex) {
     const vMusica = document.getElementById('visao-musica-detalhe');
     const vEditor = document.getElementById('visao-culto-editor');
 
-    if (vDetalhe && !vDetalhe.classList.contains('hidden')) {
+    if (window.origemCultoEditor === 'admin') {
+        // Preserva a origem admin
+    } else if (vDetalhe && !vDetalhe.classList.contains('hidden')) {
         window.origemCultoEditor = 'detalhe';
     } else {
         window.origemCultoEditor = 'lista';
@@ -302,9 +338,13 @@ function mostrarFormCulto(startIndex) {
 
     const txtVoltar = document.getElementById('culto-editor-btn-voltar-texto');
     if (txtVoltar) {
-        txtVoltar.textContent = window.origemCultoEditor === 'detalhe' 
-            ? 'Voltar para o Culto' 
-            : 'Voltar para Programação';
+        if (window.origemCultoEditor === 'admin') {
+            txtVoltar.textContent = 'Voltar ao Painel Admin';
+        } else if (window.origemCultoEditor === 'detalhe') {
+            txtVoltar.textContent = 'Voltar para o Culto';
+        } else {
+            txtVoltar.textContent = 'Voltar para Programação';
+        }
     }
 
     if (vLista) vLista.classList.add('hidden');
