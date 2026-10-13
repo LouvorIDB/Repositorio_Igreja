@@ -614,19 +614,19 @@ function popularSelectsInstrumentos() {
         if (rolesFiltrados.length === 0) return;
 
         html += `
-            <div id="min-accordion-${min.id}" class="border border-slate-800/80 rounded-xl overflow-hidden bg-slate-950/40 mb-3 transition-colors hover:border-slate-700">
+            <div id="min-accordion-${min.id}" class="border border-slate-200/80 dark:border-slate-800/80 rounded-2xl overflow-hidden bg-white/70 dark:bg-slate-950/40 mb-3 transition-colors hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs">
                 <div onclick="toggleAccordionMinisterio('${min.id}')" 
-                    class="flex items-center justify-between p-3.5 cursor-pointer hover:bg-slate-800/50 transition select-none">
+                    class="flex items-center justify-between p-3.5 cursor-pointer hover:bg-slate-100/60 dark:hover:bg-slate-800/50 transition select-none">
                     <div class="flex items-center gap-2.5">
                         <span class="text-sm">${min.icon || '🏷️'}</span>
-                        <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider">${min.name}</h4>
-                        <span id="badge-min-count-${min.id}" class="text-[10px] bg-slate-800 text-slate-400 border border-slate-700/60 px-2 py-0.5 rounded-full font-medium">0 escalados</span>
+                        <h4 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">${min.name}</h4>
+                        <span id="badge-min-count-${min.id}" class="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700/60 px-2 py-0.5 rounded-full font-mono font-medium">0 escalados</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <span id="arrow-min-${min.id}" class="text-slate-400 text-xs font-bold transition-transform">▼</span>
                     </div>
                 </div>
-                <div id="content-min-accordion-${min.id}" class="hidden p-3.5 border-t border-slate-800/70 bg-slate-900/30">
+                <div id="content-min-accordion-${min.id}" class="hidden p-3.5 border-t border-slate-200/70 dark:border-slate-800/70 bg-slate-50/50 dark:bg-slate-900/30">
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         `;
 
@@ -681,8 +681,8 @@ function popularSelectsInstrumentos() {
 
             html += `
                 <div>
-                    <label class="text-xs text-slate-400 mb-1 block font-medium">${roleName}</label>
-                    <select id="${selectId}" data-role-name="${roleName}" data-role-id="${role.id}" onchange="verificarAlertasEscalacao('${selectId}', this.value); if (typeof atualizarContadoresAccordions === 'function') atualizarContadoresAccordions(); if (typeof atualizarBadgeMinisterio === 'function') atualizarBadgeMinisterio('${min.id}');" class="escala-dinamica-input w-full bg-slate-950 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500">
+                    <label class="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1 block">${roleName}</label>
+                    <select id="${selectId}" data-role-name="${roleName}" data-role-id="${role.id}" onchange="verificarAlertasEscalacao('${selectId}', this.value); if (typeof atualizarContadoresAccordions === 'function') atualizarContadoresAccordions(); if (typeof atualizarBadgeMinisterio === 'function') atualizarBadgeMinisterio('${min.id}');" class="escala-dinamica-input w-full bg-white dark:bg-night-950 border border-slate-200 dark:border-slate-700/80 px-3 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-500 font-medium transition">
                         ${optionsHtml}
                     </select>
                     <div id="aviso-${selectId}" class="mt-1 space-y-0.5"></div>
@@ -698,7 +698,7 @@ function popularSelectsInstrumentos() {
     });
 
     if (!html) {
-        html = '<p class="text-xs text-slate-500">Nenhum campo de escala disponível para o seu acesso.</p>';
+        html = '<p class="text-xs text-slate-500 italic py-2">Nenhum campo de escala disponível para o seu acesso.</p>';
     }
 
     container.innerHTML = html;
@@ -725,16 +725,19 @@ function renderizarCantoresCulto() {
     }
 
     if (lista.length === 0) {
-        container.innerHTML = '<p class="text-slate-500 text-xs">Nenhum voluntário cadastrado com função de escala por música (ex: Vocal/Cantor).</p>';
+        container.innerHTML = '<p class="text-slate-500 text-xs italic py-2">Nenhum voluntário cadastrado com função de escala por música (ex: Vocal/Cantor).</p>';
         return;
     }
 
     container.innerHTML = lista.map(nome => {
         const ativo = cantoresCultoAtual.includes(nome);
         const cls = ativo
-            ? 'bg-brand-600 text-white border-brand-500'
-            : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500';
-        return `<button type="button" onclick="toggleCantorCulto('${nome.replace(/'/g, "\\'")}')" class="px-3 py-1.5 rounded-full text-xs font-medium border transition ${cls}">${ativo ? '✓ ' : ''}${nome}</button>`;
+            ? 'bg-brand-500 text-night-950 border-brand-500 font-bold shadow-xs'
+            : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/80 hover:border-brand-500/40 font-medium';
+        return `<button type="button" onclick="toggleCantorCulto('${nome.replace(/'/g, "\\'")}')" class="px-3 py-1.5 rounded-xl text-xs border transition flex items-center gap-1.5 cursor-pointer active:scale-95 ${cls}">
+            <span>${ativo ? '✓' : '🎤'}</span>
+            <span>${nome}</span>
+        </button>`;
     }).join('');
 }
 
@@ -772,38 +775,75 @@ function onDropMusica(e, targetIdx) {
 
 function renderizarMusicasCulto() {
     const container = document.getElementById('culto-musicas-lista');
+    if (!container) return;
+
     if (musicasCultoAtual.length === 0) {
-        container.innerHTML = '<p class="text-slate-500 text-xs">Nenhuma música adicionada.</p>';
+        container.innerHTML = `
+            <div class="p-6 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                <p class="text-slate-400 dark:text-slate-500 text-xs">Nenhuma música adicionada ao culto ainda.</p>
+                <p class="text-[11px] text-slate-400 dark:text-slate-600 mt-1">Clique em "+ Adicionar Música" acima para selecionar do repertório.</p>
+            </div>
+        `;
         return;
     }
 
     container.innerHTML = musicasCultoAtual.map((m, idx) => {
+        const isFirst = idx === 0;
+        const isLast = idx === musicasCultoAtual.length - 1;
+
         // Seletor de cantores por música (multi — chips clicáveis)
         const cantoresChips = cantoresCultoAtual.length === 0
-            ? '<span class="text-slate-600 text-xs">Selecione cantores do culto primeiro</span>'
+            ? '<span class="text-slate-400 dark:text-slate-500 text-xs italic">Defina os cantores no painel acima primeiro</span>'
             : cantoresCultoAtual.map(nome => {
                 const ativo = (m.cantores || []).includes(nome);
                 const cls = ativo
-                    ? 'bg-brand-700 text-white border-brand-600'
-                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500';
-                return `<button type="button" onclick="toggleCantorMusica(${idx},'${nome.replace(/'/g, "\\'")}')" class="px-2 py-0.5 rounded-full text-xs border transition ${cls}">${ativo ? '✓ ' : ''}${nome}</button>`;
+                    ? 'bg-brand-500 text-night-950 font-bold border-brand-500 shadow-2xs'
+                    : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-brand-500/40';
+                return `<button type="button" onclick="toggleCantorMusica(${idx},'${nome.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-xl text-xs border transition cursor-pointer active:scale-95 ${cls}">${ativo ? '✓ ' : ''}${nome}</button>`;
             }).join('');
 
         return `
-            <div draggable="true" ondragstart="onDragStartMusica(event, ${idx})" ondragover="onDragOverMusica(event)" ondrop="onDropMusica(event, ${idx})" class="bg-slate-900 border border-slate-700 px-3 py-2 rounded-lg space-y-2 cursor-move">
-                <div class="flex items-center justify-between gap-2">
-                    <span class="text-slate-500 hover:text-slate-300 font-bold select-none text-base cursor-grab mr-1">⣿</span>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm text-white font-medium truncate">${m.nome}</p>
-                        <p class="text-xs text-brand-300">${m.tom} ${m.variacao ? '('+m.variacao+')' : ''}</p>
+            <div draggable="true" ondragstart="onDragStartMusica(event, ${idx})" ondragover="onDragOverMusica(event)" ondrop="onDropMusica(event, ${idx})" 
+                 class="bg-white dark:bg-night-950/70 border border-slate-200 dark:border-slate-800 hover:border-brand-500/40 p-3 sm:p-3.5 rounded-2xl shadow-2xs space-y-2.5 transition">
+                <div class="flex items-center justify-between gap-2.5">
+                    <!-- Grip & Número -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-slate-400 dark:text-slate-600 hover:text-slate-300 font-bold select-none text-base cursor-grab shrink-0 hidden sm:inline-block" title="Arraste para reordenar">⣿</span>
+                        <span class="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center justify-center shrink-0">#${idx + 1}</span>
                     </div>
-                    <div class="flex gap-1 shrink-0">
-                        <button onclick="removerMusica(${idx})" class="text-red-400 hover:text-red-300 px-1.5 py-1 rounded text-xs">✕</button>
+
+                    <!-- Dados da Música -->
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">${m.nome}</p>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span class="px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/25 text-[11px] font-mono font-bold">${m.tom || '—'}</span>
+                            ${m.variacao ? `<span class="text-[11px] text-slate-500 dark:text-slate-400 truncate">(${m.variacao})</span>` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Botões de Ação (Reordenar Mobile & Remover) -->
+                    <div class="flex items-center gap-1 shrink-0">
+                        <!-- Botões Subir/Descer para touch/mobile -->
+                        <div class="flex items-center bg-slate-100 dark:bg-slate-800/80 rounded-xl p-0.5 border border-slate-200 dark:border-slate-700/80">
+                            <button type="button" onclick="moverMusica(${idx}, -1)" ${isFirst ? 'disabled' : ''} 
+                                    class="w-7 h-7 flex items-center justify-center text-xs rounded-lg transition ${isFirst ? 'opacity-30 cursor-not-allowed text-slate-400' : 'text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 active:scale-95 cursor-pointer'}" 
+                                    title="Mover para cima">▲</button>
+                            <button type="button" onclick="moverMusica(${idx}, 1)" ${isLast ? 'disabled' : ''} 
+                                    class="w-7 h-7 flex items-center justify-center text-xs rounded-lg transition ${isLast ? 'opacity-30 cursor-not-allowed text-slate-400' : 'text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 active:scale-95 cursor-pointer'}" 
+                                    title="Mover para baixo">▼</button>
+                        </div>
+
+                        <!-- Botão Remover -->
+                        <button type="button" onclick="removerMusica(${idx})" 
+                                class="w-7 h-7 flex items-center justify-center rounded-xl text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 transition active:scale-95 cursor-pointer" 
+                                title="Remover da lista">✕</button>
                     </div>
                 </div>
+
+                <!-- Chips de Cantores -->
                 ${cantoresCultoAtual.length > 0 ? `
-                <div class="flex flex-wrap gap-1 items-center">
-                    <span class="text-xs text-slate-500 mr-1">🎤</span>
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap gap-1.5 items-center">
+                    <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mr-0.5">🎤 Solistas:</span>
                     ${cantoresChips}
                 </div>` : ''}
             </div>
@@ -848,7 +888,7 @@ function filtrarBanco() {
     const container = document.getElementById('resultado-banco');
 
     if (!banco || banco.length === 0) {
-        container.innerHTML = '<p class="text-slate-500 text-xs px-2">Nenhuma música encontrada.</p>';
+        container.innerHTML = '<div class="p-4 text-center text-slate-400 dark:text-slate-500 text-xs">Nenhuma música encontrada no repertório.</div>';
         return;
     }
 
@@ -858,22 +898,37 @@ function filtrarBanco() {
     });
 
     if (filtradas.length === 0) {
-        container.innerHTML = '<p class="text-slate-500 text-xs px-2">Nenhuma música encontrada.</p>';
+        container.innerHTML = '<div class="p-4 text-center text-slate-400 dark:text-slate-500 text-xs">Nenhuma música encontrada com esse termo.</div>';
         return;
     }
 
     container.innerHTML = filtradas.slice(0, 50).map(item => {
         const nome = item.nome || item[0] || '';
-        const tom = item.tom || item[1] || '';
+        const tom = item.tom || item[1] || '—';
         const variacao = item.variacao || item[2] || 'Original';
         const vs = item.vs || item[3] || '';
         const yt = item.yt || item[4] || '';
+        const nomeEsc = nome.toString().replace(/'/g, "\\'");
+        const tomEsc = tom.toString().replace(/'/g, "\\'");
+        const varEsc = variacao.toString().replace(/'/g, "\\'");
+        const vsEsc = vs.toString().replace(/'/g, "\\'");
+        const ytEsc = yt.toString().replace(/'/g, "\\'");
+
         return `
-            <button onclick="adicionarMusicaDoBanco('${nome.toString().replace(/'/g, "\\'")}','${tom.toString().replace(/'/g, "\\'")}','${variacao.toString().replace(/'/g, "\\'")}','${vs.toString().replace(/'/g, "\\'")}','${yt.toString().replace(/'/g, "\\'")}')"
-                class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-700 transition flex items-center justify-between gap-2">
-                <span class="text-sm text-white truncate">${nome}</span>
-                <span class="text-xs text-brand-300 shrink-0">${tom} (${variacao})</span>
-            </button>
+            <div class="p-2.5 rounded-xl border border-slate-200/70 dark:border-slate-800 bg-white/70 dark:bg-night-900/60 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition flex items-center justify-between gap-2.5 shadow-2xs">
+                <div class="min-w-0 flex-1">
+                    <p class="text-xs font-bold text-slate-900 dark:text-white truncate">${nome}</p>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <span class="px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 text-[10px] font-mono font-bold">${tom}</span>
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400 truncate">(${variacao})</span>
+                    </div>
+                </div>
+                <button type="button" onclick="adicionarMusicaDoBanco('${nomeEsc}','${tomEsc}','${varEsc}','${vsEsc}','${ytEsc}')"
+                        class="px-2.5 py-1.5 rounded-lg bg-brand-500/15 hover:bg-brand-500 text-brand-700 dark:text-brand-300 hover:text-night-950 font-bold text-xs transition flex items-center gap-1 cursor-pointer shrink-0 active:scale-95">
+                    <span>+</span>
+                    <span>Adicionar</span>
+                </button>
+            </div>
         `;
     }).join('');
 }
@@ -896,50 +951,66 @@ function renderizarMidiasCulto() {
     if (!container) return;
 
     if (!midiasCultoAtual || midiasCultoAtual.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-500 italic py-2">Nenhuma mídia vinculada a este culto.</p>';
+        container.innerHTML = `
+            <div class="p-4 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                <p class="text-xs text-slate-400 dark:text-slate-500 italic">Nenhuma mídia vinculada a este culto.</p>
+            </div>
+        `;
         return;
     }
 
     container.innerHTML = midiasCultoAtual.map((m, idx) => {
         let icone = '📁';
+        let corBadge = 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20';
         const urlLower = (m.url || '').toLowerCase();
         const nomeLower = (m.name || '').toLowerCase();
 
         if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be') || m.type?.includes('video') || nomeLower.endsWith('.mp4')) {
             icone = '🎬';
+            corBadge = 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
         } else if (m.type?.includes('audio') || /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(nomeLower)) {
             icone = '🎵';
+            corBadge = 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
         } else if (m.type?.includes('image') || nomeLower.endsWith('.png') || nomeLower.endsWith('.jpg') || nomeLower.endsWith('.jpeg') || nomeLower.endsWith('.webp')) {
             icone = '🖼️';
+            corBadge = 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
         } else if (m.type?.includes('presentation') || /\.(pptx|ppt)$/i.test(nomeLower)) {
             icone = '📊';
+            corBadge = 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
         } else if (m.type?.includes('pdf') || nomeLower.endsWith('.pdf')) {
             icone = '📄';
+            corBadge = 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20';
         } else if (urlLower.includes('canva.com')) {
             icone = '🎨';
+            corBadge = 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20';
         } else if (urlLower.includes('drive.google.com')) {
             icone = '☁️';
+            corBadge = 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20';
         } else if (m.type === 'link') {
             icone = '🔗';
+            corBadge = 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20';
         }
 
         return `
-            <div class="bg-slate-900 border border-slate-700/80 hover:border-slate-600 px-3.5 py-2.5 rounded-xl flex items-center justify-between gap-3 transition">
-                <div class="flex items-center gap-2.5 min-w-0 flex-1">
-                    <span class="text-base shrink-0">${icone}</span>
+            <div class="bg-white dark:bg-night-950/70 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 p-3 rounded-2xl flex items-center justify-between gap-3 transition shadow-2xs">
+                <div class="flex items-center gap-3 min-w-0 flex-1">
+                    <span class="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 border ${corBadge}">
+                        ${icone}
+                    </span>
                     <div class="min-w-0 flex-1">
-                        <p class="text-xs font-semibold text-white truncate">${m.name || 'Mídia sem título'}</p>
-                        <a href="${m.url}" target="_blank" class="text-[11px] text-indigo-400 hover:text-indigo-300 underline truncate block max-w-xs sm:max-w-sm">
+                        <p class="text-xs font-bold text-slate-800 dark:text-white truncate">${m.name || 'Mídia sem título'}</p>
+                        <a href="${m.url}" target="_blank" class="text-[11px] text-brand-600 dark:text-brand-400 hover:underline truncate block">
                             ${m.url}
                         </a>
                     </div>
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
-                    <a href="${m.url}" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-2.5 py-1 rounded-lg text-xs font-medium transition" title="Abrir em nova aba">
-                        ↗ Abrir
+                    <a href="${m.url}" target="_blank" class="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition flex items-center gap-1 cursor-pointer" title="Abrir em nova aba">
+                        <span>↗</span>
+                        <span class="hidden sm:inline">Abrir</span>
                     </a>
-                    <button type="button" onclick="removerMidiaCulto(${idx})" class="bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800/60 px-2.5 py-1 rounded-lg text-xs font-medium transition" title="Remover Mídia">
-                        🗑️
+                    <button type="button" onclick="removerMidiaCulto(${idx})" class="w-7 h-7 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-500/10 transition cursor-pointer" title="Remover Mídia">
+                        ✕
                     </button>
                 </div>
             </div>
