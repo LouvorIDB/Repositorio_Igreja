@@ -162,30 +162,83 @@ async function carregarAnalytics() {
         const dataInicioStr = document.getElementById('analytics-data-inicio')?.value || '';
         const dataFimStr = document.getElementById('analytics-data-fim')?.value || '';
 
-        // Buscar cultos no banco para filtrar por data e church_id
-        let queryServices = supabaseClient.from('services').select('id, date, title, notes, singers, singers_list, church_id');
-        if (currentChurchId) {
-            queryServices = queryServices.eq('church_id', currentChurchId);
+        // Buscar cultos (services) no Supabase ou no cache global
+        let rawServices = [];
+        try {
+            let queryServices = supabaseClient.from('services').select('id, date, title, notes, church_id');
+            if (currentChurchId) {
+                queryServices = queryServices.eq('church_id', currentChurchId);
+            }
+            const { data: sData, error: sErr } = await queryServices;
+            if (!sErr && Array.isArray(sData) && sData.length > 0) {
+                rawServices = sData;
+            } else if (sErr) {
+                console.warn('Erro ao consultar services via Supabase:', sErr);
+            }
+        } catch (eServ) {
+            console.warn('Erro de conexão ao buscar services:', eServ);
         }
-        const { data: rawServices } = await queryServices;
 
+        // Fallback robusto para dadosGlobais caso a query retorne vazia ou falhe
+        if (!rawServices || rawServices.length === 0) {
+            const cachedList = window.dadosGlobais?.servicesDataList || window.dadosGlobais?.services || [];
+            if (Array.isArray(cachedList) && cachedList.length > 0) {
+                rawServices = cachedList;
+            }
+        }
+
+        // Filtrar cultos por data
         const servicesFiltrados = (rawServices || []).filter(s => {
             if (!s.date) return true;
-            const dOnly = s.date.split('T')[0];
-            if (dataInicioStr && dOnly < dataInicioStr) return false;
-            if (dataFimStr && dOnly > dataFimStr) return false;
+            let dOnly = '';
+            if (s.date.includes('T')) {
+                dOnly = s.date.split('T')[0];
+            } else if (s.date.includes('/')) {
+                const partes = s.date.split('/');
+                if (partes.length === 3) {
+                    dOnly = `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+                } else if (partes.length === 2) {
+                    const anoAtual = new Date().getFullYear();
+                    dOnly = `${anoAtual}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
+                }
+            } else {
+                dOnly = s.date.substring(0, 10);
+            }
+            if (dataInicioStr && dOnly && dOnly < dataInicioStr) return false;
+            if (dataFimStr && dOnly && dOnly > dataFimStr) return false;
             return true;
         });
 
         const validServiceIds = servicesFiltrados.map(s => s.id);
-        const totalCultos = servicesFiltrados.length;
+        let totalCultos = servicesFiltrados.length;
         const servicesMap = {};
         servicesFiltrados.forEach(s => {
             servicesMap[s.id] = s;
         });
 
+        // Filtrar cultos processados (window.cultosProcessados) para fallback completo
+        let cultosProcessadosFiltrados = [];
+        if (Array.isArray(window.cultosProcessados) && window.cultosProcessados.length > 0) {
+            const anoAtual = new Date().getFullYear();
+            cultosProcessadosFiltrados = window.cultosProcessados.filter(c => {
+                if (c.oculto) return false;
+                let cIso = '';
+                if (c.dataStr && c.dataStr.includes('/')) {
+                    const [d, m] = c.dataStr.split('/');
+                    cIso = `${anoAtual}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                }
+                if (dataInicioStr && cIso && cIso < dataInicioStr) return false;
+                if (dataFimStr && cIso && cIso > dataFimStr) return false;
+                return true;
+            });
+
+            if (totalCultos === 0) {
+                totalCultos = cultosProcessadosFiltrados.length;
+            }
+        }
+
         // Atualizar KPIs Base
-        const totalRepertorio = (window.dadosGlobais?.repertorio || []).length;
+        const totalRepertorio = (window.dadosGlobais?.repertorio || window.dadosGlobais?.banco || []).length;
         let listaVoluntariosBase = window.dadosGlobais?.voluntarios || [];
         if (roleUsuario === 'lider' && ministeriosQueLidera.length > 0) {
             listaVoluntariosBase = listaVoluntariosBase.filter(v => {
@@ -193,41 +246,86 @@ async function carregarAnalytics() {
                 return vMinIds.some(id => ministeriosQueLidera.includes(id));
             });
         }
-        const totalVoluntarios = listaVoluntariosBase.length;
-
-        const elTotalCultos = document.getElementById('kpi-total-cultos');
-        const elRepertorioAtivo = document.getElementById('kpi-repertorio-ativo');
-        const elTotalVoluntarios = document.getElementById('kpi-total-voluntarios');
-
-        if (elTotalCultos) elTotalCultos.textContent = totalCultos;
-        if (elRepertorioAtivo) elRepertorioAtivo.textContent = totalRepertorio;
-        if (elTotalVoluntarios) elTotalVoluntarios.textContent = totalVoluntarios;
+        const totalVoluntariosCadastrados = listaVoluntariosBase.length;
 
         // 3. Buscar dados de Escalas (service_scales)
-        let queryScales = supabaseClient.from('service_scales').select('*, profiles(id, name, ministry_id), ministry_roles(id, name, ministry_id)');
-        const { data: serviceScalesData } = await queryScales;
+        let serviceScalesData = [];
+        try {
+            let queryScales = supabaseClient.from('service_scales').select('*, profiles(id, name, ministry_id), ministry_roles(id, name, ministry_id)');
+            const { data: scData, error: scErr } = await queryScales;
+            if (!scErr && Array.isArray(scData) && scData.length > 0) {
+                serviceScalesData = scData;
+            } else if (scErr) {
+                console.warn('Erro ao consultar service_scales via Supabase:', scErr);
+            }
+        } catch (eScales) {
+            console.warn('Erro de conexão ao buscar service_scales:', eScales);
+        }
+
+        // Fallback: se serviceScalesData vazio, extrair das escalas aninhadas em rawServices ou dadosGlobais.services
+        if (!serviceScalesData || serviceScalesData.length === 0) {
+            const sourceServices = (window.dadosGlobais?.servicesDataList || window.dadosGlobais?.services || rawServices || []);
+            sourceServices.forEach(s => {
+                if (s.service_scales && Array.isArray(s.service_scales)) {
+                    s.service_scales.forEach(sc => {
+                        serviceScalesData.push({
+                            ...sc,
+                            service_id: sc.service_id || s.id
+                        });
+                    });
+                }
+            });
+        }
 
         const scalesByServiceId = {};
         (serviceScalesData || []).forEach(sc => {
-            if (!scalesByServiceId[sc.service_id]) {
-                scalesByServiceId[sc.service_id] = [];
+            const sid = sc.service_id;
+            if (sid) {
+                if (!scalesByServiceId[sid]) {
+                    scalesByServiceId[sid] = [];
+                }
+                scalesByServiceId[sid].push(sc);
             }
-            scalesByServiceId[sc.service_id].push(sc);
         });
 
         // 4. Buscar e filtrar dados de Músicas (service_songs)
         let topMusicas = [];
         let totalExecucoes = 0;
+        const musicasMap = {};
 
         if (!isLiderNaoLouvor) {
-            let querySongs = supabaseClient.from('service_songs').select('*, song_versions(key, songs(id, title, artist))');
-            const { data: serviceSongsData } = await querySongs;
+            let serviceSongsData = [];
+            try {
+                let querySongs = supabaseClient.from('service_songs').select('*, song_versions(songs(title))');
+                const { data: ssData, error: ssErr } = await querySongs;
+                if (!ssErr && Array.isArray(ssData) && ssData.length > 0) {
+                    serviceSongsData = ssData;
+                } else if (ssErr) {
+                    console.warn('Erro ao consultar service_songs via Supabase:', ssErr);
+                }
+            } catch (eSongs) {
+                console.warn('Erro de conexão ao buscar service_songs:', eSongs);
+            }
+
+            // Fallback: se serviceSongsData vazio, extrair das musicas aninhadas em rawServices ou dadosGlobais.services
+            if (!serviceSongsData || serviceSongsData.length === 0) {
+                const sourceServices = (window.dadosGlobais?.servicesDataList || window.dadosGlobais?.services || rawServices || []);
+                sourceServices.forEach(s => {
+                    if (s.service_songs && Array.isArray(s.service_songs)) {
+                        s.service_songs.forEach(ss => {
+                            serviceSongsData.push({
+                                ...ss,
+                                service_id: ss.service_id || s.id
+                            });
+                        });
+                    }
+                });
+            }
 
             const songsFiltradas = (serviceSongsData || []).filter(ss => validServiceIds.includes(ss.service_id));
-            const musicasMap = {};
 
             songsFiltradas.forEach(item => {
-                const title = item.song_versions?.songs?.title || item.song_name || item.title || 'Música';
+                const title = item.song_versions?.songs?.title || item.song_versions?.title || item.song_name || item.title || 'Música';
                 const tomTocado = item.key || item.tom || item.song_versions?.key || '';
                 const serviceId = item.service_id;
                 const s = servicesMap[serviceId];
@@ -268,6 +366,44 @@ async function carregarAnalytics() {
                 }
             });
 
+            // Fallback adicional: se totalExecucoes for 0 e existirem cultosProcessadosFiltrados
+            if (totalExecucoes === 0 && cultosProcessadosFiltrados.length > 0) {
+                const anoAtual = new Date().getFullYear();
+                cultosProcessadosFiltrados.forEach(c => {
+                    let cIso = '';
+                    if (c.dataStr && c.dataStr.includes('/')) {
+                        const [d, m] = c.dataStr.split('/');
+                        cIso = `${anoAtual}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    }
+                    const cId = c.playlistId || c.id;
+                    const escalaExtraida = extrairEscalaDoCulto(null, [], c);
+
+                    (c.songs || []).forEach(sItem => {
+                        const songName = sItem.musica || sItem.title || sItem.nome || '';
+                        if (!songName) return;
+
+                        if (!musicasMap[songName]) {
+                            musicasMap[songName] = {
+                                title: songName,
+                                count: 0,
+                                execucoes: []
+                            };
+                        }
+                        musicasMap[songName].count++;
+                        totalExecucoes++;
+
+                        musicasMap[songName].execucoes.push({
+                            serviceId: cId,
+                            date: cIso || '',
+                            title: c.nome || 'Culto',
+                            diaSemana: c.diaSemana || '',
+                            tom: sItem.tom || '',
+                            escala: escalaExtraida
+                        });
+                    });
+                });
+            }
+
             // Ordenar execuções de cada música pela data mais recente
             Object.values(musicasMap).forEach(m => {
                 m.execucoes.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
@@ -280,17 +416,13 @@ async function carregarAnalytics() {
             topMusicas = todasMusicasExecutadas.slice(0, 5);
         }
 
-        const elTotalMusicasTocadas = document.getElementById('kpi-total-musicas-tocadas');
-        if (elTotalMusicasTocadas) elTotalMusicasTocadas.textContent = totalExecucoes;
-
         const todosVoluntarios = window.dadosGlobais?.voluntarios || [];
         const todosMinisterios = window.dadosGlobais?.ministries || [];
 
         const scalesFiltradas = (serviceScalesData || []).filter(sc => {
-            if (!validServiceIds.includes(sc.service_id)) return false;
+            if (validServiceIds.length > 0 && !validServiceIds.includes(sc.service_id)) return false;
             
             if (roleUsuario === 'lider' && ministeriosQueLidera.length > 0) {
-                // Identifica se a função/cargo pertence aos ministérios liderados
                 const roleMinId = sc.ministry_roles ? sc.ministry_roles.ministry_id : null;
                 const isRoleInLeaderMin = roleMinId ? ministeriosQueLidera.includes(roleMinId) : todosMinisterios.some(m => ministeriosQueLidera.includes(m.id) && (m.ministry_roles || []).some(r => r.id === sc.role_id));
 
@@ -312,9 +444,33 @@ async function carregarAnalytics() {
             voluntariosContador[name] = (voluntariosContador[name] || 0) + 1;
         });
 
+        // Fallback para voluntários dos cultosProcessadosFiltrados se voluntariosContador vazio
+        if (Object.keys(voluntariosContador).length === 0 && cultosProcessadosFiltrados.length > 0) {
+            cultosProcessadosFiltrados.forEach(c => {
+                const escalaCulto = extrairEscalaDoCulto(null, [], c);
+                escalaCulto.forEach(esc => {
+                    if (esc.name) {
+                        voluntariosContador[esc.name] = (voluntariosContador[esc.name] || 0) + 1;
+                    }
+                });
+            });
+        }
+
         const topVoluntarios = Object.entries(voluntariosContador)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5);
+
+        // Atualizar contadores nos elementos de KPI
+        const elTotalCultos = document.getElementById('kpi-total-cultos');
+        const elRepertorioAtivo = document.getElementById('kpi-repertorio-ativo');
+        const elTotalVoluntarios = document.getElementById('kpi-total-voluntarios');
+        const elTotalMusicasTocadas = document.getElementById('kpi-total-musicas-tocadas');
+
+        if (elTotalCultos) elTotalCultos.textContent = totalCultos;
+        if (elRepertorioAtivo) elRepertorioAtivo.textContent = totalRepertorio;
+        const totalVoluntariosEngajados = Object.keys(voluntariosContador).length;
+        if (elTotalVoluntarios) elTotalVoluntarios.textContent = totalVoluntariosEngajados > 0 ? totalVoluntariosEngajados : totalVoluntariosCadastrados;
+        if (elTotalMusicasTocadas) elTotalMusicasTocadas.textContent = totalExecucoes;
 
         // 5. Plotar Gráficos Chart.js
         if (!isLiderNaoLouvor) {
@@ -529,15 +685,18 @@ function extrairEscalaDoCulto(service, scalesDoServico, cultoProcessado) {
                 group.cleanParts.forEach(part => {
                     const [rolePart, namePart] = part.split(':').map(s => s.trim());
                     if (namePart) {
-                        const chave = `${rolePart}:${namePart}`.toLowerCase();
-                        if (!jaAdicionados.has(chave)) {
-                            jaAdicionados.add(chave);
-                            escalaList.push({
-                                role: rolePart,
-                                name: namePart,
-                                icon: extrairIconeFuncao(rolePart)
-                            });
-                        }
+                        const nomes = namePart.split(',').map(s => s.trim()).filter(Boolean);
+                        nomes.forEach(n => {
+                            const chave = `${rolePart || 'Escalado'}:${n}`.toLowerCase();
+                            if (!jaAdicionados.has(chave)) {
+                                jaAdicionados.add(chave);
+                                escalaList.push({
+                                    role: rolePart || 'Escalado',
+                                    name: n,
+                                    icon: extrairIconeFuncao(rolePart)
+                                });
+                            }
+                        });
                     }
                 });
             }
