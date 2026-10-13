@@ -1440,10 +1440,22 @@ function abrirDetalhesCulto(cultoIndex, skipPushState = false) {
     const vLista = document.getElementById('visao-cultos-lista');
     const vCulto = document.getElementById('visao-culto-detalhe');
     const vMusica = document.getElementById('visao-musica-detalhe');
+    const vEditor = document.getElementById('visao-culto-editor');
 
     if (vLista) vLista.classList.add('hidden');
     if (vMusica) vMusica.classList.add('hidden');
+    if (vEditor) vEditor.classList.add('hidden');
     if (vCulto) vCulto.classList.remove('hidden');
+
+    // Botão de editar culto na visão detalhe
+    const btnEditarCulto = document.getElementById('btn-editar-culto-detalhe');
+    if (btnEditarCulto) {
+        const canEditar = typeof hasPermission === 'function' ? (hasPermission('editar_culto') || hasPermission('gerenciar_cultos')) : true;
+        const userToEval = (typeof modoSimulacaoPerfil !== 'undefined' ? modoSimulacaoPerfil : null) || (window.usuarioLogado || null);
+        const rUser = userToEval ? (userToEval.system_role || userToEval.role || 'membro') : 'visitante';
+        const isLiderOuAdmin = rUser === 'admin' || rUser === 'lider';
+        btnEditarCulto.classList.toggle('hidden', !(canEditar || isLiderOuAdmin));
+    }
 
     if (!skipPushState && window.history && window.history.pushState) {
         window.history.pushState({ view: 'culto-detalhe', cultoIndex: cultoIndex }, '', `#culto-${cultoIndex}`);
@@ -1641,15 +1653,23 @@ function voltarParaCultos() {
     const vLista = document.getElementById('visao-cultos-lista');
     const vCulto = document.getElementById('visao-culto-detalhe');
     const vMusica = document.getElementById('visao-musica-detalhe');
+    const vEditor = document.getElementById('visao-culto-editor');
 
     if (vLista) vLista.classList.remove('hidden');
     if (vCulto) vCulto.classList.add('hidden');
     if (vMusica) vMusica.classList.add('hidden');
+    if (vEditor) vEditor.classList.add('hidden');
 
     if (window.history && window.history.pushState) {
         window.history.pushState({ view: 'cultos-lista' }, '', '#cultos');
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function editarCultoAtualDeDetalhes() {
+    if (typeof mostrarFormCulto === 'function' && window.cultoAtualIndex !== null && window.cultoAtualIndex !== undefined) {
+        mostrarFormCulto(window.cultoAtualIndex);
+    }
 }
 
 // =========================================================================

@@ -237,6 +237,42 @@ function inicializarCalendarioCulto(dataInicialStr) {
     });
 }
 
+window.origemCultoEditor = 'lista'; // 'lista' ou 'detalhe'
+
+function abrirModalCriarCulto() {
+    mostrarFormCulto(null);
+}
+
+function voltarDoEditorCulto() {
+    const vLista = document.getElementById('visao-cultos-lista');
+    const vDetalhe = document.getElementById('visao-culto-detalhe');
+    const vMusica = document.getElementById('visao-musica-detalhe');
+    const vEditor = document.getElementById('visao-culto-editor');
+
+    if (vEditor) vEditor.classList.add('hidden');
+    const modalLegacy = document.getElementById('modal-culto');
+    if (modalLegacy) modalLegacy.classList.add('hidden');
+
+    if (window.origemCultoEditor === 'detalhe' && window.cultoAtualIndex !== null && window.cultoAtualIndex !== undefined) {
+        if (typeof abrirDetalhesCulto === 'function') {
+            abrirDetalhesCulto(window.cultoAtualIndex, true);
+        } else if (vDetalhe) {
+            vDetalhe.classList.remove('hidden');
+        }
+    } else {
+        if (typeof voltarParaCultos === 'function') {
+            voltarParaCultos();
+        } else if (vLista) {
+            vLista.classList.remove('hidden');
+        }
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function fecharModalCulto() {
+    voltarDoEditorCulto();
+}
+
 function mostrarFormCulto(startIndex) {
     cultoEditandoIndex = startIndex;
     cultoEditandoId = startIndex !== null && dadosGlobais.cultos[startIndex] ? dadosGlobais.cultos[startIndex][8] : null;
@@ -245,8 +281,46 @@ function mostrarFormCulto(startIndex) {
     midiasCultoAtual = [];
     escalaInstrumentos = { violao: '', bateria: '', teclado: '' };
 
-    document.getElementById('status-salvar-culto').classList.add('hidden');
-    document.getElementById('erro-salvar-culto').classList.add('hidden');
+    // Garante navegação para a seção de cultos se chamado a partir da agenda ou admin
+    if (typeof mudarSecao === 'function') {
+        const secaoCultos = document.getElementById('secao-cultos');
+        if (secaoCultos && secaoCultos.classList.contains('hidden')) {
+            mudarSecao('cultos');
+        }
+    }
+
+    const vLista = document.getElementById('visao-cultos-lista');
+    const vDetalhe = document.getElementById('visao-culto-detalhe');
+    const vMusica = document.getElementById('visao-musica-detalhe');
+    const vEditor = document.getElementById('visao-culto-editor');
+
+    if (vDetalhe && !vDetalhe.classList.contains('hidden')) {
+        window.origemCultoEditor = 'detalhe';
+    } else {
+        window.origemCultoEditor = 'lista';
+    }
+
+    const txtVoltar = document.getElementById('culto-editor-btn-voltar-texto');
+    if (txtVoltar) {
+        txtVoltar.textContent = window.origemCultoEditor === 'detalhe' 
+            ? 'Voltar para o Culto' 
+            : 'Voltar para Programação';
+    }
+
+    if (vLista) vLista.classList.add('hidden');
+    if (vDetalhe) vDetalhe.classList.add('hidden');
+    if (vMusica) vMusica.classList.add('hidden');
+    if (vEditor) vEditor.classList.remove('hidden');
+
+    const modalLegacy = document.getElementById('modal-culto');
+    if (modalLegacy && modalLegacy !== vEditor) {
+        modalLegacy.classList.add('hidden');
+    }
+
+    const stSalvar = document.getElementById('status-salvar-culto');
+    const errSalvar = document.getElementById('erro-salvar-culto');
+    if (stSalvar) stSalvar.classList.add('hidden');
+    if (errSalvar) errSalvar.classList.add('hidden');
 
     let dataFormatar = null;
 
@@ -501,14 +575,11 @@ function mostrarFormCulto(startIndex) {
         }
     }
 
-    document.getElementById('modal-culto').classList.remove('hidden');
+    if (vEditor) vEditor.classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function editarCulto(startIndex) { mostrarFormCulto(startIndex); }
-
-function fecharModalCulto() {
-    document.getElementById('modal-culto').classList.add('hidden');
-}
 
 async function excluirCulto(serviceIdOuIndex) {
     let serviceId = null;
@@ -1183,11 +1254,12 @@ async function salvarCulto() {
     });
 
     const btn = document.getElementById('btn-salvar-culto');
+    const btnTopo = document.getElementById('btn-salvar-culto-topo');
     const statusEl = document.getElementById('status-salvar-culto');
     const erroEl = document.getElementById('erro-salvar-culto');
 
-    btn.textContent = 'Salvando...';
-    btn.disabled = true;
+    if (btn) { btn.textContent = 'Salvando...'; btn.disabled = true; }
+    if (btnTopo) { btnTopo.textContent = 'Salvando...'; btnTopo.disabled = true; }
     statusEl.classList.add('hidden');
     erroEl.classList.add('hidden');
 
@@ -1369,8 +1441,14 @@ async function salvarCulto() {
         erroEl.textContent = 'Erro ao salvar. Tente novamente.';
         erroEl.classList.remove('hidden');
     } finally {
-        btn.textContent = 'Salvar Culto';
-        btn.disabled = false;
+        if (btn) {
+            btn.textContent = 'Salvar Culto';
+            btn.disabled = false;
+        }
+        if (btnTopo) {
+            btnTopo.textContent = '💾 Salvar Culto';
+            btnTopo.disabled = false;
+        }
     }
 }
 
