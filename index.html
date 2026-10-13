@@ -174,14 +174,27 @@
                 document.documentElement.setAttribute('data-theme', 'dark');
             }
 
-            // Passo 2: Pré-carregar dados de cache da igreja e do perfil
-            const cachedChurchStr = localStorage.getItem('cached_church_data');
-            const cachedUserStr = localStorage.getItem('cached_user_profile');
-            if (cachedChurchStr) {
-                try { window.__CACHED_CHURCH__ = JSON.parse(cachedChurchStr); } catch (e) {}
-            }
-            if (cachedUserStr) {
-                try { window.__CACHED_USER__ = JSON.parse(cachedUserStr); } catch (e) {}
+            // Passo 2: Pré-carregar dados de cache da igreja e do perfil (somente se houver sessão ativa ou tag na URL)
+            const hasAuthToken = Object.keys(localStorage).some(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasChurchTag = urlParams.get('tag') || urlParams.get('c') || urlParams.get('church');
+
+            if (!hasAuthToken && !hasChurchTag) {
+                try {
+                    localStorage.removeItem('cached_user_profile');
+                    localStorage.removeItem('cached_church_data');
+                } catch (e) {}
+                window.__CACHED_USER__ = null;
+                window.__CACHED_CHURCH__ = null;
+            } else {
+                const cachedChurchStr = localStorage.getItem('cached_church_data');
+                const cachedUserStr = hasAuthToken ? localStorage.getItem('cached_user_profile') : null;
+                if (cachedChurchStr) {
+                    try { window.__CACHED_CHURCH__ = JSON.parse(cachedChurchStr); } catch (e) {}
+                }
+                if (cachedUserStr) {
+                    try { window.__CACHED_USER__ = JSON.parse(cachedUserStr); } catch (e) {}
+                }
             }
 
             let cachedColor = localStorage.getItem('cached_theme_color');
@@ -840,7 +853,7 @@
     <script src="js/agenda.js?v=1.4"></script>
     <script src="js/disponibilidade.js?v=1.0"></script>
     <script src="js/whatsapp-dispatcher.js?v=1.0"></script>
-    <script src="js/app.js?v=7.0"></script>
+    <script src="js/app.js?v=7.1"></script>
 </body>
 
 </html>

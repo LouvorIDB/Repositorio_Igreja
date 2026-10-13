@@ -241,45 +241,47 @@ async function carregarDados() {
 
         // 1. Identificar a Igreja Ativa para Multi-Tenant RLS
         let currentChurchId = null;
-        if (!dadosGlobais.church && window.__CACHED_CHURCH__) {
-            dadosGlobais.church = window.__CACHED_CHURCH__;
-        }
-        if (dadosGlobais.church && dadosGlobais.church.id) {
-            currentChurchId = dadosGlobais.church.id;
-        }
+        const params = new URLSearchParams(window.location.search);
+        const tag = params.get('tag') || params.get('c') || params.get('church');
 
-        // Se o usuário está logado, a igreja dele tem prioridade
+        // Prioridade 1: Se o usuário está logado, a igreja dele tem prioridade máxima
         if (usuarioLogado && usuarioLogado.church_id) {
             currentChurchId = usuarioLogado.church_id;
             const { data: cData } = await supabaseClient.from('churches').select('*').eq('id', currentChurchId).maybeSingle();
             if (cData) {
                 dadosGlobais.church = cData;
+                window.__CACHED_CHURCH__ = cData;
                 try {
                     localStorage.setItem('cached_church_data', JSON.stringify(cData));
                 } catch (e) {}
             }
         }
-
-        // Se não achou por login, tenta buscar pela TAG na URL (?tag=..., ?c=..., ?church=...)
-        if (!currentChurchId) {
-            const params = new URLSearchParams(window.location.search);
-            const tag = params.get('tag') || params.get('c') || params.get('church');
-            if (tag) {
-                const { data: cData } = await supabaseClient.from('churches').select('*').eq('slug', tag.toLowerCase().trim()).maybeSingle();
-                if (cData) {
-                    dadosGlobais.church = cData;
-                    currentChurchId = cData.id;
-                    try {
-                        localStorage.setItem('cached_church_data', JSON.stringify(cData));
-                    } catch (e) {}
-                }
+        // Prioridade 2: Visitante com TAG/Slug na URL (?tag=..., ?c=..., ?church=...)
+        else if (tag) {
+            const { data: cData } = await supabaseClient.from('churches').select('*').eq('slug', tag.toLowerCase().trim()).maybeSingle();
+            if (cData) {
+                dadosGlobais.church = cData;
+                window.__CACHED_CHURCH__ = cData;
+                currentChurchId = cData.id;
+                try {
+                    localStorage.setItem('cached_church_data', JSON.stringify(cData));
+                } catch (e) {}
             }
         }
+        // Prioridade 3: Se há igreja já carregada em dadosGlobais e há usuário logado
+        else if (usuarioLogado && dadosGlobais.church && dadosGlobais.church.id) {
+            currentChurchId = dadosGlobais.church.id;
+        }
 
-        // Se NÃO há igreja definida (usuário deslogado sem TAG na URL)
+        // Se NÃO há igreja definida (usuário deslogado sem TAG na URL) -> Exibir Landing Oficial Liturge
         if (!currentChurchId) {
             dadosGlobais.church = null;
-            try { localStorage.removeItem('cached_church_data'); } catch (e) {}
+            window.__CACHED_CHURCH__ = null;
+            window.__CACHED_USER__ = null;
+            try { 
+                localStorage.removeItem('cached_church_data'); 
+                localStorage.removeItem('cached_user_profile');
+            } catch (e) {}
             exibirLandingBoasVindas();
             finalizarTelaCarregamento();
             return;
@@ -1043,7 +1045,8 @@ function processarMatrizCultos(rows) {
     let contadorCulto = 0;
     window.liturgeCultosPlaylists = window.liturgeCultosPlaylists || {};
 
-    const userToEval = (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil) || usuarioLogado || window.__CACHED_USER__;
+    // Apenas avalia usuário se houver simulação ativa ou usuário autenticado real
+    const userToEval = (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil) || (usuarioLogado ? usuarioLogado : null);
     const nomeUsuarioNorm = userToEval ? (userToEval.name || userToEval.full_name || userToEval.nome || '').trim().toLowerCase() : '';
 
     for (let i = 0; i < rows.length; i++) {
@@ -1284,17 +1287,31 @@ function renderizarCultos(rows) {
 }
 
 function atualizarContadoresFiltro() {
-    const total = window.cultosProcessados.length;
-    const escalados = window.cultosProcessados.filter(c => c.userIsEscalado).length;
-    const montagem = window.cultosProcessados.filter(c => c.emMontagem).length;
+    const total = (window.cultosProcessados || []).length;
+    const userAtivo = (typeof modoSimulacaoPerfil !== 'undefined' && modoSimulacaoPerfil) || (usuarioLogado ? usuarioLogado : null);
+    const escalados = userAtivo ? (window.cultosProcessados || []).filter(c => c.userIsEscalado).length : 0;
+    const montagem = (window.cultosProcessados || []).filter(c => c.emMontagem).length;
 
     const badgeTodos = document.getElementById('badge-count-todos');
     const badgeEscalado = document.getElementById('badge-count-escalado');
     const badgeMontagem = document.getElementById('badge-count-montagem');
+    const btnEscalado = document.getElementById('filtro-cultos-escalado');
 
     if (badgeTodos) badgeTodos.textContent = total;
     if (badgeEscalado) badgeEscalado.textContent = escalados;
     if (badgeMontagem) badgeMontagem.textContent = montagem;
+
+    // Se o usuário não está autenticado e não está simulando perfil, oculta o filtro "Onde estou escalado"
+    if (btnEscalado) {
+        if (!userAtivo) {
+            btnEscalado.classList.add('hidden');
+            if (window.filtroCultosAtual === 'escalado') {
+                filtrarCultos('todos');
+            }
+        } else {
+            btnEscalado.classList.remove('hidden');
+        }
+    }
 }
 
 function filtrarCultos(tipo) {
@@ -2962,9 +2979,23 @@ async function verificarSessaoAtiva() {
             }, 800);
         } else {
             usuarioLogado = null;
+            window.__CACHED_USER__ = null;
+            if (window.Store && typeof window.Store.setUsuarioLogado === 'function') {
+                window.Store.setUsuarioLogado(null);
+            }
             try {
                 localStorage.removeItem('cached_user_profile');
             } catch (e) {}
+
+            // Se o usuário não está autenticado e NÃO há parâmetro de igreja na URL (?c=... ou ?tag=...),
+            // limpa também a igreja em cache para direcionar para a Landing Page do Liturge
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasChurchTag = urlParams.get('tag') || urlParams.get('c') || urlParams.get('church');
+            if (!hasChurchTag) {
+                window.__CACHED_CHURCH__ = null;
+                dadosGlobais.church = null;
+                try { localStorage.removeItem('cached_church_data'); } catch (e) {}
+            }
             const btnLogin = document.getElementById('btn-login-header');
             const btnSignup = document.getElementById('btn-signup-header');
             const btnOnboarding = document.getElementById('btn-onboarding-header');
@@ -3032,6 +3063,11 @@ async function realizarLogoutUsuario() {
         console.warn('Erro ao realizar logout:', err);
     } finally {
         usuarioLogado = null;
+        window.__CACHED_USER__ = null;
+        window.__CACHED_CHURCH__ = null;
+        if (window.Store && typeof window.Store.setUsuarioLogado === 'function') {
+            window.Store.setUsuarioLogado(null);
+        }
         window.location.reload();
     }
 }
