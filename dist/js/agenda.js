@@ -1935,7 +1935,9 @@ function editarEventoPorId(serviceId, dateStr = '') {
     if (dateStr) window.pendingDataClick = dateStr;
     const cultos = window.dadosGlobais?.cultos || [];
     const idx = cultos.findIndex(row => row[8] === serviceId);
-    if (typeof mostrarFormCulto === 'function') {
+    if (typeof abrirEditorCultoAdmin === 'function') {
+        abrirEditorCultoAdmin(idx !== -1 ? idx : null, dateStr);
+    } else if (typeof mostrarFormCulto === 'function') {
         mostrarFormCulto(idx !== -1 ? idx : null);
     }
 }

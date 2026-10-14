@@ -249,31 +249,23 @@ function voltarDoEditorCulto() {
     const modalLegacy = document.getElementById('modal-culto');
     if (modalLegacy && modalLegacy !== vEditor) modalLegacy.classList.add('hidden');
 
-    if (window.origemCultoEditor === 'admin') {
-        const hub = document.getElementById('admin-cultos-eventos-hub');
-        if (hub) hub.classList.remove('hidden');
-        if (typeof renderizarAdminCultosEventos === 'function') renderizarAdminCultosEventos();
-        const painelAdmin = document.getElementById('painel-admin');
-        if (painelAdmin) painelAdmin.scrollTo({ top: 0, behavior: 'smooth' });
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        return;
+    const painelAdmin = document.getElementById('painel-admin');
+    const hub = document.getElementById('admin-cultos-eventos-hub');
+    const visaoEvento = document.getElementById('admin-visao-evento-editor');
+    const visaoRecorrente = document.getElementById('admin-visao-recorrente-editor');
+
+    // Como o editor reside na aba Cultos & Eventos do Admin, o retorno padrão é sempre o Hub do Admin
+    if (painelAdmin) painelAdmin.classList.remove('hidden');
+    if (typeof mudarAbaAdmin === 'function') mudarAbaAdmin('cultos-eventos');
+    if (hub) hub.classList.remove('hidden');
+    if (visaoEvento) visaoEvento.classList.add('hidden');
+    if (visaoRecorrente) visaoRecorrente.classList.add('hidden');
+
+    if (typeof renderizarAdminCultosEventos === 'function') {
+        renderizarAdminCultosEventos();
     }
 
-    const vLista = document.getElementById('visao-cultos-lista');
-    const vDetalhe = document.getElementById('visao-culto-detalhe');
-    if (window.origemCultoEditor === 'detalhe' && window.cultoAtualIndex !== null && window.cultoAtualIndex !== undefined) {
-        if (typeof abrirDetalhesCulto === 'function') {
-            abrirDetalhesCulto(window.cultoAtualIndex, true);
-        } else if (vDetalhe) {
-            vDetalhe.classList.remove('hidden');
-        }
-    } else {
-        if (typeof voltarParaCultos === 'function') {
-            voltarParaCultos();
-        } else if (vLista) {
-            vLista.classList.remove('hidden');
-        }
-    }
+    if (painelAdmin) painelAdmin.scrollTo({ top: 0, behavior: 'smooth' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -331,29 +323,26 @@ function mostrarFormCulto(startIndex) {
     midiasCultoAtual = [];
     escalaInstrumentos = { violao: '', bateria: '', teclado: '' };
 
+    const painelAdmin = document.getElementById('painel-admin');
+    if (painelAdmin) painelAdmin.classList.remove('hidden');
+    if (typeof mudarAbaAdmin === 'function') mudarAbaAdmin('cultos-eventos');
+    window.origemCultoEditor = 'admin';
+
     const hub = document.getElementById('admin-cultos-eventos-hub');
+    const visaoEvento = document.getElementById('admin-visao-evento-editor');
+    const visaoRecorrente = document.getElementById('admin-visao-recorrente-editor');
     const vLista = document.getElementById('visao-cultos-lista');
     const vDetalhe = document.getElementById('visao-culto-detalhe');
     const vMusica = document.getElementById('visao-musica-detalhe');
     const vEditor = document.getElementById('visao-culto-editor');
 
-    if (window.origemCultoEditor === 'admin') {
-        if (hub) hub.classList.add('hidden');
-    } else if (vDetalhe && !vDetalhe.classList.contains('hidden')) {
-        window.origemCultoEditor = 'detalhe';
-    } else {
-        window.origemCultoEditor = 'lista';
-    }
+    if (hub) hub.classList.add('hidden');
+    if (visaoEvento) visaoEvento.classList.add('hidden');
+    if (visaoRecorrente) visaoRecorrente.classList.add('hidden');
 
     const txtVoltar = document.getElementById('culto-editor-btn-voltar-texto');
     if (txtVoltar) {
-        if (window.origemCultoEditor === 'admin') {
-            txtVoltar.textContent = 'Voltar para Cultos & Eventos';
-        } else if (window.origemCultoEditor === 'detalhe') {
-            txtVoltar.textContent = 'Voltar para o Culto';
-        } else {
-            txtVoltar.textContent = 'Voltar para Programação';
-        }
+        txtVoltar.textContent = 'Voltar para Cultos & Eventos';
     }
 
     if (vLista) vLista.classList.add('hidden');
@@ -679,13 +668,15 @@ async function excluirCulto(serviceIdOuIndex) {
         const { error } = await supabaseClient.from('services').delete().eq('id', serviceId);
         if (error) throw error;
 
-        // 3. Fechar modais abertos
+        // 3. Recarregar dados primeiro
+        if (typeof carregarDados === 'function') await carregarDados();
+        if (typeof carregarAgenda === 'function') carregarAgenda();
+
+        // 4. Fechar modais / retornar ao hub
         if (typeof fecharModalCulto === 'function') fecharModalCulto();
         if (typeof fecharModalDetalhesDia === 'function') fecharModalDetalhesDia();
 
-        // 4. Recarregar dados e atualizar telas
-        if (typeof carregarDados === 'function') await carregarDados();
-        if (typeof carregarAgenda === 'function') carregarAgenda();
+        // 5. Re-renderizar telas administrativas
         if (typeof renderizarAdminCultosEventos === 'function') renderizarAdminCultosEventos();
         if (typeof renderizarAdminListaCultos === 'function') renderizarAdminListaCultos();
 
@@ -1484,8 +1475,30 @@ async function salvarCulto() {
         }
 
         // 5. Pós-gravação
+        // 5.1 Recarregar dados globais do Supabase PRIMEIRO para que o novo culto conste em dadosGlobais
+        if (typeof carregarDados === 'function') {
+            await carregarDados();
+        }
+
+        // 5.2 Sincronizar data selecionada no calendário Admin
+        if (dataLocalIso) {
+            const dateOnly = dataLocalIso.split('T')[0];
+            window.adminDiaSelecionadoStr = dateOnly;
+            const parts = dateOnly.split('-');
+            if (parts.length === 3) {
+                window.anoAtualAdmin = parseInt(parts[0], 10);
+                window.mesAtualAdmin = parseInt(parts[1], 10) - 1;
+            }
+        }
+
+        // 5.3 Fechar o editor e retornar ao Hub de Cultos & Eventos
         fecharModalCulto();
-        await carregarDados();
+
+        // 5.4 Garantir re-renderização imediata do calendário e cards com os dados frescos
+        if (typeof renderizarAdminCultosEventos === 'function') {
+            await renderizarAdminCultosEventos();
+        }
+
         mostrarToast('Culto e músicas salvos com sucesso no Supabase!', 'sucesso');
     } catch (err) {
         console.error('Erro ao salvar culto no Supabase:', err);

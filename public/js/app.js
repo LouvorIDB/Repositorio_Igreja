@@ -640,6 +640,9 @@ async function carregarDados() {
                 if (typeof renderizarHistoricoCultos === 'function') {
                     renderizarHistoricoCultos();
                 }
+                if (typeof renderizarAdminCultosEventos === 'function') {
+                    renderizarAdminCultosEventos();
+                }
             } catch (errAdmin) {
                 console.error("Erro ao renderizar painel admin:", errAdmin);
             }
@@ -4557,8 +4560,11 @@ async function confirmarCopiarPlaylist() {
     // Caso A: Criar Novo Culto
     if (destinoId === '__NOVO_CULTO__') {
         fecharModalCopiarPlaylist();
-        if (typeof mostrarFormCulto === 'function') {
+        if (typeof abrirEditorCultoAdmin === 'function') {
+            abrirEditorCultoAdmin(null);
+        } else if (typeof mostrarFormCulto === 'function') {
             mostrarFormCulto(null);
+        }
             if (typeof musicasCultoAtual !== 'undefined') {
                 musicasCultoAtual = musicas.map(m => ({
                     nome: m.nome,

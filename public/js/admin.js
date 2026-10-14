@@ -311,7 +311,7 @@ function renderizarAdminListaCultos() {
             }
 
             const legacyIndex = rows.findIndex(r => r && r[8] === s.id);
-            const editAction = legacyIndex !== -1 ? `editarCulto(${legacyIndex})` : `mostrarFormCulto(null)`;
+            const editAction = legacyIndex !== -1 ? `editarCulto(${legacyIndex})` : `abrirEditorCultoAdmin(null)`;
 
             const botaoExcluir = isLiderOuAdmin
                 ? `<button onclick="excluirCulto('${s.id}')" class="bg-slate-700 hover:bg-red-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1 shadow-sm">🗑️ Excluir</button>`
