@@ -4565,24 +4565,23 @@ async function confirmarCopiarPlaylist() {
         } else if (typeof mostrarFormCulto === 'function') {
             mostrarFormCulto(null);
         }
-            if (typeof musicasCultoAtual !== 'undefined') {
-                musicasCultoAtual = musicas.map(m => ({
-                    nome: m.nome,
-                    tom: m.tom,
-                    variacao: m.variacao,
-                    vs: m.vs,
-                    yt: m.yt,
-                    cantores: incluirCantores ? (Array.isArray(m.cantores) ? m.cantores : (m.cantores ? m.cantores.split(',').map(s=>s.trim()) : [])) : [],
-                    song_version_id: m.song_version_id,
-                    lyrics: m.lyrics,
-                    chords: m.chords,
-                    artist: m.artist
-                }));
-                if (typeof renderizarMusicasCulto === 'function') renderizarMusicasCulto();
-                if (typeof atualizarContadoresAccordions === 'function') atualizarContadoresAccordions();
-            }
-            if (typeof mostrarToast === 'function') mostrarToast(`✨ ${musicas.length} músicas carregadas no novo culto! Defina a data e salve.`, 'sucesso');
+        if (typeof musicasCultoAtual !== 'undefined') {
+            musicasCultoAtual = musicas.map(m => ({
+                nome: m.nome,
+                tom: m.tom,
+                variacao: m.variacao,
+                vs: m.vs,
+                yt: m.yt,
+                cantores: incluirCantores ? (Array.isArray(m.cantores) ? m.cantores : (m.cantores ? m.cantores.split(',').map(s=>s.trim()) : [])) : [],
+                song_version_id: m.song_version_id,
+                lyrics: m.lyrics,
+                chords: m.chords,
+                artist: m.artist
+            }));
+            if (typeof renderizarMusicasCulto === 'function') renderizarMusicasCulto();
+            if (typeof atualizarContadoresAccordions === 'function') atualizarContadoresAccordions();
         }
+        if (typeof mostrarToast === 'function') mostrarToast(`✨ ${musicas.length} músicas carregadas no novo culto! Defina a data e salve.`, 'sucesso');
         return;
     }
 
