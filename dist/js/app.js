@@ -1678,8 +1678,12 @@ function voltarParaCultos() {
 }
 
 function editarCultoAtualDeDetalhes() {
-    if (typeof mostrarFormCulto === 'function' && window.cultoAtualIndex !== null && window.cultoAtualIndex !== undefined) {
-        mostrarFormCulto(window.cultoAtualIndex);
+    if (window.cultoAtualIndex !== null && window.cultoAtualIndex !== undefined) {
+        if (typeof abrirEditorCultoAdmin === 'function') {
+            abrirEditorCultoAdmin(window.cultoAtualIndex);
+        } else if (typeof mostrarFormCulto === 'function') {
+            mostrarFormCulto(window.cultoAtualIndex);
+        }
     }
 }
 

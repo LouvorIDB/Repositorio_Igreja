@@ -240,27 +240,27 @@ function inicializarCalendarioCulto(dataInicialStr) {
 window.origemCultoEditor = 'lista'; // 'lista', 'detalhe' ou 'admin'
 
 function abrirModalCriarCulto() {
-    mostrarFormCulto(null);
+    abrirEditorCultoAdmin(null);
 }
 
 function voltarDoEditorCulto() {
-    const vLista = document.getElementById('visao-cultos-lista');
-    const vDetalhe = document.getElementById('visao-culto-detalhe');
-    const vMusica = document.getElementById('visao-musica-detalhe');
     const vEditor = document.getElementById('visao-culto-editor');
-
     if (vEditor) vEditor.classList.add('hidden');
     const modalLegacy = document.getElementById('modal-culto');
-    if (modalLegacy) modalLegacy.classList.add('hidden');
+    if (modalLegacy && modalLegacy !== vEditor) modalLegacy.classList.add('hidden');
 
     if (window.origemCultoEditor === 'admin') {
-        const painelAdmin = document.getElementById('painel-admin');
-        if (painelAdmin) painelAdmin.classList.remove('hidden');
+        const hub = document.getElementById('admin-cultos-eventos-hub');
+        if (hub) hub.classList.remove('hidden');
         if (typeof renderizarAdminCultosEventos === 'function') renderizarAdminCultosEventos();
+        const painelAdmin = document.getElementById('painel-admin');
+        if (painelAdmin) painelAdmin.scrollTo({ top: 0, behavior: 'smooth' });
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
     }
 
+    const vLista = document.getElementById('visao-cultos-lista');
+    const vDetalhe = document.getElementById('visao-culto-detalhe');
     if (window.origemCultoEditor === 'detalhe' && window.cultoAtualIndex !== null && window.cultoAtualIndex !== undefined) {
         if (typeof abrirDetalhesCulto === 'function') {
             abrirDetalhesCulto(window.cultoAtualIndex, true);
@@ -283,8 +283,21 @@ function fecharModalCulto() {
 
 function abrirEditorCultoAdmin(startIndex = null, dataStr = null) {
     window.origemCultoEditor = 'admin';
+
+    // Garante que o painel admin esteja visível e na aba correta
     const painelAdmin = document.getElementById('painel-admin');
-    if (painelAdmin) painelAdmin.classList.add('hidden');
+    if (painelAdmin) painelAdmin.classList.remove('hidden');
+    if (typeof mudarAbaAdmin === 'function') mudarAbaAdmin('cultos-eventos');
+
+    const hub = document.getElementById('admin-cultos-eventos-hub');
+    const visaoEvento = document.getElementById('admin-visao-evento-editor');
+    const visaoRecorrente = document.getElementById('admin-visao-recorrente-editor');
+    const visaoCulto = document.getElementById('visao-culto-editor');
+
+    if (hub) hub.classList.add('hidden');
+    if (visaoEvento) visaoEvento.classList.add('hidden');
+    if (visaoRecorrente) visaoRecorrente.classList.add('hidden');
+    if (visaoCulto) visaoCulto.classList.remove('hidden');
 
     mostrarFormCulto(startIndex);
 
@@ -303,7 +316,10 @@ function abrirEditorCultoAdmin(startIndex = null, dataStr = null) {
     }
 
     const txtVoltar = document.getElementById('culto-editor-btn-voltar-texto');
-    if (txtVoltar) txtVoltar.textContent = 'Voltar ao Painel Admin';
+    if (txtVoltar) txtVoltar.textContent = 'Voltar para Cultos & Eventos';
+
+    if (painelAdmin) painelAdmin.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 window.abrirEditorCultoAdmin = abrirEditorCultoAdmin;
 
@@ -315,21 +331,14 @@ function mostrarFormCulto(startIndex) {
     midiasCultoAtual = [];
     escalaInstrumentos = { violao: '', bateria: '', teclado: '' };
 
-    // Garante navegação para a seção de cultos se chamado a partir da agenda ou admin
-    if (typeof mudarSecao === 'function') {
-        const secaoCultos = document.getElementById('secao-cultos');
-        if (secaoCultos && secaoCultos.classList.contains('hidden')) {
-            mudarSecao('cultos');
-        }
-    }
-
+    const hub = document.getElementById('admin-cultos-eventos-hub');
     const vLista = document.getElementById('visao-cultos-lista');
     const vDetalhe = document.getElementById('visao-culto-detalhe');
     const vMusica = document.getElementById('visao-musica-detalhe');
     const vEditor = document.getElementById('visao-culto-editor');
 
     if (window.origemCultoEditor === 'admin') {
-        // Preserva a origem admin
+        if (hub) hub.classList.add('hidden');
     } else if (vDetalhe && !vDetalhe.classList.contains('hidden')) {
         window.origemCultoEditor = 'detalhe';
     } else {
@@ -339,7 +348,7 @@ function mostrarFormCulto(startIndex) {
     const txtVoltar = document.getElementById('culto-editor-btn-voltar-texto');
     if (txtVoltar) {
         if (window.origemCultoEditor === 'admin') {
-            txtVoltar.textContent = 'Voltar ao Painel Admin';
+            txtVoltar.textContent = 'Voltar para Cultos & Eventos';
         } else if (window.origemCultoEditor === 'detalhe') {
             txtVoltar.textContent = 'Voltar para o Culto';
         } else {
@@ -619,7 +628,9 @@ function mostrarFormCulto(startIndex) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function editarCulto(startIndex) { mostrarFormCulto(startIndex); }
+function editarCulto(startIndex) { 
+    abrirEditorCultoAdmin(startIndex); 
+}
 
 async function excluirCulto(serviceIdOuIndex) {
     let serviceId = null;
