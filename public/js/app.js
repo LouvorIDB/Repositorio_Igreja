@@ -1698,7 +1698,7 @@ window.origemMusicaDetalhe = 'culto'; // 'culto', 'repertorio' ou 'novas'
 window.musicaRepertorioOrigemObj = null;
 window.versaoMusicaAtualIndex = 0;
 
-async function atualizarArtworkMusicaDetalhe(titulo, artista) {
+async function atualizarArtworkMusicaDetalhe(titulo, artista, ytUrl = '') {
     const fotoEl = document.getElementById('musica-detalhe-foto');
     const fallbackEl = document.getElementById('musica-detalhe-foto-fallback');
     if (!fotoEl || !fallbackEl) return;
@@ -1708,16 +1708,20 @@ async function atualizarArtworkMusicaDetalhe(titulo, artista) {
 
     if (typeof window.fetchTrackArtwork === 'function') {
         try {
-            const art = await window.fetchTrackArtwork(titulo, artista);
+            const art = await window.fetchTrackArtwork(titulo, artista, ytUrl);
             if (art && window.musicaAtualDetalhe && window.musicaAtualDetalhe.title === titulo) {
                 fotoEl.src = art;
                 fotoEl.onload = () => {
                     fotoEl.classList.remove('hidden');
                     fallbackEl.classList.add('hidden');
                 };
+                fotoEl.onerror = () => {
+                    fotoEl.classList.add('hidden');
+                    fallbackEl.classList.remove('hidden');
+                };
             }
         } catch (e) {
-            console.warn('[Artwork] Falha ao carregar artwork:', e);
+            // Falha silenciosa
         }
     }
 }
@@ -1832,8 +1836,9 @@ function preencherVisaoMusicaDetalhe(musica, options = {}) {
         }
     }
 
-    // Capa em Alta Resolução (Apple Music)
-    atualizarArtworkMusicaDetalhe(musica.title, musica.artist);
+    // Capa em Alta Resolução (YouTube ou Apple Music)
+    const ytMusicaDetalhe = musica.yt || musica.youtube_url || (versoes[0] && (versoes[0].yt || versoes[0].youtube_url)) || '';
+    atualizarArtworkMusicaDetalhe(musica.title, musica.artist, ytMusicaDetalhe);
 
     // Aba 1: Metadados
     const metaTom = document.getElementById('musica-meta-tom');
@@ -2614,22 +2619,47 @@ function renderizarLinhaMusicaStreaming(musicaObj, index, origem = 'repertorio')
     const thumbId = `thumb-${origem}-${musicaObj.id}`;
     const fallbackId = `thumb-fallback-${origem}-${musicaObj.id}`;
 
-    // Dispara a busca assíncrona da capa para a thumbnail em lotes leves
-    setTimeout(() => {
-        if (typeof window.fetchTrackArtwork === 'function') {
-            window.fetchTrackArtwork(musicaObj.title, musicaObj.artist).then(art => {
-                if (art) {
-                    const img = document.getElementById(thumbId);
-                    const fb = document.getElementById(fallbackId);
-                    if (img && fb) {
-                        img.src = art;
-                        img.classList.remove('hidden');
-                        fb.classList.add('hidden');
+    // 1. Tenta extrair a capa de alta resolução diretamente do link do YouTube (instantâneo, sem rate limit)
+    const ytUrl = (versoes.find(v => v.yt && v.yt.trim()) || {}).yt || musicaObj.yt || musicaObj.youtube_url || '';
+    const ytId = typeof extrairIdYoutube === 'function' ? extrairIdYoutube(ytUrl) : '';
+    let directThumb = '';
+    if (ytId) {
+        directThumb = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+    }
+
+    // 2. Se não tem YouTube, checa se já existe imagem salva no localStorage permanente da Apple Music
+    if (!directThumb) {
+        const cleanTitle = (musicaObj.title || '')
+            .replace(/\s*[\(\[](ao\s*vivo|live|playback|vs|multitrack|oficial|single)[\)\]]/gi, '')
+            .replace(/[-–—]\s*(ao\s*vivo|live|playback|vs|single)/gi, '')
+            .trim();
+        const cleanArtist = (musicaObj.artist && !musicaObj.artist.includes('Liturge'))
+            ? musicaObj.artist.replace(/\s*[\(\[](ao\s*vivo|live)[\)\]]/gi, '').trim()
+            : '';
+        const cacheKey = `liturge_art_${(cleanArtist + '_' + cleanTitle).toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+        try {
+            directThumb = localStorage.getItem(cacheKey) || '';
+        } catch(e) {}
+    }
+
+    // 3. Se ainda não possui imagem imediata, enfileira a busca ordenada na Apple Music
+    if (!directThumb) {
+        setTimeout(() => {
+            if (typeof window.fetchTrackArtwork === 'function') {
+                window.fetchTrackArtwork(musicaObj.title, musicaObj.artist, ytUrl).then(art => {
+                    if (art) {
+                        const img = document.getElementById(thumbId);
+                        const fb = document.getElementById(fallbackId);
+                        if (img && fb) {
+                            img.src = art;
+                            img.classList.remove('hidden');
+                            fb.classList.add('hidden');
+                        }
                     }
-                }
-            }).catch(() => {});
-        }
-    }, 10 + (index * 20));
+                }).catch(() => {});
+            }
+        }, 50);
+    }
 
     return `
         <div onclick="abrirDetalhesMusicaDoRepertorio('${musicaObj.id}', '${origem}')" 
@@ -2638,8 +2668,8 @@ function renderizarLinhaMusicaStreaming(musicaObj, index, origem = 'repertorio')
             <!-- Capa e Título / Artista -->
             <div class="flex items-center gap-3 min-w-0 flex-1">
                 <div class="relative w-11 h-11 sm:w-12 sm:h-12 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 shrink-0 flex items-center justify-center shadow-xs">
-                    <img id="${thumbId}" src="" alt="" class="hidden w-full h-full object-cover">
-                    <div id="${fallbackId}" class="w-full h-full flex items-center justify-center text-brand-500 bg-gradient-to-br from-brand-500/10 to-brand-500/25">
+                    <img id="${thumbId}" src="${directThumb || ''}" alt="" class="${directThumb ? '' : 'hidden '}w-full h-full object-cover" loading="lazy" onerror="this.classList.add('hidden'); const fb = document.getElementById('${fallbackId}'); if(fb) fb.classList.remove('hidden');">
+                    <div id="${fallbackId}" class="${directThumb ? 'hidden ' : ''}w-full h-full flex items-center justify-center text-brand-500 bg-gradient-to-br from-brand-500/10 to-brand-500/25">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
                     </div>
                 </div>
