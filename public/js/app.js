@@ -569,6 +569,11 @@ async function carregarDados() {
                     variation: v.variation || 'Original',
                     vs: v.drive_vs_url || v.drive_url || '',
                     yt: v.youtube_url || '',
+                    spotify_url: v.spotify_url || '',
+                    deezer_url: v.deezer_url || '',
+                    apple_music_url: v.apple_music_url || '',
+                    cifraclub_url: v.cifraclub_url || '',
+                    letras_url: v.letras_url || '',
                     lyrics: v.lyrics || song.lyrics || '',
                     chords: v.chords || song.chords || ''
                 }))
@@ -1863,6 +1868,30 @@ function preencherVisaoMusicaDetalhe(musica, options = {}) {
         }
     }
 
+    // Links de Streaming & Cifras (Spotify, Deezer, Apple Music, Cifra Club, Letras)
+    const cachedLinks = typeof obterLinksStreamingCache === 'function' 
+        ? (obterLinksStreamingCache(musica.id) || obterLinksStreamingCache(musica.versionId)) 
+        : null;
+
+    const configurarBotaoPlataforma = (elementId, urlDirect, keyCache) => {
+        const btn = document.getElementById(elementId);
+        if (!btn) return;
+        const urlFinal = urlDirect || (cachedLinks ? cachedLinks[keyCache] : null);
+        if (urlFinal && urlFinal.trim()) {
+            btn.href = urlFinal.trim();
+            btn.classList.remove('opacity-50', 'pointer-events-none');
+        } else {
+            btn.href = '#';
+            btn.classList.add('opacity-50', 'pointer-events-none');
+        }
+    };
+
+    configurarBotaoPlataforma('btn-musica-link-spotify', musica.spotifyUrl || musica.spotify_url, 'spotify_url');
+    configurarBotaoPlataforma('btn-musica-link-deezer', musica.deezerUrl || musica.deezer_url, 'deezer_url');
+    configurarBotaoPlataforma('btn-musica-link-apple', musica.appleMusicUrl || musica.apple_music_url, 'apple_music_url');
+    configurarBotaoPlataforma('btn-musica-link-cifraclub', musica.cifraclubUrl || musica.cifraclub_url, 'cifraclub_url');
+    configurarBotaoPlataforma('btn-musica-link-letras', musica.letrasUrl || musica.letras_url, 'letras_url');
+
     const btnVs = document.getElementById('btn-musica-ouvir-vs');
     if (btnVs) {
         btnVs.classList.toggle('opacity-50', !musica.vs);
@@ -1937,6 +1966,11 @@ function abrirDetalhesMusicaDoRepertorio(musicaId, origem = 'repertorio', versao
         bpm: (vAtiva && vAtiva.bpm) || musicaObj.bpm || '—',
         duracao: (vAtiva && vAtiva.duration) || musicaObj.duration || '—',
         linkYoutube: (vAtiva && vAtiva.yt) || musicaObj.yt || '',
+        spotifyUrl: (vAtiva && (vAtiva.spotify_url || vAtiva.spotify)) || musicaObj.spotify_url || '',
+        deezerUrl: (vAtiva && (vAtiva.deezer_url || vAtiva.deezer)) || musicaObj.deezer_url || '',
+        appleMusicUrl: (vAtiva && (vAtiva.apple_music_url || vAtiva.apple_music)) || musicaObj.apple_music_url || '',
+        cifraclubUrl: (vAtiva && (vAtiva.cifraclub_url || vAtiva.cifraclub)) || musicaObj.cifraclub_url || '',
+        letrasUrl: (vAtiva && (vAtiva.letras_url || vAtiva.letras)) || musicaObj.letras_url || '',
         vs: (vAtiva && vAtiva.vs) || musicaObj.vs || '',
         chords: (vAtiva && vAtiva.chords) || musicaObj.chords || '',
         lyrics: (vAtiva && vAtiva.lyrics) || musicaObj.lyrics || '',
@@ -1965,6 +1999,11 @@ function trocarVersaoMusicaDetalhe(versaoIndex) {
             window.musicaAtualDetalhe.lyrics = v.lyrics || window.musicaAtualDetalhe.lyrics;
             window.musicaAtualDetalhe.vs = v.vs || window.musicaAtualDetalhe.vs;
             window.musicaAtualDetalhe.linkYoutube = v.yt || window.musicaAtualDetalhe.linkYoutube;
+            window.musicaAtualDetalhe.spotifyUrl = v.spotify_url || window.musicaAtualDetalhe.spotifyUrl;
+            window.musicaAtualDetalhe.deezerUrl = v.deezer_url || window.musicaAtualDetalhe.deezerUrl;
+            window.musicaAtualDetalhe.appleMusicUrl = v.apple_music_url || window.musicaAtualDetalhe.appleMusicUrl;
+            window.musicaAtualDetalhe.cifraclubUrl = v.cifraclub_url || window.musicaAtualDetalhe.cifraclubUrl;
+            window.musicaAtualDetalhe.letrasUrl = v.letras_url || window.musicaAtualDetalhe.letrasUrl;
             const culto = window.cultosProcessados ? window.cultosProcessados[window.cultoAtualIndex] : null;
             preencherVisaoMusicaDetalhe(window.musicaAtualDetalhe, { origem: 'culto', versaoIndex: versaoIndex, cultoNome: culto?.nome });
         }

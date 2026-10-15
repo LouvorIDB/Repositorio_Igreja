@@ -6627,10 +6627,595 @@ async function concluirOnboardingWizard() {
         }
     } catch(e) {
         console.error("Erro ao concluir onboarding:", e);
-        if (typeof mostrarToast === 'function') mostrarToast(`Erro ao concluir onboarding: ${e.message}`, 'erro');
     }
 }
 window.concluirOnboardingWizard = concluirOnboardingWizard;
+
+// ==============================================================================
+// CURADORIA DE LINKS DE STREAMING & CIFRAS (SPOTIFY, DEEZER, APPLE, CIFRA, LETRAS)
+// ==============================================================================
+
+const STORAGE_KEY_STREAMING_LINKS = 'liturge_streaming_links_cache_v1';
+window.curadoriaLinksState = [];
+let curadoriaFiltroTermo = '';
+let curadoriaFiltroStatus = 'todas';
+
+function obterTodosLinksStreamingCache() {
+    try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY_STREAMING_LINKS) || '{}');
+    } catch (e) {
+        return {};
+    }
+}
+
+function obterLinksStreamingCache(id) {
+    if (!id) return null;
+    const all = obterTodosLinksStreamingCache();
+    return all[id] || null;
+}
+
+function salvarLinksStreamingCache(id, links) {
+    if (!id || !links) return;
+    try {
+        const all = obterTodosLinksStreamingCache();
+        all[id] = { ...(all[id] || {}), ...links, atualizado_em: new Date().toISOString() };
+        localStorage.setItem(STORAGE_KEY_STREAMING_LINKS, JSON.stringify(all));
+    } catch (e) {
+        console.warn('Erro ao salvar cache de streaming:', e);
+    }
+}
+window.obterLinksStreamingCache = obterLinksStreamingCache;
+window.salvarLinksStreamingCache = salvarLinksStreamingCache;
+
+function limparTermoParaBuscaStreaming(str) {
+    if (!str) return '';
+    return str
+        .replace(/\((ao vivo|acústico|playback|remix|feat\.?.*|versão.*|cover|single)\)/gi, '')
+        .replace(/\[.*?\]/g, '')
+        .replace(/[-–—_]/g, ' ')
+        .replace(/[\\/]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function gerarUrlBuscaSpotify(termo) {
+    return `https://open.spotify.com/search/${encodeURIComponent(termo)}`;
+}
+
+function gerarUrlBuscaDeezer(termo) {
+    return `https://www.deezer.com/search/${encodeURIComponent(termo)}`;
+}
+
+function gerarUrlBuscaAppleMusic(termo) {
+    return `https://music.apple.com/br/search?term=${encodeURIComponent(termo)}`;
+}
+
+function gerarUrlBuscaCifraClub(termo) {
+    return `https://www.cifraclub.com.br/?q=${encodeURIComponent(termo)}`;
+}
+
+function gerarUrlBuscaLetras(termo) {
+    return `https://www.letras.mus.br/?q=${encodeURIComponent(termo)}`;
+}
+
+async function buscarTrackNoItunes(termo) {
+    try {
+        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(termo)}&entity=song&limit=1`;
+        const resp = await fetch(url);
+        if (!resp.ok) return null;
+        const data = await resp.json();
+        if (data && data.results && data.results.length > 0 && data.results[0].trackViewUrl) {
+            return data.results[0].trackViewUrl;
+        }
+    } catch (e) {
+        // Fallback silencioso
+    }
+    return null;
+}
+
+async function iniciarBuscaAutomaticaLinks() {
+    const modal = document.getElementById('modal-curadoria-links-streaming');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    const listaContainer = document.getElementById('curadoria-lista-musicas');
+    if (listaContainer) {
+        listaContainer.innerHTML = `
+            <div class="py-12 flex flex-col items-center justify-center gap-3 text-center">
+                <div class="w-10 h-10 border-3 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-sm font-semibold text-slate-300">Carregando catálogo e gerando links de busca...</p>
+                <p class="text-xs text-slate-500">Mapeando Spotify, Deezer, Apple Music, Cifra Club e Letras.mus.br</p>
+            </div>
+        `;
+    }
+
+    // 1. Obter músicas da igreja
+    let musicas = [];
+    if (adminSongsCache && adminSongsCache.length > 0) {
+        musicas = [...adminSongsCache];
+    } else if (typeof dadosGlobais !== 'undefined' && dadosGlobais.repertorio && dadosGlobais.repertorio.length > 0) {
+        musicas = [...dadosGlobais.repertorio];
+    } else if (supabaseClient) {
+        try {
+            const churchId = dadosGlobais.church?.id || usuarioLogado?.church_id;
+            let q = supabaseClient.from('songs').select('id, title, artist, status, song_versions(id, key, variation, drive_vs_url, youtube_url, spotify_url, deezer_url, apple_music_url, cifraclub_url, letras_url)');
+            if (churchId) q = q.eq('church_id', churchId);
+            const { data } = await q;
+            if (data) musicas = data;
+        } catch (e) {
+            console.warn('Erro ao buscar músicas para curadoria:', e);
+        }
+    }
+
+    if (musicas.length === 0) {
+        if (listaContainer) {
+            listaContainer.innerHTML = '<p class="text-slate-400 text-sm text-center py-8">Nenhuma música encontrada no catálogo da igreja ativa.</p>';
+        }
+        return;
+    }
+
+    // 2. Montar estado dos links para cada música
+    const state = [];
+    for (const song of musicas) {
+        const versoes = song.song_versions || song.versions || [];
+        const v0 = versoes[0] || {};
+        const versionId = v0.id || song.id;
+        const cached = obterLinksStreamingCache(versionId) || obterLinksStreamingCache(song.id) || {};
+
+        const cleanTitle = limparTermoParaBuscaStreaming(song.title);
+        const cleanArtist = limparTermoParaBuscaStreaming(song.artist || '');
+        const queryTermo = [cleanTitle, cleanArtist].filter(Boolean).join(' ');
+
+        // URLs existentes ou geradas
+        const spotifyUrl = v0.spotify_url || cached.spotify_url || gerarUrlBuscaSpotify(queryTermo);
+        const deezerUrl = v0.deezer_url || cached.deezer_url || gerarUrlBuscaDeezer(queryTermo);
+        const itunesUrl = v0.apple_music_url || cached.apple_music_url || gerarUrlBuscaAppleMusic(queryTermo);
+        const cifraUrl = v0.cifraclub_url || cached.cifraclub_url || gerarUrlBuscaCifraClub(queryTermo);
+        const letrasUrl = v0.letras_url || cached.letras_url || gerarUrlBuscaLetras(queryTermo);
+
+        // Status inicial: se já foi salvo anteriormente fica aprovado, senão pendente
+        const spotifyStatus = (v0.spotify_url || cached.spotify_url) ? 'aprovado' : 'pendente';
+        const deezerStatus = (v0.deezer_url || cached.deezer_url) ? 'aprovado' : 'pendente';
+        const itunesStatus = (v0.apple_music_url || cached.apple_music_url) ? 'aprovado' : 'pendente';
+        const cifraStatus = (v0.cifraclub_url || cached.cifraclub_url) ? 'aprovado' : 'pendente';
+        const letrasStatus = (v0.letras_url || cached.letras_url) ? 'aprovado' : 'pendente';
+
+        state.push({
+            songId: song.id,
+            versionId: versionId,
+            title: song.title || 'Sem título',
+            artist: song.artist || 'Ministério de Louvor',
+            queryTermo: queryTermo,
+            expanded: false,
+            needsItunesLookup: !v0.apple_music_url && !cached.apple_music_url,
+            links: {
+                spotify: { url: spotifyUrl, status: spotifyStatus, label: 'Spotify', color: 'emerald' },
+                deezer: { url: deezerUrl, status: deezerStatus, label: 'Deezer', color: 'purple' },
+                itunes: { url: itunesUrl, status: itunesStatus, label: 'Apple Music', color: 'rose' },
+                cifraclub: { url: cifraUrl, status: cifraStatus, label: 'Cifra Club', color: 'amber' },
+                letras: { url: letrasUrl, status: letrasStatus, label: 'Letras.mus.br', color: 'indigo' }
+            }
+        });
+    }
+
+    window.curadoriaLinksState = state;
+    renderizarListaCuradoriaLinks();
+
+    // 3. Consulta em segundo plano no iTunes para obter trackViewUrl exato onde aplicável
+    executarBuscaAssincronaItunes();
+}
+window.iniciarBuscaAutomaticaLinks = iniciarBuscaAutomaticaLinks;
+
+function fecharModalCuradoriaLinks() {
+    const modal = document.getElementById('modal-curadoria-links-streaming');
+    if (modal) modal.classList.add('hidden');
+}
+window.fecharModalCuradoriaLinks = fecharModalCuradoriaLinks;
+
+async function executarBuscaAssincronaItunes() {
+    const pendentes = (window.curadoriaLinksState || []).filter(item => item.needsItunesLookup);
+    if (pendentes.length === 0) return;
+
+    const progContainer = document.getElementById('curadoria-progresso-container');
+    const progTexto = document.getElementById('curadoria-progresso-texto');
+    const progContagem = document.getElementById('curadoria-progresso-contagem');
+
+    if (progContainer) progContainer.classList.remove('hidden');
+
+    let total = pendentes.length;
+    let concluidos = 0;
+
+    for (const item of pendentes) {
+        concluidos++;
+        const pct = Math.round((concluidos / total) * 100);
+        if (progTexto) progTexto.textContent = `Buscando faixa oficial no iTunes: ${item.title}...`;
+        if (progContagem) progContagem.textContent = `${pct}% (${concluidos}/${total})`;
+
+        const directTrackUrl = await buscarTrackNoItunes(item.queryTermo);
+        if (directTrackUrl) {
+            item.links.itunes.url = directTrackUrl;
+            // Atualiza input na tela se o elemento existir
+            const inputEl = document.getElementById(`curadoria-input-${item.songId}-itunes`);
+            if (inputEl) inputEl.value = directTrackUrl;
+            const linkTestEl = document.getElementById(`curadoria-testar-${item.songId}-itunes`);
+            if (linkTestEl) linkTestEl.href = directTrackUrl;
+        }
+
+        item.needsItunesLookup = false;
+        // Pequena pausa para evitar rate limit
+        await new Promise(r => setTimeout(r, 120));
+    }
+
+    if (progContainer) progContainer.classList.add('hidden');
+    atualizarResumoCuradoria();
+}
+
+function filtrarListaCuradoriaLinks() {
+    const inputBusca = document.getElementById('curadoria-input-busca');
+    const selectStatus = document.getElementById('curadoria-filtro-status');
+
+    curadoriaFiltroTermo = inputBusca ? inputBusca.value.toLowerCase().trim() : '';
+    curadoriaFiltroStatus = selectStatus ? selectStatus.value : 'todas';
+
+    renderizarListaCuradoriaLinks();
+}
+window.filtrarListaCuradoriaLinks = filtrarListaCuradoriaLinks;
+
+function renderizarListaCuradoriaLinks() {
+    const container = document.getElementById('curadoria-lista-musicas');
+    if (!container) return;
+
+    const state = window.curadoriaLinksState || [];
+    const filtradas = state.filter(item => {
+        const matchesBusca = !curadoriaFiltroTermo || 
+            item.title.toLowerCase().includes(curadoriaFiltroTermo) || 
+            item.artist.toLowerCase().includes(curadoriaFiltroTermo);
+
+        if (!matchesBusca) return false;
+
+        const linksArr = Object.values(item.links);
+        const todosAprovados = linksArr.every(l => l.status === 'aprovado');
+        const temRejeitado = linksArr.some(l => l.status === 'rejeitado');
+        const temPendente = linksArr.some(l => l.status === 'pendente');
+
+        if (curadoriaFiltroStatus === 'pendentes') return temPendente;
+        if (curadoriaFiltroStatus === 'aprovadas') return todosAprovados;
+        if (curadoriaFiltroStatus === 'rejeitadas') return temRejeitado;
+
+        return true;
+    });
+
+    if (filtradas.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 text-sm text-center py-10">Nenhuma música corresponde aos filtros selecionados.</p>';
+        atualizarResumoCuradoria();
+        return;
+    }
+
+    container.innerHTML = filtradas.map((item, idx) => {
+        const linksArr = Object.entries(item.links);
+        const aprovadosCount = linksArr.filter(([_, l]) => l.status === 'aprovado').length;
+        const totalCount = linksArr.length;
+
+        let statusBadge = '';
+        if (aprovadosCount === totalCount) {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">Totalmente Aprovada</span>';
+        } else if (linksArr.some(([_, l]) => l.status === 'rejeitado')) {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">Com Rejeições</span>';
+        } else {
+            statusBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">Pendente de Revisão</span>';
+        }
+
+        const isExpanded = item.expanded;
+
+        const plataformasHtml = linksArr.map(([plat, dados]) => {
+            const isApproved = dados.status === 'aprovado';
+            const isRejected = dados.status === 'rejeitado';
+
+            let corClasses = 'border-slate-800 bg-night-950/70';
+            if (isApproved) corClasses = 'border-emerald-500/40 bg-emerald-950/10';
+            if (isRejected) corClasses = 'border-rose-500/30 bg-rose-950/10 opacity-70';
+
+            let iconPlat = '🎵';
+            let badgePlatCor = 'bg-slate-800 text-slate-300';
+            if (plat === 'spotify') { iconPlat = '🎧'; badgePlatCor = 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'; }
+            if (plat === 'deezer') { iconPlat = '🟣'; badgePlatCor = 'bg-purple-500/15 text-purple-400 border border-purple-500/30'; }
+            if (plat === 'itunes') { iconPlat = '🍎'; badgePlatCor = 'bg-rose-500/15 text-rose-400 border border-rose-500/30'; }
+            if (plat === 'cifraclub') { iconPlat = '🎸'; badgePlatCor = 'bg-amber-500/15 text-amber-400 border border-amber-500/30'; }
+            if (plat === 'letras') { iconPlat = '📄'; badgePlatCor = 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30'; }
+
+            return `
+                <div class="p-3 rounded-xl border ${corClasses} transition space-y-2">
+                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm">${iconPlat}</span>
+                            <span class="text-xs font-bold text-white">${dados.label}</span>
+                            <span class="text-[10px] px-2 py-0.2 rounded-full font-semibold ${badgePlatCor}">
+                                ${isApproved ? '✓ Aprovado' : (isRejected ? '✕ Rejeitado' : '⏳ Pendente')}
+                            </span>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <a id="curadoria-testar-${item.songId}-${plat}" href="${dados.url}" target="_blank"
+                                class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 hover:bg-slate-700 text-sky-400 hover:text-sky-300 border border-slate-700 transition flex items-center gap-1 cursor-pointer"
+                                title="Abrir link para testar em nova aba">
+                                <span>↗ Testar</span>
+                            </a>
+                            <button type="button" onclick="alternarStatusLinkCuradoria('${item.songId}', '${plat}', 'aprovado')"
+                                class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer ${isApproved ? 'bg-emerald-500 text-night-950 shadow-sm' : 'bg-slate-800 hover:bg-emerald-500/20 text-slate-400 hover:text-emerald-400 border border-slate-700'}">
+                                <span>✓ Aprovar</span>
+                            </button>
+                            <button type="button" onclick="alternarStatusLinkCuradoria('${item.songId}', '${plat}', 'rejeitado')"
+                                class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 cursor-pointer ${isRejected ? 'bg-rose-500 text-white shadow-sm' : 'bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-700'}">
+                                <span>✕ Rejeitar</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <input type="url" id="curadoria-input-${item.songId}-${plat}" value="${dados.url}"
+                            onchange="atualizarUrlLinkCuradoria('${item.songId}', '${plat}', this.value)"
+                            placeholder="URL encontrada para ${dados.label}..."
+                            class="w-full bg-night-900 border border-slate-800 focus:border-sky-500 rounded-lg px-3 py-1.5 text-xs text-slate-200 font-mono transition">
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="bg-night-900/90 border border-slate-800/90 hover:border-slate-700 rounded-2xl p-4 transition shadow-sm space-y-3">
+                <!-- Cabeçalho do Card da Música -->
+                <div class="flex items-center justify-between gap-3 flex-wrap cursor-pointer" onclick="alternarExpansaoMusicaCuradoria('${item.songId}')">
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <div class="w-10 h-10 rounded-xl bg-night-950 border border-slate-800 flex items-center justify-center text-sky-400 font-bold shrink-0">
+                            🎵
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h4 class="font-bold text-white text-sm sm:text-base truncate">${item.title}</h4>
+                                <span class="text-xs text-slate-400 truncate">(${item.artist})</span>
+                                ${statusBadge}
+                            </div>
+                            <div class="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
+                                <span class="font-mono text-sky-400 font-bold">${aprovadosCount} de ${totalCount} links aprovados</span>
+                                <span>•</span>
+                                <span class="text-[11px] text-slate-500">Clique para ${isExpanded ? 'recolher' : 'expandir e revisar'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 shrink-0" onclick="event.stopPropagation()">
+                        <button type="button" onclick="aprovarTodosLinksMusica('${item.songId}')"
+                            class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 transition flex items-center gap-1 cursor-pointer">
+                            <span>✓ Aprovar Todos</span>
+                        </button>
+                        <button type="button" onclick="rejeitarTodosLinksMusica('${item.songId}')"
+                            class="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 transition flex items-center gap-1 cursor-pointer">
+                            <span>✕ Rejeitar</span>
+                        </button>
+                        <button type="button" onclick="alternarExpansaoMusicaCuradoria('${item.songId}')"
+                            class="p-2 rounded-xl text-xs font-bold bg-night-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition cursor-pointer">
+                            ${isExpanded ? '▲' : '▼'}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Painel Expansível de Links (5 plataformas) -->
+                <div class="${isExpanded ? 'block' : 'hidden'} pt-2 border-t border-slate-800/80 space-y-2.5 animate-fade-in">
+                    ${plataformasHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    atualizarResumoCuradoria();
+}
+
+function alternarExpansaoMusicaCuradoria(songId) {
+    const item = (window.curadoriaLinksState || []).find(s => s.songId === songId);
+    if (item) {
+        item.expanded = !item.expanded;
+        renderizarListaCuradoriaLinks();
+    }
+}
+window.alternarExpansaoMusicaCuradoria = alternarExpansaoMusicaCuradoria;
+
+function alternarStatusLinkCuradoria(songId, platform, novoStatus) {
+    const item = (window.curadoriaLinksState || []).find(s => s.songId === songId);
+    if (!item || !item.links[platform]) return;
+
+    item.links[platform].status = novoStatus;
+    renderizarListaCuradoriaLinks();
+}
+window.alternarStatusLinkCuradoria = alternarStatusLinkCuradoria;
+
+function atualizarUrlLinkCuradoria(songId, platform, novaUrl) {
+    const item = (window.curadoriaLinksState || []).find(s => s.songId === songId);
+    if (!item || !item.links[platform]) return;
+
+    item.links[platform].url = novaUrl.trim();
+    if (novaUrl.trim()) {
+        item.links[platform].status = 'aprovado';
+    }
+    const testEl = document.getElementById(`curadoria-testar-${songId}-${platform}`);
+    if (testEl) testEl.href = novaUrl.trim();
+    atualizarResumoCuradoria();
+}
+window.atualizarUrlLinkCuradoria = atualizarUrlLinkCuradoria;
+
+function aprovarTodosLinksMusica(songId) {
+    const item = (window.curadoriaLinksState || []).find(s => s.songId === songId);
+    if (!item) return;
+    Object.keys(item.links).forEach(plat => {
+        item.links[plat].status = 'aprovado';
+    });
+    renderizarListaCuradoriaLinks();
+}
+window.aprovarTodosLinksMusica = aprovarTodosLinksMusica;
+
+function rejeitarTodosLinksMusica(songId) {
+    const item = (window.curadoriaLinksState || []).find(s => s.songId === songId);
+    if (!item) return;
+    Object.keys(item.links).forEach(plat => {
+        item.links[plat].status = 'rejeitado';
+    });
+    renderizarListaCuradoriaLinks();
+}
+window.rejeitarTodosLinksMusica = rejeitarTodosLinksMusica;
+
+function aprovarTodosLinksCuradoria() {
+    (window.curadoriaLinksState || []).forEach(item => {
+        Object.keys(item.links).forEach(plat => {
+            item.links[plat].status = 'aprovado';
+        });
+    });
+    renderizarListaCuradoriaLinks();
+    if (typeof mostrarToast === 'function') mostrarToast('Todos os links marcados como aprovados!', 'sucesso');
+}
+window.aprovarTodosLinksCuradoria = aprovarTodosLinksCuradoria;
+
+function rejeitarTodosLinksCuradoria() {
+    (window.curadoriaLinksState || []).forEach(item => {
+        Object.keys(item.links).forEach(plat => {
+            item.links[plat].status = 'rejeitado';
+        });
+    });
+    renderizarListaCuradoriaLinks();
+    if (typeof mostrarToast === 'function') mostrarToast('Todos os links marcados como rejeitados.', 'info');
+}
+window.rejeitarTodosLinksCuradoria = rejeitarTodosLinksCuradoria;
+
+function atualizarResumoCuradoria() {
+    const state = window.curadoriaLinksState || [];
+    let totalLinksAprovados = 0;
+    let musicasComAprovados = 0;
+
+    state.forEach(item => {
+        const aprovados = Object.values(item.links).filter(l => l.status === 'aprovado');
+        totalLinksAprovados += aprovados.length;
+        if (aprovados.length > 0) musicasComAprovados++;
+    });
+
+    const badgeResumo = document.getElementById('curadoria-badge-resumo');
+    if (badgeResumo) {
+        badgeResumo.textContent = `${musicasComAprovados}/${state.length} Músicas Aprovadas`;
+    }
+
+    const rodapeResumo = document.getElementById('curadoria-rodape-resumo');
+    if (rodapeResumo) {
+        rodapeResumo.textContent = `${totalLinksAprovados} links aprovados prontos para salvar`;
+    }
+
+    const btnSalvar = document.getElementById('btn-salvar-curadoria-links');
+    if (btnSalvar) {
+        btnSalvar.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            <span>Salvar Links (${totalLinksAprovados})</span>
+        `;
+    }
+}
+
+async function salvarLinksCuradoriaAprovados() {
+    const state = window.curadoriaLinksState || [];
+    const comAprovados = state.filter(item => Object.values(item.links).some(l => l.status === 'aprovado'));
+
+    if (comAprovados.length === 0) {
+        if (typeof mostrarToast === 'function') {
+            mostrarToast('Nenhum link aprovado para salvar. Aprove pelo menos um link antes de salvar.', 'alerta');
+        } else {
+            alert('Nenhum link aprovado para salvar.');
+        }
+        return;
+    }
+
+    const btnSalvar = document.getElementById('btn-salvar-curadoria-links');
+    if (btnSalvar) {
+        btnSalvar.disabled = true;
+        btnSalvar.classList.add('opacity-75', 'pointer-events-none');
+        btnSalvar.innerHTML = '<span>Salvando...</span>';
+    }
+
+    let salvosSucesso = 0;
+    try {
+        for (const item of comAprovados) {
+            const payload = {};
+            if (item.links.spotify.status === 'aprovado') payload.spotify_url = item.links.spotify.url.trim();
+            if (item.links.deezer.status === 'aprovado') payload.deezer_url = item.links.deezer.url.trim();
+            if (item.links.itunes.status === 'aprovado') payload.apple_music_url = item.links.itunes.url.trim();
+            if (item.links.cifraclub.status === 'aprovado') payload.cifraclub_url = item.links.cifraclub.url.trim();
+            if (item.links.letras.status === 'aprovado') payload.letras_url = item.links.letras.url.trim();
+
+            // Salva no cache local imediato
+            salvarLinksStreamingCache(item.versionId, payload);
+            salvarLinksStreamingCache(item.songId, payload);
+
+            // Atualiza no Supabase
+            if (supabaseClient && item.versionId) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('song_versions')
+                        .update(payload)
+                        .eq('id', item.versionId);
+
+                    if (error) {
+                        // Se falhou por ausência de colunas extras na tabela, salva ao menos spotify_url nativo
+                        if (payload.spotify_url) {
+                            await supabaseClient
+                                .from('song_versions')
+                                .update({ spotify_url: payload.spotify_url })
+                                .eq('id', item.versionId);
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`Fallback salvamento links versão ${item.versionId}:`, e);
+                }
+            }
+
+            // Atualiza cache em memória
+            if (typeof dadosGlobais !== 'undefined' && dadosGlobais.repertorio) {
+                const repSong = dadosGlobais.repertorio.find(s => s.id === item.songId);
+                if (repSong && repSong.versions && repSong.versions[0]) {
+                    Object.assign(repSong.versions[0], payload);
+                }
+            }
+            if (adminSongsCache) {
+                const admSong = adminSongsCache.find(s => s.id === item.songId);
+                if (admSong && admSong.song_versions && admSong.song_versions[0]) {
+                    Object.assign(admSong.song_versions[0], payload);
+                }
+            }
+
+            salvosSucesso++;
+        }
+
+        fecharModalCuradoriaLinks();
+        if (typeof mostrarToast === 'function') {
+            mostrarToast(`🎉 Links de streaming e cifras de ${salvosSucesso} músicas salvos com sucesso!`, 'sucesso');
+        }
+
+        // Se uma música estiver aberta na tela de detalhes, recarrega os botões
+        if (window.musicaAtualDetalhe && typeof preencherVisaoMusicaDetalhe === 'function') {
+            const vCached = obterLinksStreamingCache(window.musicaAtualDetalhe.id);
+            if (vCached) {
+                Object.assign(window.musicaAtualDetalhe, {
+                    spotifyUrl: vCached.spotify_url,
+                    deezerUrl: vCached.deezer_url,
+                    appleMusicUrl: vCached.apple_music_url,
+                    cifraclubUrl: vCached.cifraclub_url,
+                    letrasUrl: vCached.letras_url
+                });
+                preencherVisaoMusicaDetalhe(window.musicaAtualDetalhe, { origem: window.origemMusicaDetalhe || 'repertorio' });
+            }
+        }
+    } catch (err) {
+        console.error('Erro ao salvar curadoria de links:', err);
+        if (typeof mostrarToast === 'function') mostrarToast('Erro ao salvar alguns links no banco.', 'erro');
+    } finally {
+        if (btnSalvar) {
+            btnSalvar.disabled = false;
+            btnSalvar.classList.remove('opacity-75', 'pointer-events-none');
+            atualizarResumoCuradoria();
+        }
+    }
+}
+window.salvarLinksCuradoriaAprovados = salvarLinksCuradoriaAprovados;
 
 
 

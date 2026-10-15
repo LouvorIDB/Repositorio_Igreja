@@ -25,9 +25,86 @@ window.LiturgePlayer = (function () {
     }
 
     const artworkCache = new Map();
+    const pendingArtworkPromises = new Map();
+    const artworkQueue = [];
+    let isProcessingArtworkQueue = false;
+    let itunesCooldownUntil = 0;
 
-    async function fetchTrackArtwork(title, artist) {
+    async function executeItunesRequest(query, cacheKey) {
+        if (Date.now() < itunesCooldownUntil) return null;
+
+        try {
+            const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=1`, {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (res.status === 403 || res.status === 429) {
+                // Rate-limit atingido: ativa cooldown de 45 segundos para evitar sobrecarregar
+                itunesCooldownUntil = Date.now() + 45000;
+                return null;
+            }
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.results && data.results.length > 0 && data.results[0].artworkUrl100) {
+                    const hiResArt = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
+                    try {
+                        localStorage.setItem(cacheKey, hiResArt);
+                    } catch (e) {}
+                    artworkCache.set(cacheKey, hiResArt);
+                    return hiResArt;
+                } else {
+                    artworkCache.set(cacheKey, null);
+                }
+            }
+        } catch (err) {
+            // Falha de rede silenciosa
+        }
+
+        return null;
+    }
+
+    async function processArtworkQueue() {
+        if (isProcessingArtworkQueue) return;
+        isProcessingArtworkQueue = true;
+
+        while (artworkQueue.length > 0) {
+            const item = artworkQueue.shift();
+
+            if (Date.now() < itunesCooldownUntil) {
+                item.resolve(null);
+                pendingArtworkPromises.delete(item.cacheKey);
+                continue;
+            }
+
+            try {
+                const art = await executeItunesRequest(item.query, item.cacheKey);
+                item.resolve(art);
+            } catch (e) {
+                item.resolve(null);
+            } finally {
+                pendingArtworkPromises.delete(item.cacheKey);
+            }
+
+            // Espaçamento de 300ms entre requisições consecutivas para respeitar a taxa da Apple
+            if (artworkQueue.length > 0) {
+                await new Promise(r => setTimeout(r, 300));
+            }
+        }
+
+        isProcessingArtworkQueue = false;
+    }
+
+    async function fetchTrackArtwork(title, artist, ytUrl = '') {
         if (!title) return null;
+
+        // 1. Tenta extrair a capa de alta resolução diretamente do link do YouTube (instantâneo, sem rate limit)
+        if (ytUrl) {
+            const ytId = typeof extrairIdYoutube === 'function' ? extrairIdYoutube(ytUrl) : '';
+            if (ytId) {
+                return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+            }
+        }
 
         // Limpeza de termos para matching na loja Apple (remover tags comuns como VS, Ao Vivo, Playback, etc.)
         const cleanTitle = title
@@ -41,12 +118,12 @@ window.LiturgePlayer = (function () {
 
         const cacheKey = `liturge_art_${(cleanArtist + '_' + cleanTitle).toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
 
-        // 1. Checa memória
+        // 2. Checa cache em memória
         if (artworkCache.has(cacheKey)) {
             return artworkCache.get(cacheKey);
         }
 
-        // 2. Checa localStorage
+        // 3. Checa localStorage permanente
         try {
             const cached = localStorage.getItem(cacheKey);
             if (cached) {
@@ -55,29 +132,25 @@ window.LiturgePlayer = (function () {
             }
         } catch (e) {}
 
-        // 3. Consulta API do iTunes / Apple Music (pública, sem chave, CORS liberado)
-        try {
-            const query = cleanArtist ? `${cleanTitle} ${cleanArtist}` : cleanTitle;
-            const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=1`, {
-                headers: { 'Accept': 'application/json' }
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                if (data && data.results && data.results.length > 0 && data.results[0].artworkUrl100) {
-                    const hiResArt = data.results[0].artworkUrl100.replace('100x100bb.jpg', '600x600bb.jpg');
-                    try {
-                        localStorage.setItem(cacheKey, hiResArt);
-                    } catch (e) {}
-                    artworkCache.set(cacheKey, hiResArt);
-                    return hiResArt;
-                }
-            }
-        } catch (err) {
-            console.warn('[LiturgePlayer] Não foi possível consultar capa online:', err);
+        // 4. Se a mesma música já estiver na fila de busca, reutiliza a Promise
+        if (pendingArtworkPromises.has(cacheKey)) {
+            return pendingArtworkPromises.get(cacheKey);
         }
 
-        return null;
+        // 5. Se estiver em cooldown ativo da Apple, não dispara rede
+        if (Date.now() < itunesCooldownUntil) {
+            return null;
+        }
+
+        // 6. Enfileira a busca na Apple Music de forma ordenada e espaçada
+        const query = cleanArtist ? `${cleanTitle} ${cleanArtist}` : cleanTitle;
+        const promise = new Promise(resolve => {
+            artworkQueue.push({ query, cacheKey, resolve });
+            processArtworkQueue();
+        });
+
+        pendingArtworkPromises.set(cacheKey, promise);
+        return promise;
     }
 
     window.fetchTrackArtwork = fetchTrackArtwork;
@@ -100,7 +173,7 @@ window.LiturgePlayer = (function () {
 
     async function carregarEAtualizarCapa(trackInfo) {
         if (!trackInfo || !trackInfo.title) return;
-        const art = await fetchTrackArtwork(trackInfo.title, trackInfo.artist);
+        const art = await fetchTrackArtwork(trackInfo.title, trackInfo.artist, trackInfo.yt || trackInfo.youtube_url);
         if (art && currentTrackInfo && currentTrackInfo.title === trackInfo.title) {
             currentTrackInfo.artworkUrl = art;
             setupMediaSession(currentTrackInfo);

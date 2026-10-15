@@ -1907,4 +1907,92 @@
     </div>
 </div>
 
+<!-- ===================== MODAL DE CURADORIA DE LINKS DE STREAMING & CIFRAS ===================== -->
+<div id="modal-curadoria-links-streaming" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md z-[130] flex items-center justify-center p-2 sm:p-4 overflow-hidden animate-fade-in">
+    <div class="bg-night-900 border border-slate-800 rounded-3xl max-w-4xl w-full h-[92vh] max-h-[850px] shadow-2xl flex flex-col overflow-hidden">
+        <!-- Topo / Cabeçalho -->
+        <div class="p-4 sm:p-5 border-b border-slate-800 bg-night-950/60 flex items-center justify-between gap-3 shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+                </div>
+                <div>
+                    <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                        <span>Curadoria de Links de Streaming & Cifras</span>
+                    </h3>
+                    <p class="text-xs text-slate-400">Revise, teste e aprove os links encontrados no Spotify, Deezer, Apple Music, Cifra Club e Letras.</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span id="curadoria-badge-resumo" class="px-3 py-1 rounded-full text-xs font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 hidden sm:inline-block">
+                    0 músicas
+                </span>
+                <button type="button" onclick="fecharModalCuradoriaLinks()" class="w-8 h-8 rounded-xl bg-night-950 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold border border-slate-800 transition cursor-pointer" title="Fechar">✕</button>
+            </div>
+        </div>
+
+        <!-- Barra de Progresso da Busca Automática -->
+        <div id="curadoria-progresso-container" class="hidden px-4 py-2.5 bg-sky-950/40 border-b border-sky-800/40 flex items-center justify-between gap-3 shrink-0">
+            <div class="flex items-center gap-2 min-w-0">
+                <div class="w-4 h-4 border-2 border-sky-400 border-t-transparent rounded-full animate-spin shrink-0"></div>
+                <span id="curadoria-progresso-texto" class="text-xs font-semibold text-sky-300 truncate">Consultando APIs e plataformas...</span>
+            </div>
+            <span id="curadoria-progresso-contagem" class="text-xs font-mono text-sky-400 shrink-0">0%</span>
+        </div>
+
+        <!-- Barra de Ferramentas / Filtros e Ações em Massa -->
+        <div class="p-3 sm:p-4 bg-night-950/40 border-b border-slate-800/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
+            <div class="flex flex-1 items-center gap-2">
+                <div class="relative flex-1">
+                    <input type="text" id="curadoria-input-busca" oninput="filtrarListaCuradoriaLinks()" placeholder="Filtrar por nome ou artista..."
+                        class="w-full bg-night-950 border border-slate-800 pl-9 pr-3 py-2 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-sky-500 font-sans">
+                    <svg class="absolute left-3 top-2.5 text-slate-500" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
+                <select id="curadoria-filtro-status" onchange="filtrarListaCuradoriaLinks()"
+                    class="bg-night-950 border border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm text-slate-300 focus:outline-none focus:border-sky-500 font-sans cursor-pointer">
+                    <option value="todas">Todas</option>
+                    <option value="pendentes">Pendentes de Revisão</option>
+                    <option value="aprovadas">Totalmente Aprovadas</option>
+                    <option value="rejeitadas">Com Links Rejeitados</option>
+                </select>
+            </div>
+
+            <div class="flex items-center gap-2 self-end sm:self-auto">
+                <button type="button" onclick="aprovarTodosLinksCuradoria()" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition flex items-center gap-1 cursor-pointer" title="Aprovar todos os links de todas as músicas exibidas">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>Aprovar Todos</span>
+                </button>
+                <button type="button" onclick="rejeitarTodosLinksCuradoria()" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition flex items-center gap-1 cursor-pointer" title="Rejeitar todos os links">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <span>Rejeitar Todos</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Lista de Músicas com Cards Expandíveis para Curadoria -->
+        <div id="curadoria-lista-musicas" class="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3">
+            <p class="text-slate-500 text-sm text-center py-8">Iniciando busca automática de links...</p>
+        </div>
+
+        <!-- Rodapé de Ações Finais -->
+        <div class="p-3 sm:p-4 border-t border-slate-800 bg-night-950/80 flex items-center justify-between gap-3 shrink-0">
+            <div class="text-xs text-slate-400">
+                <span id="curadoria-rodape-resumo">0 links aprovados para salvar</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="fecharModalCuradoriaLinks()"
+                    class="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">
+                    Cancelar
+                </button>
+                <button type="button" id="btn-salvar-curadoria-links" onclick="salvarLinksCuradoriaAprovados()"
+                    class="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-night-950 font-bold px-5 py-2 rounded-xl text-xs sm:text-sm transition shadow-lg shadow-emerald-500/20 flex items-center gap-2 cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    <span>Salvar Links Aprovados</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 
