@@ -374,13 +374,6 @@ function mostrarToast(mensagem, tipo = 'info') {
 // ===================== MODAL DE LETRA PÚBLICA / GLOBAL =====================
 
 function abrirModalLetraPublica(titulo, subtitulo, lyricsEncoded) {
-    const tituloEl = document.getElementById('letra-publica-titulo');
-    const subtituloEl = document.getElementById('letra-publica-subtitulo');
-    const conteudoEl = document.getElementById('letra-publica-conteudo');
-
-    if (tituloEl) tituloEl.textContent = titulo || 'Letra da Música';
-    if (subtituloEl) subtituloEl.textContent = subtitulo || '';
-    
     let lyricsText = '';
     try {
         lyricsText = decodeURIComponent(lyricsEncoded || '');
@@ -388,9 +381,33 @@ function abrirModalLetraPublica(titulo, subtitulo, lyricsEncoded) {
         lyricsText = lyricsEncoded || '';
     }
 
-    if (conteudoEl) {
-        conteudoEl.textContent = lyricsText || 'Letra não disponível.';
+    let tom = 'C';
+    if (subtitulo && subtitulo.includes('Tom:')) {
+        tom = subtitulo.replace('Tom:', '').trim();
     }
+
+    if (typeof preencherVisaoMusicaDetalhe === 'function') {
+        preencherVisaoMusicaDetalhe({
+            title: titulo || 'Letra da Música',
+            tom: tom,
+            artist: 'Ministério de Louvor',
+            lyrics: lyricsText,
+            chords: '',
+            versions: []
+        }, { origem: 'historico' });
+        if (typeof mudarSubAbaMusica === 'function') {
+            mudarSubAbaMusica('letra');
+        }
+        return;
+    }
+
+    const tituloEl = document.getElementById('letra-publica-titulo');
+    const subtituloEl = document.getElementById('letra-publica-subtitulo');
+    const conteudoEl = document.getElementById('letra-publica-conteudo');
+
+    if (tituloEl) tituloEl.textContent = titulo || 'Letra da Música';
+    if (subtituloEl) subtituloEl.textContent = subtitulo || '';
+    if (conteudoEl) conteudoEl.textContent = lyricsText || 'Letra não disponível.';
 
     const modal = document.getElementById('modal-letra-publica');
     if (modal) modal.classList.remove('hidden');
@@ -537,6 +554,21 @@ function abrirModalCifraPublica(titulo, tomOriginal, chordsEncoded) {
     }
 
     const tomInicial = tomOriginal || 'C';
+
+    if (typeof preencherVisaoMusicaDetalhe === 'function') {
+        preencherVisaoMusicaDetalhe({
+            title: titulo || 'Cifra da Música',
+            tom: tomInicial,
+            artist: 'Ministério de Louvor',
+            chords: chordsText,
+            lyrics: '',
+            versions: []
+        }, { origem: 'historico' });
+        if (typeof mudarSubAbaMusica === 'function') {
+            mudarSubAbaMusica('cifra');
+        }
+        return;
+    }
 
     stateCifraPublica = {
         titulo: titulo || 'Cifra da Música',

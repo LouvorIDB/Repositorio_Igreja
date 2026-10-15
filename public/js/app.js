@@ -1761,6 +1761,8 @@ function preencherVisaoMusicaDetalhe(musica, options = {}) {
             btnVoltarTexto.textContent = 'Voltar para o Repertório';
         } else if (origem === 'novas') {
             btnVoltarTexto.textContent = 'Voltar para Músicas Novas';
+        } else if (origem === 'historico') {
+            btnVoltarTexto.textContent = options.cultoNome ? `Voltar para ${options.cultoNome}` : 'Voltar para o Histórico';
         } else {
             btnVoltarTexto.textContent = options.cultoNome ? `Voltar para ${options.cultoNome}` : 'Voltar para o Culto';
         }
@@ -1964,6 +1966,41 @@ function trocarVersaoMusicaDetalhe(versaoIndex) {
     }
 }
 
+function abrirDetalheMusicaHistorico(musicaData, cultoNome) {
+    let chordsText = '';
+    let lyricsText = '';
+    try {
+        chordsText = decodeURIComponent(musicaData.chords || '');
+    } catch(e) {
+        chordsText = musicaData.chords || '';
+    }
+    try {
+        lyricsText = decodeURIComponent(musicaData.lyrics || '');
+    } catch(e) {
+        lyricsText = musicaData.lyrics || '';
+    }
+
+    const musicaObj = {
+        title: musicaData.title || 'Música',
+        artist: musicaData.artist || 'Ministério de Louvor',
+        tom: musicaData.tom || '—',
+        cantor: musicaData.cantor || '',
+        chords: chordsText,
+        lyrics: lyricsText,
+        vs: musicaData.vs || '',
+        linkYoutube: musicaData.yt || '',
+        bpm: musicaData.bpm || '—',
+        duracao: '—',
+        versions: []
+    };
+
+    if (window.history && window.history.pushState) {
+        window.history.pushState({ view: 'musica-detalhe-historico', title: musicaData.title }, '', `#musica-${encodeURIComponent(musicaData.title)}`);
+    }
+
+    preencherVisaoMusicaDetalhe(musicaObj, { origem: 'historico', cultoNome: cultoNome || 'Cultos Arquivados' });
+}
+
 function voltarDeMusicaDetalhe() {
     const vMusica = document.getElementById('visao-musica-detalhe');
     if (vMusica) vMusica.classList.add('hidden');
@@ -1979,6 +2016,11 @@ function voltarDeMusicaDetalhe() {
         const secNovas = document.getElementById('secao-novas');
         if (secCultos) secCultos.classList.add('hidden');
         if (secNovas) secNovas.classList.remove('hidden');
+    } else if (origem === 'historico') {
+        const secCultos = document.getElementById('secao-cultos');
+        const vLista = document.getElementById('visao-cultos-lista');
+        if (secCultos) secCultos.classList.remove('hidden');
+        if (vLista) vLista.classList.remove('hidden');
     } else {
         const vCulto = document.getElementById('visao-culto-detalhe');
         if (vCulto) vCulto.classList.remove('hidden');
@@ -2000,12 +2042,15 @@ function voltarParaCultoDetalhe() {
 
 function abrirModalAjusteMusicaAtual() {
     if (!window.musicaAtualDetalhe) return;
+    const inlinePainel = document.getElementById('painel-ajuste-tom-inline');
     const modal = document.getElementById('modal-ajuste-tom-rapido');
     const tit = document.getElementById('modal-ajuste-musica-titulo');
+    const subTit = document.getElementById('painel-ajuste-musica-sub');
     const autorInput = document.getElementById('modal-ajuste-autor');
     const statusMsg = document.getElementById('modal-ajuste-status');
 
     if (tit) tit.textContent = window.musicaAtualDetalhe.title;
+    if (subTit) subTit.textContent = `Ajuste para: ${window.musicaAtualDetalhe.title}`;
     if (statusMsg) statusMsg.classList.add('hidden');
 
     if (autorInput && !autorInput.value) {
@@ -2015,10 +2060,19 @@ function abrirModalAjusteMusicaAtual() {
         }
     }
 
-    if (modal) modal.classList.remove('hidden');
+    if (inlinePainel) {
+        inlinePainel.classList.toggle('hidden');
+        if (!inlinePainel.classList.contains('hidden')) {
+            inlinePainel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    } else if (modal) {
+        modal.classList.remove('hidden');
+    }
 }
 
 function fecharModalAjusteMusicaAtual() {
+    const inlinePainel = document.getElementById('painel-ajuste-tom-inline');
+    if (inlinePainel) inlinePainel.classList.add('hidden');
     const modal = document.getElementById('modal-ajuste-tom-rapido');
     if (modal) modal.classList.add('hidden');
 }
@@ -2028,8 +2082,13 @@ async function submeterAjusteMusicaAtual(event) {
     if (!window.musicaAtualDetalhe) return;
 
     const autor = (document.getElementById('modal-ajuste-autor')?.value || '').trim();
-    const texto = (document.getElementById('modal-ajuste-texto')?.value || '').trim();
+    let texto = (document.getElementById('modal-ajuste-texto')?.value || '').trim();
+    const tomSugerido = (document.getElementById('modal-ajuste-tom-sugerido')?.value || '').trim();
     const btnSubmit = document.getElementById('btn-submit-ajuste-musica');
+
+    if (tomSugerido) {
+        texto = `[Sugestão de Tom: ${tomSugerido}] ${texto}`;
+    }
 
     if (!autor || !texto) {
         if (typeof mostrarToast === 'function') mostrarToast('Preencha seu nome e a solicitação.', 'aviso');
@@ -2047,6 +2106,8 @@ async function submeterAjusteMusicaAtual(event) {
         if (typeof mostrarToast === 'function') mostrarToast('Solicitação de ajuste enviada aos líderes!', 'sucesso');
         const txtEl = document.getElementById('modal-ajuste-texto');
         if (txtEl) txtEl.value = '';
+        const tomEl = document.getElementById('modal-ajuste-tom-sugerido');
+        if (tomEl) tomEl.value = '';
     } catch (err) {
         console.error('Erro ao enviar solicitação:', err);
         if (typeof mostrarToast === 'function') mostrarToast('Erro ao enviar solicitação.', 'erro');
@@ -2311,6 +2372,7 @@ window.copiarLetraAtual = copiarLetraAtual;
 window.abrirModalAjusteMusicaAtual = abrirModalAjusteMusicaAtual;
 window.fecharModalAjusteMusicaAtual = fecharModalAjusteMusicaAtual;
 window.submeterAjusteMusicaAtual = submeterAjusteMusicaAtual;
+window.abrirDetalheMusicaHistorico = abrirDetalheMusicaHistorico;
 window.abrirModalEditarMusicaAdmin = abrirModalEditarMusicaAdmin;
 window.abrirModalNovaMusicaAdmin = abrirModalNovaMusicaAdmin;
 window.toggleMenuFiltrosRepertorio = toggleMenuFiltrosRepertorio;
@@ -4265,46 +4327,35 @@ function renderizarHistoricoCultos() {
                     trackIndexService = window.liturgeCultosPlaylists[servicePlaylistId].length - 1;
                 }
 
-                const btnLetra = (lyrics && canVerLetra)
-                    ? `<button onclick="abrirModalLetraPublica('${nomeMusica.replace(/'/g, "\\'")}', 'Tom: ${tom}', '${encodeURIComponent(lyrics)}')" class="bg-night-950/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1 shadow-sm">
-                        <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        Letra
-                    </button>`
-                    : '';
-                const btnCifra = (chords && canVerCifra)
-                    ? `<button onclick="abrirModalCifraPublica('${nomeMusica.replace(/'/g, "\\'")}', '${tom}', '${encodeURIComponent(chords)}')" class="bg-night-950/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1 shadow-sm">
-                        <svg class="w-3 h-3 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><path d="M9 18V5l12-2v13"/></svg>
-                        Cifra
-                    </button>`
-                    : '';
-                const btnYt = (linkYoutubeFinal && canVerYoutube)
-                    ? `<button onclick="playYoutubeAudio('${nomeMusica.replace(/'/g, "\\'")}', '${linkYoutubeFinal}')" class="bg-night-950/80 hover:bg-rose-950/40 text-rose-400 border border-rose-800/40 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition flex items-center gap-1 shadow-sm">
-                        <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                        YouTube
-                    </button>`
-                    : '';
                 const btnPlayVs = (vs && canVerVs)
-                    ? `<button onclick="LiturgePlayer.tocarDoCulto('${servicePlaylistId}', ${trackIndexService})" class="bg-night-950/80 hover:bg-slate-800 text-liturge-400 border border-liturge-500/30 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition flex items-center gap-1 shadow-sm">
+                    ? `<button type="button" onclick="event.stopPropagation(); LiturgePlayer.tocarDoCulto('${servicePlaylistId}', ${trackIndexService})" class="bg-brand-500/10 hover:bg-brand-500 text-brand-400 hover:text-night-950 border border-brand-500/30 px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1 shadow-sm cursor-pointer" title="Tocar VS">
                         <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                        VS
+                        <span>VS</span>
                     </button>`
                     : '';
 
                 musicasHtml += `
-                    <div class="py-2.5 flex items-center justify-between border-b border-slate-800/60 last:border-0 hover:bg-slate-800/30 px-4 transition text-xs">
-                        <div>
-                            <span class="font-bold text-white">${nomeMusica}</span>
-                            ${artist ? `<span class="text-[10px] text-slate-400 ml-1">(${artist})</span>` : ''}
-                            <div class="flex items-center gap-1.5 mt-0.5 text-[10px] text-slate-400">
-                                ${tom ? `<span class="text-liturge-400 font-mono font-semibold">Tom: ${tom}</span>` : ''}
-                                ${cantoresMusica ? `<span class="text-slate-300">• ${cantoresMusica}</span>` : ''}
+                    <div onclick="abrirDetalheMusicaHistorico({ title: '${nomeMusica.replace(/'/g, "\\'")}', artist: '${(artist || '').replace(/'/g, "\\'")}', tom: '${tom || 'C'}', cantor: '${(cantoresMusica || '').replace(/'/g, "\\'")}', chords: '${encodeURIComponent(chords)}', lyrics: '${encodeURIComponent(lyrics)}', vs: '${vs || ''}', yt: '${linkYoutubeFinal || ''}' }, '${titulo.replace(/'/g, "\\'")}')"
+                        class="group py-2.5 px-4 border-b border-slate-800/60 last:border-0 hover:bg-slate-800/40 transition cursor-pointer flex items-center justify-between gap-3 text-xs">
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-white group-hover:text-brand-400 transition truncate">${nomeMusica}</span>
+                                ${artist ? `<span class="text-[10px] text-slate-400 truncate">(${artist})</span>` : ''}
+                            </div>
+                            <div class="flex items-center gap-2 mt-0.5 text-[10px] text-slate-400">
+                                ${tom ? `<span class="text-brand-400 font-mono font-semibold">Tom ${tom}</span>` : ''}
+                                ${cantoresMusica ? `<span class="text-slate-300">• 🎤 ${cantoresMusica}</span>` : ''}
                             </div>
                         </div>
-                        <div class="flex items-center gap-1.5 flex-wrap justify-end">
+                        <div class="flex items-center gap-2 shrink-0">
+                            <!-- Ícones de recursos disponíveis -->
+                            <div class="hidden sm:flex items-center gap-1.5 text-xs text-slate-400">
+                                ${chords ? `<span title="Cifra disponível">🎸</span>` : ''}
+                                ${lyrics ? `<span title="Letra disponível">📜</span>` : ''}
+                                ${linkYoutubeFinal ? `<span title="Vídeo do YouTube disponível">📺</span>` : ''}
+                            </div>
                             ${btnPlayVs}
-                            ${btnLetra}
-                            ${btnCifra}
-                            ${btnYt}
+                            <span class="text-slate-500 group-hover:text-brand-400 transition text-sm font-bold pl-1">›</span>
                         </div>
                     </div>
                 `;

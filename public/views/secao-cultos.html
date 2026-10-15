@@ -258,7 +258,41 @@
                         <!-- Pílulas de versão injetadas dinamicamente -->
                     </div>
                 </div>
+        </div>
+
+        <!-- Painel Colapsável Inline: Solicitar Ajuste de Tom / Observação -->
+        <div id="painel-ajuste-tom-inline" class="hidden overflow-hidden transition-all duration-300 bg-white dark:bg-night-900/95 border border-brand-500/30 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                <div class="flex items-center gap-2">
+                    <span class="text-base sm:text-lg">💬</span>
+                    <div>
+                        <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">Solicitar Ajuste de Tom / Observação</h3>
+                        <p id="painel-ajuste-musica-sub" class="text-[11px] text-brand-600 dark:text-brand-400 font-medium">Envie a observação diretamente para os líderes do culto</p>
+                    </div>
+                </div>
+                <button type="button" onclick="fecharModalAjusteMusicaAtual()" class="w-7 h-7 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-center text-xs font-bold border border-slate-200 dark:border-slate-700 cursor-pointer transition" title="Fechar painel">✕</button>
             </div>
+            <form onsubmit="submeterAjusteMusicaAtual(event)" class="space-y-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">Seu Nome e Função / Instrumento</label>
+                        <input type="text" id="modal-ajuste-autor" required placeholder="Ex: Lucas (Violão)" class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-500 font-sans">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">Tom Sugerido / Detalhe</label>
+                        <input type="text" id="modal-ajuste-tom-sugerido" placeholder="Ex: Mudar tom para D, ou atualizar link..." class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-500 font-sans">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-700 dark:text-slate-300 mb-1">Mensagem ou Observação</label>
+                    <textarea id="modal-ajuste-texto" required rows="2" placeholder="Descreva brevemente o motivo da alteração..." class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-500 font-sans resize-none"></textarea>
+                </div>
+                <p id="modal-ajuste-status" class="hidden text-xs text-brand-500 font-medium"></p>
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <button type="button" onclick="fecharModalAjusteMusicaAtual()" class="px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer">Fechar</button>
+                    <button type="submit" id="btn-submit-ajuste-musica" class="px-4 py-1.5 rounded-xl text-xs font-bold bg-brand-500 hover:bg-brand-400 text-night-950 transition shadow-sm cursor-pointer active:scale-95">Enviar Ajuste</button>
+                </div>
+            </form>
         </div>
 
         <!-- Abas Internas da Música (Info & Links | Cifra | Letra) -->

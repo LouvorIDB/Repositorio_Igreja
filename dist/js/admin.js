@@ -799,42 +799,68 @@ function filtrarAdminRepertorio() {
     }
 
     container.innerHTML = filtradas.map(song => {
-        let versoesHtml = '';
-        if (song.song_versions && song.song_versions.length > 0) {
-            versoesHtml = song.song_versions.map((v, index) => {
-                const tom = v.key || 'N/A';
-                const variacao = v.variation || 'Original';
-                return `<div class="mt-2 text-xs text-slate-400 flex items-center gap-2 flex-wrap"><span class="bg-night-950 border border-slate-800 px-2.5 py-0.5 rounded-md text-[11px] font-mono"><span class="text-slate-500">Tom:</span> <span class="text-slate-200 font-bold">${tom}</span> <span class="text-slate-400">(${variacao})</span></span></div>`;
-            }).join('');
-        }
+        const versoes = song.song_versions || [];
+        const numVersoes = versoes.length;
+        const temCifra = !!(song.chords?.trim() || versoes.some(v => v.chords?.trim()));
+        const temLetra = !!(song.lyrics?.trim() || versoes.some(v => v.lyrics?.trim()));
+        const temYt = versoes.some(v => v.youtube_url?.trim());
+        const temVs = versoes.some(v => v.drive_vs_url?.trim());
+
+        const tonsBadges = versoes.slice(0, 3).map(v => `
+            <span class="bg-night-950 border border-slate-800/90 px-2 py-0.5 rounded-md text-[10px] font-mono text-slate-300">
+                <span class="text-slate-500 font-sans">Tom:</span> <strong class="text-brand-400">${v.key || 'N/A'}</strong> <span class="text-slate-500">(${v.variation || 'Original'})</span>
+            </span>
+        `).join('');
+
+        const maisVersoesBadge = numVersoes > 3 
+            ? `<span class="text-[10px] text-slate-500 font-mono">+${numVersoes - 3}</span>` 
+            : '';
 
         return `
-            <div class="flex flex-col p-4 rounded-xl border border-slate-800/90 bg-night-900/90 hover:border-slate-700/80 transition gap-3 mb-2.5 shadow-sm">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <h3 class="font-bold text-white text-base">${song.title || 'Sem Título'} ${song.artist ? `<span class="text-xs font-normal text-slate-400 ml-1.5">(${song.artist})</span>` : ''}</h3>
-                    <div class="flex gap-2 shrink-0 flex-wrap">
-                        <button onclick="abrirModalEditarLetraAdmin('${song.id}')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700/80 hover:border-liturge-500/40 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 cursor-pointer">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                            <span>Letra</span>
-                        </button>
-                        <button onclick="abrirModalEditarCifraAdmin('${song.id}')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700/80 hover:border-liturge-500/40 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 cursor-pointer">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                            <span>Cifra</span>
-                        </button>
-                        <button onclick="abrirModalEditarMusicaAdmin('${song.id}')" class="text-xs bg-night-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 cursor-pointer">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                            <span>Editar</span>
-                        </button>
-                        <button onclick="abrirModalNovaVersao('${song.id}')" class="text-xs bg-liturge-500/10 hover:bg-liturge-500/20 text-liturge-400 border border-liturge-500/30 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1 cursor-pointer">
-                            <span>+</span> Versão
-                        </button>
-                        <button onclick="excluirMusicaAdmin('${song.id}')" class="bg-night-950 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-800/40 px-2.5 py-1.5 rounded-lg text-xs transition font-semibold flex items-center gap-1 cursor-pointer">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                            <span>Excluir</span>
-                        </button>
+            <div onclick="abrirEditorMusicaAdmin('${song.id}')"
+                class="group bg-night-900/90 hover:bg-night-800/90 border border-slate-800/90 hover:border-brand-500/40 rounded-2xl p-4 transition duration-200 cursor-pointer shadow-sm hover:shadow-md hover:shadow-brand-500/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-2.5">
+                
+                <div class="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                    <div class="w-10 h-10 rounded-xl bg-night-950 border border-slate-800 flex items-center justify-center text-brand-500 font-bold shrink-0 group-hover:border-brand-500/30 group-hover:scale-105 transition">
+                        🎵
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h3 class="font-bold text-white text-sm sm:text-base group-hover:text-brand-400 transition truncate">
+                                ${song.title || 'Sem Título'}
+                            </h3>
+                            ${song.artist ? `<span class="text-xs text-slate-400 truncate">(${song.artist})</span>` : ''}
+                            ${song.status === 'nova' ? '<span class="bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Nova</span>' : ''}
+                        </div>
+
+                        <!-- Indicadores de Recursos & Tons -->
+                        <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                            <div class="flex items-center gap-1 flex-wrap">
+                                ${tonsBadges}
+                                ${maisVersoesBadge}
+                            </div>
+                            <div class="flex items-center gap-1.5 text-xs">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-medium border ${temCifra ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-900 text-slate-600 border-slate-800'}" title="${temCifra ? 'Cifra Cadastrada' : 'Sem Cifra'}">🎸 Cifra</span>
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-medium border ${temLetra ? 'bg-liturge-500/10 text-liturge-400 border-liturge-500/30' : 'bg-slate-900 text-slate-600 border-slate-800'}" title="${temLetra ? 'Letra Cadastrada' : 'Sem Letra'}">📄 Letra</span>
+                                ${temYt ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-500/10 text-red-400 border border-red-500/30" title="Vídeo / Áudio YouTube">🎬 YT</span>' : ''}
+                                ${temVs ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/30" title="Multitrack / VS">🔊 VS</span>' : ''}
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div>${versoesHtml}</div>
+
+                <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                    <button type="button" onclick="event.stopPropagation(); abrirEditorMusicaAdmin('${song.id}')"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-brand-400"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                        <span>Editar</span>
+                    </button>
+                    <button type="button" onclick="event.stopPropagation(); excluirMusicaAdmin('${song.id}')"
+                        class="p-2 rounded-xl text-xs text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 border border-transparent hover:border-rose-900/40 transition cursor-pointer"
+                        title="Excluir Música">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                </div>
             </div>
         `;
     }).join('');
@@ -851,6 +877,7 @@ async function excluirMusicaAdmin(songId) {
         }
         await carregarDados();
         await renderizarAdminListaRepertorio();
+        await renderizarAdminListaNovas();
         mostrarToast('Música excluída com sucesso!', 'sucesso');
     } catch (err) {
         console.error('Erro ao excluir música:', err);
@@ -872,7 +899,7 @@ async function renderizarAdminListaNovas() {
 
             let query = supabaseClient
                 .from('songs')
-                .select('id, title, status, lyrics, song_versions(id, key, variation)')
+                .select('id, title, artist, status, lyrics, chords, song_versions(id, key, variation, drive_vs_url, youtube_url, lyrics, chords)')
                 .eq('status', 'nova')
                 .order('title', { ascending: true });
 
@@ -891,49 +918,73 @@ async function renderizarAdminListaNovas() {
         }
 
         container.innerHTML = novas.map(song => {
-            let versoesHtml = '';
-            if (song.song_versions && song.song_versions.length > 0) {
-                versoesHtml = song.song_versions.map((v, index) => {
-                    const tom = v.key || 'N/A';
-                    const variacao = v.variation || 'Original';
-                    return `<div class="mt-2 text-xs text-slate-400 flex items-center gap-2 flex-wrap"><span class="bg-night-950 border border-slate-800 px-2.5 py-0.5 rounded-md text-[11px] font-mono"><span class="text-slate-500">Tom:</span> <span class="text-slate-200 font-bold">${tom}</span> <span class="text-slate-400">(${variacao})</span></span></div>`;
-                }).join('');
-            }
+            const versoes = song.song_versions || [];
+            const numVersoes = versoes.length;
+            const temCifra = !!(song.chords?.trim() || versoes.some(v => v.chords?.trim()));
+            const temLetra = !!(song.lyrics?.trim() || versoes.some(v => v.lyrics?.trim()));
+            const temYt = versoes.some(v => v.youtube_url?.trim());
+            const temVs = versoes.some(v => v.drive_vs_url?.trim());
+
+            const tonsBadges = versoes.slice(0, 3).map(v => `
+                <span class="bg-night-950 border border-slate-800/90 px-2 py-0.5 rounded-md text-[10px] font-mono text-slate-300">
+                    <span class="text-slate-500 font-sans">Tom:</span> <strong class="text-brand-400">${v.key || 'N/A'}</strong> <span class="text-slate-500">(${v.variation || 'Original'})</span>
+                </span>
+            `).join('');
+
+            const maisVersoesBadge = numVersoes > 3 
+                ? `<span class="text-[10px] text-slate-500 font-mono">+${numVersoes - 3}</span>` 
+                : '';
 
             return `
-                <div class="flex flex-col p-4 rounded-xl border border-liturge-500/30 bg-night-900/90 hover:border-liturge-500/50 transition gap-3 mb-2.5 shadow-sm">
-                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <h3 class="font-bold text-white text-base">${song.title || 'Sem Título'} ${song.artist ? `<span class="text-xs font-normal text-slate-400 ml-1.5">(${song.artist})</span>` : ''}</h3>
-                            <span class="bg-liturge-500/15 text-liturge-300 border border-liturge-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Nova</span>
+                <div onclick="abrirEditorMusicaAdmin('${song.id}')"
+                    class="group bg-night-900/90 hover:bg-night-800/90 border border-amber-500/30 hover:border-brand-500/50 rounded-2xl p-4 transition duration-200 cursor-pointer shadow-sm hover:shadow-md hover:shadow-brand-500/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-2.5">
+                    
+                    <div class="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                        <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-bold shrink-0 group-hover:scale-105 transition">
+                            ⭐
                         </div>
-                        <div class="flex gap-2 shrink-0 flex-wrap">
-                            <button onclick="abrirModalEditarLetraAdmin('${song.id}')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700/80 hover:border-liturge-500/40 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 cursor-pointer">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                                <span>Letra</span>
-                            </button>
-                            <button onclick="abrirModalEditarCifraAdmin('${song.id}')" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700/80 hover:border-liturge-500/40 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 cursor-pointer">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-liturge-400"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                                <span>Cifra</span>
-                            </button>
-                            <button onclick="abrirModalEditarMusicaAdmin('${song.id}')" class="text-xs bg-night-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 cursor-pointer">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                                <span>Editar</span>
-                            </button>
-                            <button onclick="abrirModalNovaVersao('${song.id}')" class="text-xs bg-liturge-500/10 hover:bg-liturge-500/20 text-liturge-400 border border-liturge-500/30 px-2.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1 cursor-pointer">
-                                <span>+</span> Versão
-                            </button>
-                            <button onclick="aprovarMusicaNovaAdmin('${song.id}')" class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 font-bold px-3 py-1.5 rounded-lg text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span>Aprovar</span>
-                            </button>
-                            <button onclick="excluirMusicaAdmin('${song.id}')" class="bg-night-950 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-800/40 px-2.5 py-1.5 rounded-lg text-xs transition font-semibold flex items-center gap-1 cursor-pointer">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                <span>Excluir</span>
-                            </button>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <h3 class="font-bold text-white text-sm sm:text-base group-hover:text-brand-400 transition truncate">
+                                    ${song.title || 'Sem Título'}
+                                </h3>
+                                ${song.artist ? `<span class="text-xs text-slate-400 truncate">(${song.artist})</span>` : ''}
+                                <span class="bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Nova</span>
+                            </div>
+
+                            <!-- Indicadores de Recursos & Tons -->
+                            <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                                <div class="flex items-center gap-1 flex-wrap">
+                                    ${tonsBadges}
+                                    ${maisVersoesBadge}
+                                </div>
+                                <div class="flex items-center gap-1.5 text-xs">
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium border ${temCifra ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-900 text-slate-600 border-slate-800'}" title="${temCifra ? 'Cifra Cadastrada' : 'Sem Cifra'}">🎸 Cifra</span>
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-medium border ${temLetra ? 'bg-liturge-500/10 text-liturge-400 border-liturge-500/30' : 'bg-slate-900 text-slate-600 border-slate-800'}" title="${temLetra ? 'Letra Cadastrada' : 'Sem Letra'}">📄 Letra</span>
+                                    ${temYt ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-red-500/10 text-red-400 border border-red-500/30" title="Vídeo / Áudio YouTube">🎬 YT</span>' : ''}
+                                    ${temVs ? '<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/30" title="Multitrack / VS">🔊 VS</span>' : ''}
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div>${versoesHtml}</div>
+
+                    <div class="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        <button type="button" onclick="event.stopPropagation(); aprovarMusicaNovaAdmin('${song.id}')"
+                            class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 font-bold px-3 py-1.5 rounded-xl text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <span>Aprovar</span>
+                        </button>
+                        <button type="button" onclick="event.stopPropagation(); abrirEditorMusicaAdmin('${song.id}')"
+                            class="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-brand-400"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                            <span>Editar</span>
+                        </button>
+                        <button type="button" onclick="event.stopPropagation(); excluirMusicaAdmin('${song.id}')"
+                            class="p-2 rounded-xl text-xs text-slate-500 hover:text-rose-400 hover:bg-rose-950/30 border border-transparent hover:border-rose-900/40 transition cursor-pointer"
+                            title="Excluir Música">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -1903,195 +1954,16 @@ async function uploadArquivoSupabase(file, bucketName = 'media-inbox', subFolder
 }
 window.uploadArquivoSupabase = uploadArquivoSupabase;
 
-// ===================== ADMIN: CRIAÇÃO DE MÚSICA =====================
+// ===================== ADMIN: VISÃO DEDICADA DE EDIÇÃO DE MÚSICA (SEM MODAIS) =====================
 
-function abrirModalMusicaAdmin() {
-    const modal = document.getElementById('modal-musica-admin');
-    if (!modal) return;
+window.adminEditorState = {
+    songId: null,
+    song: null,
+    versoes: [],
+    subAba: 'geral'
+};
 
-    document.getElementById('admin-musica-titulo').value = '';
-    const artistaEl = document.getElementById('admin-musica-artista');
-    if (artistaEl) artistaEl.value = '';
-    document.getElementById('admin-musica-tom').value = '';
-    document.getElementById('admin-musica-variacao').value = '';
-    document.getElementById('admin-musica-vs').value = '';
-    document.getElementById('admin-musica-yt').value = '';
-    document.getElementById('admin-musica-status').value = 'ativo';
-    const fileInput = document.getElementById('admin-musica-vs-file');
-    if (fileInput) fileInput.value = '';
-
-    modal.classList.remove('hidden');
-}
-
-function fecharModalMusicaAdmin() {
-    const modal = document.getElementById('modal-musica-admin');
-    if (modal) modal.classList.add('hidden');
-}
-
-async function salvarMusicaAdmin() {
-    const titulo = document.getElementById('admin-musica-titulo').value.trim();
-    const artista = document.getElementById('admin-musica-artista')?.value.trim() || '';
-    const tom = document.getElementById('admin-musica-tom').value.trim();
-    const variacao = document.getElementById('admin-musica-variacao').value.trim() || 'Original';
-    let vsUrl = document.getElementById('admin-musica-vs').value.trim();
-    const ytUrl = document.getElementById('admin-musica-yt').value.trim();
-    const status = document.getElementById('admin-musica-status').value;
-    const vsFileInput = document.getElementById('admin-musica-vs-file');
-
-    if (!titulo) {
-        mostrarToast('Informe o título da música.', 'aviso');
-        return;
-    }
-
-    const btn = document.getElementById('btn-salvar-musica-admin');
-    if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
-
-    try {
-        if (!supabaseClient) {
-            throw new Error("Cliente Supabase não inicializado.");
-        }
-
-        // Fazer upload do arquivo de áudio/VS para o Supabase Storage se um arquivo foi selecionado
-        if (vsFileInput && vsFileInput.files && vsFileInput.files.length > 0) {
-            if (btn) btn.textContent = 'Enviando arquivo de áudio...';
-            const uploadedUrl = await uploadArquivoSupabase(vsFileInput.files[0], 'media-inbox', 'vs_tracks');
-            if (uploadedUrl) vsUrl = uploadedUrl;
-        }
-
-        const churchId = (typeof dadosGlobais !== 'undefined' && dadosGlobais.church?.id) ? dadosGlobais.church.id : null;
-
-        const songPayload = {
-            title: titulo,
-            status: status
-        };
-        if (artista) songPayload.artist = artista;
-        if (churchId) songPayload.church_id = churchId;
-
-        // 1. Inserir na tabela 'songs'
-        const { data: newSong, error: songErr } = await supabaseClient
-            .from('songs')
-            .insert(songPayload)
-            .select('id')
-            .single();
-
-        if (songErr) throw songErr;
-
-        // 2. Inserir a versão inicial na tabela 'song_versions'
-        if (newSong && newSong.id) {
-            const { error: versionErr } = await supabaseClient
-                .from('song_versions')
-                .insert({
-                    song_id: newSong.id,
-                    key: tom,
-                    variation: variacao,
-                    drive_vs_url: vsUrl,
-                    youtube_url: ytUrl
-                });
-
-            if (versionErr) console.warn('Aviso ao criar versão da música:', versionErr);
-        }
-        fecharModalMusicaAdmin();
-        await carregarDados();
-        if (status === 'nova') {
-            await renderizarAdminListaNovas();
-        } else {
-            await renderizarAdminListaRepertorio();
-        }
-        mostrarToast('Música adicionada com sucesso!', 'sucesso');
-    } catch (err) {
-        console.error('Erro ao salvar música admin:', err);
-        mostrarToast('Erro ao adicionar música no Supabase.', 'erro');
-    } finally {
-        if (btn) { btn.disabled = false; btn.textContent = 'Salvar Música'; }
-    }
-}
-
-// ===================== ADMIN: NOVA VERSÃO DA MÚSICA =====================
-
-function abrirModalNovaVersao(songId) {
-    if (!songId) return;
-    
-    let musica = null;
-    const repertorio = dadosGlobais.repertorio || [];
-    const novas = dadosGlobais.novas || [];
-    
-    musica = repertorio.find(m => m.id === songId) || novas.find(m => m.id === songId);
-    
-    if (!musica) {
-        mostrarToast('Música não encontrada no cache.', 'erro');
-        return;
-    }
-
-    document.getElementById('versao-admin-song-id').value = songId;
-    document.getElementById('versao-admin-musica-titulo').textContent = musica.title;
-    
-    document.getElementById('versao-admin-tom').value = '';
-    document.getElementById('versao-admin-variacao').value = '';
-    document.getElementById('versao-admin-vs').value = '';
-    document.getElementById('versao-admin-yt').value = '';
-    
-    const btn = document.getElementById('btn-salvar-versao-admin');
-    if(btn) { btn.disabled = false; btn.textContent = 'Salvar Versão'; }
-
-    document.getElementById('modal-versao-admin').classList.remove('hidden');
-}
-
-function fecharModalNovaVersao() {
-    document.getElementById('modal-versao-admin').classList.add('hidden');
-}
-
-async function salvarNovaVersao() {
-    const songId = document.getElementById('versao-admin-song-id').value;
-    const tom = document.getElementById('versao-admin-tom').value.trim();
-    const variacao = document.getElementById('versao-admin-variacao').value.trim() || 'Original';
-    let vsUrl = document.getElementById('versao-admin-vs').value.trim();
-    const ytUrl = document.getElementById('versao-admin-yt').value.trim();
-    const vsFileInput = document.getElementById('versao-admin-vs-file');
-
-    if (!songId || !tom) {
-        mostrarToast('Informe o tom da nova versão.', 'aviso');
-        return;
-    }
-
-    const btn = document.getElementById('btn-salvar-versao-admin');
-    if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
-
-    try {
-        if (!supabaseClient) throw new Error("Cliente Supabase não inicializado.");
-
-        if (vsFileInput && vsFileInput.files && vsFileInput.files.length > 0) {
-            if (btn) btn.textContent = 'Enviando arquivo de áudio...';
-            const uploadedUrl = await uploadArquivoSupabase(vsFileInput.files[0], 'media-inbox', 'vs_tracks');
-            if (uploadedUrl) vsUrl = uploadedUrl;
-        }
-
-        const { error: versionErr } = await supabaseClient
-            .from('song_versions')
-            .insert({
-                song_id: songId,
-                key: tom,
-                variation: variacao,
-                drive_vs_url: vsUrl,
-                youtube_url: ytUrl
-            });
-
-        if (versionErr) throw versionErr;
-        fecharModalNovaVersao();
-        await carregarDados();
-        mostrarToast('Versão adicionada com sucesso!', 'sucesso');
-        
-    } catch (err) {
-        console.error("Erro ao salvar versão:", err);
-        mostrarToast('Erro ao salvar versão.', 'erro');
-    } finally {
-        if (btn) { btn.disabled = false; btn.textContent = 'Salvar Versão'; }
-    }
-}
-
-
-// ===================== ADMIN: EDITAR MÚSICA E VERSÕES =====================
-
-async function abrirModalEditarMusicaAdmin(songId) {
+async function abrirEditorMusicaAdmin(songId) {
     if (!songId) return;
 
     let song = null;
@@ -2099,16 +1971,17 @@ async function abrirModalEditarMusicaAdmin(songId) {
         if (supabaseClient) {
             const { data, error } = await supabaseClient
                 .from('songs')
-                .select('id, title, artist, status, song_versions(id, key, variation, drive_vs_url, youtube_url)')
+                .select('id, title, artist, status, lyrics, chords, song_versions(*)')
                 .eq('id', songId)
                 .single();
             if (!error && data) song = data;
         }
-    } catch (e) {}
+    } catch (e) {
+        console.warn('Erro ao carregar detalhes completos da música:', e);
+    }
 
     if (!song) {
-        const rep = adminSongsCache.find(s => s.id === songId);
-        if (rep) song = rep;
+        song = (adminSongsCache || []).find(s => s.id === songId);
     }
 
     if (!song) {
@@ -2116,122 +1989,640 @@ async function abrirModalEditarMusicaAdmin(songId) {
         return;
     }
 
-    document.getElementById('edit-admin-song-id').value = song.id;
-    document.getElementById('edit-admin-musica-titulo').value = song.title || '';
-    const artistaEl = document.getElementById('edit-admin-musica-artista');
-    if (artistaEl) artistaEl.value = song.artist || '';
-    document.getElementById('edit-admin-musica-status').value = song.status || 'ativo';
+    const rawVersoes = song.song_versions || [];
+    const versoes = rawVersoes.length > 0
+        ? rawVersoes.map(v => ({ ...v }))
+        : [{
+            key: '',
+            variation: 'Original',
+            drive_vs_url: '',
+            youtube_url: '',
+            chords: song.chords || '',
+            lyrics: song.lyrics || ''
+        }];
 
-    const containerVersoes = document.getElementById('edit-admin-lista-versoes');
-    const versoes = song.song_versions || [];
+    window.adminEditorState = {
+        songId: song.id,
+        song: song,
+        versoes: versoes,
+        subAba: 'geral'
+    };
 
-    if (versoes.length === 0) {
-        containerVersoes.innerHTML = '<p class="text-slate-500 text-xs">Nenhuma versão cadastrada ainda.</p>';
-    } else {
-        containerVersoes.innerHTML = versoes.map((v, i) => `
-            <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2" data-version-id="${v.id}">
-                <div class="flex justify-between items-center">
-                    <span class="text-xs font-semibold text-brand-400">Versão ${i + 1}</span>
-                    ${versoes.length > 1 ? `<button type="button" onclick="excluirVersaoAdmin('${v.id}')" class="text-xs text-red-400 hover:text-red-300">🗑️ Excluir Versão</button>` : ''}
-                </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[10px] text-slate-400 block">Tom</label>
-                        <input type="text" id="edit-v-tom-${v.id}" value="${v.key || ''}" placeholder="Ex: G"
-                            class="w-full bg-slate-800 border border-slate-700 px-2 py-1 rounded text-xs text-white">
-                    </div>
-                    <div>
-                        <label class="text-[10px] text-slate-400 block">Variação</label>
-                        <input type="text" id="edit-v-var-${v.id}" value="${v.variation || 'Original'}" placeholder="Ex: Original"
-                            class="w-full bg-slate-800 border border-slate-700 px-2 py-1 rounded text-xs text-white">
-                    </div>
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 block">Link do VS (Google Drive)</label>
-                    <input type="text" id="edit-v-vs-${v.id}" value="${v.drive_vs_url || ''}" placeholder="https://drive.google.com/..."
-                        class="w-full bg-slate-800 border border-slate-700 px-2 py-1 rounded text-xs text-white">
-                </div>
-                <div>
-                    <label class="text-[10px] text-slate-400 block">Links do YouTube (Separe múltiplos por vírgula ou linha)</label>
-                    <textarea id="edit-v-yt-${v.id}" rows="2" placeholder="https://youtube.com/...
-https://youtube.com/..."
-                        class="w-full bg-slate-800 border border-slate-700 px-2 py-1 rounded text-xs text-white">${v.youtube_url || ''}</textarea>
-                </div>
-            </div>
-        `).join('');
+    // Atualiza cabeçalho e campos
+    const idEl = document.getElementById('admin-editor-song-id');
+    if (idEl) idEl.value = song.id;
+
+    const headerTitEl = document.getElementById('admin-editor-header-titulo');
+    if (headerTitEl) headerTitEl.textContent = song.title || 'Sem Título';
+
+    const headerSubEl = document.getElementById('admin-editor-header-subtitulo');
+    if (headerSubEl) headerSubEl.textContent = song.artist ? `Artista: ${song.artist}` : 'Sem Artista Informado';
+
+    const statusBadgeEl = document.getElementById('admin-editor-status-badge');
+    if (statusBadgeEl) {
+        if (song.status === 'nova') {
+            statusBadgeEl.textContent = 'Música Nova';
+            statusBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 shrink-0';
+        } else {
+            statusBadgeEl.textContent = 'Repertório Oficial';
+            statusBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0';
+        }
     }
 
-    const btn = document.getElementById('btn-salvar-edit-musica-admin');
-    if (btn) { btn.disabled = false; btn.textContent = 'Salvar Alterações'; }
+    // Tab 1: Geral
+    const titInput = document.getElementById('admin-editor-titulo');
+    if (titInput) titInput.value = song.title || '';
 
-    document.getElementById('modal-editar-musica-admin').classList.remove('hidden');
+    const artInput = document.getElementById('admin-editor-artista');
+    if (artInput) artInput.value = song.artist || '';
+
+    const tomInput = document.getElementById('admin-editor-tom');
+    if (tomInput) tomInput.value = versoes[0]?.key || '';
+
+    const bpmInput = document.getElementById('admin-editor-bpm');
+    if (bpmInput) bpmInput.value = song.bpm || '';
+
+    const durInput = document.getElementById('admin-editor-duracao');
+    if (durInput) durInput.value = song.duration || '';
+
+    const statusInput = document.getElementById('admin-editor-status');
+    if (statusInput) statusInput.value = song.status || 'ativa';
+
+    renderizarVersoesInlineAdmin();
+
+    // Tab 2: Cifra
+    const buscaMusicaCifra = document.getElementById('admin-editor-cifra-busca-musica');
+    if (buscaMusicaCifra) buscaMusicaCifra.value = song.title || '';
+
+    const buscaArtistaCifra = document.getElementById('admin-editor-cifra-busca-artista');
+    if (buscaArtistaCifra) buscaArtistaCifra.value = song.artist || '';
+
+    const cifraTextarea = document.getElementById('admin-editor-cifra');
+    if (cifraTextarea) cifraTextarea.value = song.chords || versoes[0]?.chords || '';
+
+    // Tab 3: Letra
+    const letraTextarea = document.getElementById('admin-editor-letra');
+    if (letraTextarea) letraTextarea.value = song.lyrics || versoes[0]?.lyrics || '';
+
+    // Tab 4: Mídia
+    const ytInput = document.getElementById('admin-editor-yt');
+    if (ytInput) ytInput.value = versoes[0]?.youtube_url || '';
+
+    const vsInput = document.getElementById('admin-editor-vs');
+    if (vsInput) vsInput.value = versoes[0]?.drive_vs_url || '';
+
+    atualizarPreviewAudioEditorAdmin(versoes[0]?.drive_vs_url || '');
+
+    // Exibe a visão dedicada e oculta o hub
+    const hub = document.getElementById('admin-repertorio-hub');
+    const editor = document.getElementById('admin-visao-musica-editor');
+    if (hub) hub.classList.add('hidden');
+    if (editor) {
+        editor.classList.remove('hidden');
+        editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    mudarSubAbaEditorAdmin('geral');
 }
 
-function fecharModalEditarMusicaAdmin() {
-    document.getElementById('modal-editar-musica-admin').classList.add('hidden');
+function abrirEditorNovoMusicaAdmin(tipo = 'ativa') {
+    window.adminEditorState = {
+        songId: null,
+        song: null,
+        versoes: [{
+            key: '',
+            variation: 'Original',
+            drive_vs_url: '',
+            youtube_url: '',
+            chords: '',
+            lyrics: ''
+        }],
+        subAba: 'geral'
+    };
+
+    const idEl = document.getElementById('admin-editor-song-id');
+    if (idEl) idEl.value = '';
+
+    const headerTitEl = document.getElementById('admin-editor-header-titulo');
+    if (headerTitEl) headerTitEl.textContent = tipo === 'nova' ? 'Cadastrar Música Nova' : 'Cadastrar Nova Música';
+
+    const headerSubEl = document.getElementById('admin-editor-header-subtitulo');
+    if (headerSubEl) headerSubEl.textContent = 'Preencha título, tom, versão, cifra e letra na mesma página';
+
+    const statusBadgeEl = document.getElementById('admin-editor-status-badge');
+    if (statusBadgeEl) {
+        statusBadgeEl.textContent = tipo === 'nova' ? 'Música Nova' : 'Novo Cadastro';
+        statusBadgeEl.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-500/15 text-brand-400 border border-brand-500/30 shrink-0';
+    }
+
+    const titInput = document.getElementById('admin-editor-titulo');
+    if (titInput) titInput.value = '';
+
+    const artInput = document.getElementById('admin-editor-artista');
+    if (artInput) artInput.value = '';
+
+    const tomInput = document.getElementById('admin-editor-tom');
+    if (tomInput) tomInput.value = '';
+
+    const bpmInput = document.getElementById('admin-editor-bpm');
+    if (bpmInput) bpmInput.value = '';
+
+    const durInput = document.getElementById('admin-editor-duracao');
+    if (durInput) durInput.value = '';
+
+    const statusInput = document.getElementById('admin-editor-status');
+    if (statusInput) statusInput.value = tipo === 'nova' ? 'nova' : 'ativa';
+
+    renderizarVersoesInlineAdmin();
+
+    const buscaMusicaCifra = document.getElementById('admin-editor-cifra-busca-musica');
+    if (buscaMusicaCifra) buscaMusicaCifra.value = '';
+
+    const buscaArtistaCifra = document.getElementById('admin-editor-cifra-busca-artista');
+    if (buscaArtistaCifra) buscaArtistaCifra.value = '';
+
+    const cifraTextarea = document.getElementById('admin-editor-cifra');
+    if (cifraTextarea) cifraTextarea.value = '';
+
+    const letraTextarea = document.getElementById('admin-editor-letra');
+    if (letraTextarea) letraTextarea.value = '';
+
+    const ytInput = document.getElementById('admin-editor-yt');
+    if (ytInput) ytInput.value = '';
+
+    const vsInput = document.getElementById('admin-editor-vs');
+    if (vsInput) vsInput.value = '';
+
+    atualizarPreviewAudioEditorAdmin('');
+
+    const hub = document.getElementById('admin-repertorio-hub');
+    const editor = document.getElementById('admin-visao-musica-editor');
+    if (hub) hub.classList.add('hidden');
+    if (editor) {
+        editor.classList.remove('hidden');
+        editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    mudarSubAbaEditorAdmin('geral');
 }
 
-async function salvarEdicaoMusicaAdmin() {
-    const songId = document.getElementById('edit-admin-song-id').value;
-    const titulo = document.getElementById('edit-admin-musica-titulo').value.trim();
-    const artista = document.getElementById('edit-admin-musica-artista')?.value.trim() || '';
-    const status = document.getElementById('edit-admin-musica-status').value;
+function fecharEditorMusicaAdmin() {
+    const hub = document.getElementById('admin-repertorio-hub');
+    const editor = document.getElementById('admin-visao-musica-editor');
+    if (editor) editor.classList.add('hidden');
+    if (hub) hub.classList.remove('hidden');
+}
 
-    if (!songId || !titulo) {
-        mostrarToast('Informe o título da música.', 'aviso');
+function mudarSubAbaEditorAdmin(tabName) {
+    const paineis = {
+        geral: document.getElementById('admin-editor-painel-geral'),
+        cifra: document.getElementById('admin-editor-painel-cifra'),
+        letra: document.getElementById('admin-editor-painel-letra'),
+        midia: document.getElementById('admin-editor-painel-midia')
+    };
+
+    const botoes = {
+        geral: document.getElementById('tab-btn-admin-editor-geral'),
+        cifra: document.getElementById('tab-btn-admin-editor-cifra'),
+        letra: document.getElementById('tab-btn-admin-editor-letra'),
+        midia: document.getElementById('tab-btn-admin-editor-midia')
+    };
+
+    Object.keys(paineis).forEach(k => {
+        if (paineis[k]) {
+            if (k === tabName) {
+                paineis[k].classList.remove('hidden');
+            } else {
+                paineis[k].classList.add('hidden');
+            }
+        }
+        if (botoes[k]) {
+            if (k === tabName) {
+                botoes[k].className = 'py-2.5 px-3 sm:px-4 border-b-2 font-bold text-xs sm:text-sm transition flex items-center gap-1.5 border-brand-500 text-brand-600 dark:text-brand-400 cursor-pointer';
+            } else {
+                botoes[k].className = 'py-2.5 px-3 sm:px-4 border-b-2 font-semibold text-xs sm:text-sm transition flex items-center gap-1.5 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 cursor-pointer';
+            }
+        }
+    });
+
+    if (window.adminEditorState) {
+        window.adminEditorState.subAba = tabName;
+    }
+}
+
+function renderizarVersoesInlineAdmin() {
+    const container = document.getElementById('admin-editor-versoes-lista');
+    if (!container) return;
+
+    const versoes = window.adminEditorState?.versoes || [];
+
+    if (versoes.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500 py-2">Nenhuma versão cadastrada ainda.</p>';
         return;
     }
 
-    const btn = document.getElementById('btn-salvar-edit-musica-admin');
-    if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+    container.innerHTML = versoes.map((v, idx) => `
+        <div class="bg-slate-50 dark:bg-night-950 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3" data-index="${idx}">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-brand-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>🎵</span> Versão ${idx + 1} ${idx === 0 ? '<span class="text-[10px] text-slate-400 font-normal lowercase">(principal)</span>' : ''}
+                </span>
+                ${versoes.length > 1 ? `
+                    <button type="button" onclick="removerVersaoInlineAdmin(${idx})" class="text-xs text-rose-500 hover:text-rose-400 font-semibold cursor-pointer flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        <span>Excluir Versão</span>
+                    </button>
+                ` : ''}
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">Nome / Variação</label>
+                    <input type="text" oninput="atualizarCampoVersaoInlineAdmin(${idx}, 'variation', this.value)" value="${v.variation || 'Original'}" placeholder="Ex: Original, Acústico, Tom Feminino"
+                        class="w-full bg-white dark:bg-night-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">Tom Desta Versão</label>
+                    <input type="text" oninput="atualizarCampoVersaoInlineAdmin(${idx}, 'key', this.value)" value="${v.key || ''}" placeholder="Ex: G, D, Em"
+                        class="w-full bg-white dark:bg-night-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-lg text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:border-brand-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">Link do VS / Áudio (Drive)</label>
+                    <input type="text" oninput="atualizarCampoVersaoInlineAdmin(${idx}, 'drive_vs_url', this.value)" value="${v.drive_vs_url || ''}" placeholder="https://drive.google.com/..."
+                        class="w-full bg-white dark:bg-night-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">Link do YouTube</label>
+                    <input type="text" oninput="atualizarCampoVersaoInlineAdmin(${idx}, 'youtube_url', this.value)" value="${v.youtube_url || ''}" placeholder="https://youtube.com/..."
+                        class="w-full bg-white dark:bg-night-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-500">
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function atualizarCampoVersaoInlineAdmin(idx, field, value) {
+    if (window.adminEditorState?.versoes?.[idx]) {
+        window.adminEditorState.versoes[idx][field] = value;
+        if (idx === 0) {
+            if (field === 'key') {
+                const tomBase = document.getElementById('admin-editor-tom');
+                if (tomBase && tomBase.value !== value) tomBase.value = value;
+            } else if (field === 'drive_vs_url') {
+                const vsInput = document.getElementById('admin-editor-vs');
+                if (vsInput && vsInput.value !== value) vsInput.value = value;
+            } else if (field === 'youtube_url') {
+                const ytInput = document.getElementById('admin-editor-yt');
+                if (ytInput && ytInput.value !== value) ytInput.value = value;
+            }
+        }
+    }
+}
+
+function adicionarVersaoInlineAdmin() {
+    if (!window.adminEditorState) return;
+    window.adminEditorState.versoes.push({
+        key: '',
+        variation: `Versão ${window.adminEditorState.versoes.length + 1}`,
+        drive_vs_url: '',
+        youtube_url: '',
+        chords: '',
+        lyrics: ''
+    });
+    renderizarVersoesInlineAdmin();
+    mostrarToast('Nova versão adicionada. Preencha o tom e links.', 'info');
+}
+
+async function removerVersaoInlineAdmin(idx) {
+    if (!window.adminEditorState?.versoes?.[idx]) return;
+    const v = window.adminEditorState.versoes[idx];
+
+    if (!confirm(`Deseja remover a versão "${v.variation || 'Versão ' + (idx + 1)}"?`)) return;
+
+    if (v.id && supabaseClient) {
+        try {
+            await supabaseClient.from('song_versions').delete().eq('id', v.id);
+            mostrarToast('Versão removida do banco!', 'sucesso');
+        } catch (e) {
+            console.error('Erro ao deletar versão no Supabase:', e);
+        }
+    }
+
+    window.adminEditorState.versoes.splice(idx, 1);
+    renderizarVersoesInlineAdmin();
+}
+
+function atualizarPreviewAudioEditorAdmin(url) {
+    const bloco = document.getElementById('admin-editor-preview-vs-bloco');
+    const audio = document.getElementById('admin-editor-preview-audio');
+    if (!bloco || !audio) return;
+
+    if (url && (url.includes('drive.google.com') || url.startsWith('http'))) {
+        let streamUrl = url;
+        const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+        if (driveMatch && driveMatch[1]) {
+            streamUrl = `https://docs.google.com/uc?export=download&id=${driveMatch[1]}`;
+        }
+        audio.src = streamUrl;
+        bloco.classList.remove('hidden');
+    } else {
+        audio.removeAttribute('src');
+        bloco.classList.add('hidden');
+    }
+}
+
+async function buscarCifraClubNoEditorAdmin() {
+    const tit = document.getElementById('admin-editor-cifra-busca-musica')?.value.trim() || document.getElementById('admin-editor-titulo')?.value.trim() || '';
+    const art = document.getElementById('admin-editor-cifra-busca-artista')?.value.trim() || document.getElementById('admin-editor-artista')?.value.trim() || '';
+    const tomAlvo = document.getElementById('admin-editor-tom')?.value.trim() || 'C';
+
+    if (!tit) {
+        mostrarToast('Informe o nome da música para buscar a cifra.', 'aviso');
+        return;
+    }
+
+    const btn = document.getElementById('btn-admin-editor-buscar-cifra');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span>⏳ Buscando...</span>'; }
 
     try {
-        if (!supabaseClient) throw new Error("Cliente Supabase não inicializado.");
+        let cifraEncontrada = '';
+        let queryUrl = `https://api.vagalume.com.br/search.php?art=${encodeURIComponent(art)}&mus=${encodeURIComponent(tit)}&extra=cifra`;
 
-        const { error: songErr } = await supabaseClient
-            .from('songs')
-            .update({ title: titulo, artist: artista, status: status })
-            .eq('id', songId);
-
-        if (songErr) throw songErr;
-
-        const cached = adminSongsCache.find(s => s.id === songId);
-        if (cached) {
-            cached.title = titulo;
-            cached.artist = artista;
-            cached.status = status;
+        let resp = await fetch(queryUrl);
+        let data = null;
+        if (resp.ok) {
+            try { data = await resp.json(); } catch (e) {}
         }
 
-        const versionElements = document.querySelectorAll('#edit-admin-lista-versoes [data-version-id]');
-        for (const el of versionElements) {
-            const vId = el.getAttribute('data-version-id');
-            const tom = document.getElementById(`edit-v-tom-${vId}`)?.value.trim() || '';
-            const variacao = document.getElementById(`edit-v-var-${vId}`)?.value.trim() || 'Original';
-            const vsUrl = document.getElementById(`edit-v-vs-${vId}`)?.value.trim() || '';
-            const ytUrl = document.getElementById(`edit-v-yt-${vId}`)?.value.trim() || '';
-
-            await supabaseClient
-                .from('song_versions')
-                .update({
-                    key: tom,
-                    variation: variacao,
-                    drive_vs_url: vsUrl,
-                    youtube_url: ytUrl
-                })
-                .eq('id', vId);
+        if ((!data || !data.mus || !data.mus[0] || !data.mus[0].cifra) && art) {
+            queryUrl = `https://api.vagalume.com.br/search.php?art=&mus=${encodeURIComponent(tit)}&extra=cifra`;
+            resp = await fetch(queryUrl);
+            if (resp.ok) {
+                try { data = await resp.json(); } catch (e) {}
+            }
         }
-        fecharModalEditarMusicaAdmin();
-        await carregarDados();
-        await renderizarAdminListaRepertorio();
-        await renderizarAdminListaNovas();
-        mostrarToast('Música atualizada com sucesso!', 'sucesso');
 
-    } catch (err) {
-        console.error('Erro ao editar música:', err);
-        mostrarToast('Erro ao salvar alterações.', 'erro');
+        if (data && data.mus && data.mus[0] && data.mus[0].cifra) {
+            const rawCifra = data.mus[0].cifra.text || '';
+            const rawTom = data.mus[0].cifra.key || 'C';
+            if (rawCifra) {
+                cifraEncontrada = typeof transporCifra === 'function' ? transporCifra(rawCifra, rawTom, tomAlvo) : rawCifra;
+            }
+        }
+
+        if (cifraEncontrada) {
+            const cifraEl = document.getElementById('admin-editor-cifra');
+            if (cifraEl) cifraEl.value = typeof sanitizarTextoCifraClub === 'function' ? sanitizarTextoCifraClub(cifraEncontrada) : cifraEncontrada;
+            mostrarToast(`Cifra encontrada e ajustada para o tom ${tomAlvo}!`, 'sucesso');
+        } else {
+            mostrarToast('Cifra não encontrada automaticamente. Abrindo pesquisa externa no Cifra Club...', 'aviso');
+            const termo = [tit, art].filter(Boolean).join(' ');
+            window.open(`https://www.cifraclub.com.br/?q=${encodeURIComponent(termo)}`, '_blank');
+        }
+    } catch (e) {
+        console.error('Erro ao buscar cifra:', e);
+        mostrarToast('Erro ao consultar cifra online.', 'erro');
     } finally {
-        if (btn) { btn.disabled = false; btn.textContent = 'Salvar Alterações'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<span>🔍 Buscar Cifra</span>'; }
     }
+}
+
+function sanitizarCifraNoEditorAdmin() {
+    const el = document.getElementById('admin-editor-cifra');
+    if (!el || !el.value.trim()) {
+        mostrarToast('Nenhuma cifra para sanitizar.', 'aviso');
+        return;
+    }
+    el.value = typeof sanitizarTextoCifraClub === 'function' ? sanitizarTextoCifraClub(el.value) : el.value;
+    mostrarToast('Cifra sanitizada (tablaturas e cabeçalhos limpos)!', 'sucesso');
+}
+
+function copiarLetraDaCifraNoEditorAdmin() {
+    const cifraEl = document.getElementById('admin-editor-cifra');
+    const letraEl = document.getElementById('admin-editor-letra');
+    if (!cifraEl || !cifraEl.value.trim()) {
+        mostrarToast('Nenhuma cifra para extrair letra.', 'aviso');
+        return;
+    }
+
+    const linhas = cifraEl.value.split('\n');
+    const linhasLetra = [];
+
+    const regexAcordes = /^(\s*([A-G][b#]?(m|maj|min|dim|aug|sus[24]?|[0-9]+)*(\/[A-G][b#]?)?)+(\s+|$))+$/;
+
+    for (let linha of linhas) {
+        const trimmed = linha.trim();
+        if (!trimmed) {
+            linhasLetra.push('');
+            continue;
+        }
+        if (trimmed.startsWith('|') || trimmed.startsWith('e|') || trimmed.startsWith('B|') || trimmed.startsWith('G|') || trimmed.startsWith('D|') || trimmed.startsWith('A|') || trimmed.startsWith('E|')) {
+            continue;
+        }
+        if (regexAcordes.test(trimmed)) {
+            continue;
+        }
+        linhasLetra.push(linha);
+    }
+
+    const letraLimpa = linhasLetra.join('\n').replace(/\n\s*\n\s*\n+/g, '\n\n').trim();
+    if (letraEl) {
+        letraEl.value = letraLimpa;
+        mudarSubAbaEditorAdmin('letra');
+        mostrarToast('Letra extraída da cifra com sucesso!', 'sucesso');
+    }
+}
+
+function limparLinhasDuplasLetraNoEditorAdmin() {
+    const el = document.getElementById('admin-editor-letra');
+    if (!el || !el.value.trim()) return;
+    el.value = el.value.replace(/\n\s*\n\s*\n+/g, '\n\n').trim();
+    mostrarToast('Linhas em branco excessivas removidas!', 'sucesso');
+}
+
+async function salvarEditorMusicaAdmin() {
+    const songId = document.getElementById('admin-editor-song-id')?.value || null;
+    const titulo = document.getElementById('admin-editor-titulo')?.value.trim();
+    const artista = document.getElementById('admin-editor-artista')?.value.trim() || '';
+    const status = document.getElementById('admin-editor-status')?.value || 'ativa';
+    const tomBase = document.getElementById('admin-editor-tom')?.value.trim() || '';
+    const bpm = document.getElementById('admin-editor-bpm')?.value.trim() || null;
+    const duracao = document.getElementById('admin-editor-duracao')?.value.trim() || null;
+    const cifra = document.getElementById('admin-editor-cifra')?.value || '';
+    const letra = document.getElementById('admin-editor-letra')?.value || '';
+    const ytPrincipal = document.getElementById('admin-editor-yt')?.value.trim() || '';
+    const vsPrincipal = document.getElementById('admin-editor-vs')?.value.trim() || '';
+
+    if (!titulo) {
+        mostrarToast('Informe o título da música.', 'aviso');
+        mudarSubAbaEditorAdmin('geral');
+        return;
+    }
+
+    const btn = document.getElementById('btn-admin-editor-salvar');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span>Salvando...</span>'; }
+
+    try {
+        if (!supabaseClient) throw new Error('Cliente Supabase não inicializado.');
+
+        const churchId = (typeof dadosGlobais !== 'undefined' && dadosGlobais.church?.id) 
+            ? dadosGlobais.church.id 
+            : (usuarioLogado?.church_id || null);
+
+        let savedSongId = songId;
+
+        if (savedSongId) {
+            const payloadUpdate = {
+                title: titulo,
+                artist: artista,
+                status: status,
+                lyrics: letra,
+                chords: cifra
+            };
+            if (bpm !== null && bpm !== '') payloadUpdate.bpm = parseInt(bpm);
+            if (duracao !== null && duracao !== '') payloadUpdate.duration = duracao;
+
+            const { error: errUpdate } = await supabaseClient
+                .from('songs')
+                .update(payloadUpdate)
+                .eq('id', savedSongId);
+
+            if (errUpdate) throw errUpdate;
+        } else {
+            const payloadInsert = {
+                title: titulo,
+                artist: artista,
+                status: status,
+                lyrics: letra,
+                chords: cifra
+            };
+            if (churchId) payloadInsert.church_id = churchId;
+            if (bpm !== null && bpm !== '') payloadInsert.bpm = parseInt(bpm);
+            if (duracao !== null && duracao !== '') payloadInsert.duration = duracao;
+
+            const { data: newSong, error: errInsert } = await supabaseClient
+                .from('songs')
+                .insert(payloadInsert)
+                .select('id')
+                .single();
+
+            if (errInsert) throw errInsert;
+            savedSongId = newSong.id;
+        }
+
+        const versoes = window.adminEditorState?.versoes || [];
+        if (versoes.length === 0) {
+            versoes.push({
+                key: tomBase,
+                variation: 'Original',
+                drive_vs_url: vsPrincipal,
+                youtube_url: ytPrincipal,
+                chords: cifra,
+                lyrics: letra
+            });
+        } else {
+            if (tomBase && !versoes[0].key) versoes[0].key = tomBase;
+            if (vsPrincipal) versoes[0].drive_vs_url = vsPrincipal;
+            if (ytPrincipal) versoes[0].youtube_url = ytPrincipal;
+            if (!versoes[0].chords) versoes[0].chords = cifra;
+            if (!versoes[0].lyrics) versoes[0].lyrics = letra;
+        }
+
+        for (const v of versoes) {
+            const vChords = typeof sanitizarTextoCifraClub === 'function' ? sanitizarTextoCifraClub(v.chords || cifra) : (v.chords || cifra);
+            if (v.id) {
+                await supabaseClient
+                    .from('song_versions')
+                    .update({
+                        key: v.key || tomBase,
+                        variation: v.variation || 'Original',
+                        drive_vs_url: v.drive_vs_url || '',
+                        youtube_url: v.youtube_url || '',
+                        chords: vChords,
+                        lyrics: v.lyrics || letra
+                    })
+                    .eq('id', v.id);
+            } else {
+                await supabaseClient
+                    .from('song_versions')
+                    .insert({
+                        song_id: savedSongId,
+                        key: v.key || tomBase,
+                        variation: v.variation || 'Original',
+                        drive_vs_url: v.drive_vs_url || '',
+                        youtube_url: v.youtube_url || '',
+                        chords: vChords,
+                        lyrics: v.lyrics || letra
+                    });
+            }
+        }
+
+        fecharEditorMusicaAdmin();
+        await carregarDados();
+        await carregarAdminRepertorio();
+        await renderizarAdminListaNovas();
+        mostrarToast('Música e versões salvas com sucesso!', 'sucesso');
+    } catch (err) {
+        console.error('Erro ao salvar música:', err);
+        mostrarToast('Erro ao salvar dados da música.', 'erro');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg><span>Salvar Alterações</span>`;
+        }
+    }
+}
+
+async function excluirMusicaAdminAtual() {
+    const songId = document.getElementById('admin-editor-song-id')?.value;
+    if (!songId) {
+        fecharEditorMusicaAdmin();
+        return;
+    }
+    await excluirMusicaAdmin(songId);
+    fecharEditorMusicaAdmin();
+}
+
+// ===================== WRAPPERS DE COMPATIBILIDADE (MODAIS DESATIVADOS) =====================
+
+function abrirModalMusicaAdmin(tipo = 'ativa') {
+    abrirEditorNovoMusicaAdmin(tipo);
+}
+
+function fecharModalMusicaAdmin() {
+    fecharEditorMusicaAdmin();
+}
+
+async function salvarMusicaAdmin() {
+    await salvarEditorMusicaAdmin();
+}
+
+function abrirModalNovaVersao(songId) {
+    abrirEditorMusicaAdmin(songId);
+    mudarSubAbaEditorAdmin('geral');
+}
+
+function fecharModalNovaVersao() {
+    fecharEditorMusicaAdmin();
+}
+
+async function salvarNovaVersao() {
+    await salvarEditorMusicaAdmin();
+}
+
+async function abrirModalEditarMusicaAdmin(songId) {
+    await abrirEditorMusicaAdmin(songId);
+}
+
+function fecharModalEditarMusicaAdmin() {
+    fecharEditorMusicaAdmin();
+}
+
+async function salvarEdicaoMusicaAdmin() {
+    await salvarEditorMusicaAdmin();
 }
 
 async function excluirVersaoAdmin(versionId) {
@@ -2241,15 +2632,40 @@ async function excluirVersaoAdmin(versionId) {
             const { error } = await supabaseClient.from('song_versions').delete().eq('id', versionId);
             if (error) throw error;
         }
-        
         mostrarToast('Versão removida!', 'sucesso');
-        const songId = document.getElementById('edit-admin-song-id').value;
-        await abrirModalEditarMusicaAdmin(songId);
+        const songId = document.getElementById('admin-editor-song-id')?.value;
+        if (songId) await abrirEditorMusicaAdmin(songId);
     } catch (err) {
         console.error('Erro ao excluir versão:', err);
         mostrarToast('Erro ao excluir versão.', 'erro');
     }
 }
+
+// Expõe globalmente no window
+window.abrirEditorMusicaAdmin = abrirEditorMusicaAdmin;
+window.abrirEditorNovoMusicaAdmin = abrirEditorNovoMusicaAdmin;
+window.fecharEditorMusicaAdmin = fecharEditorMusicaAdmin;
+window.mudarSubAbaEditorAdmin = mudarSubAbaEditorAdmin;
+window.renderizarVersoesInlineAdmin = renderizarVersoesInlineAdmin;
+window.atualizarCampoVersaoInlineAdmin = atualizarCampoVersaoInlineAdmin;
+window.adicionarVersaoInlineAdmin = adicionarVersaoInlineAdmin;
+window.removerVersaoInlineAdmin = removerVersaoInlineAdmin;
+window.buscarCifraClubNoEditorAdmin = buscarCifraClubNoEditorAdmin;
+window.sanitizarCifraNoEditorAdmin = sanitizarCifraNoEditorAdmin;
+window.copiarLetraDaCifraNoEditorAdmin = copiarLetraDaCifraNoEditorAdmin;
+window.limparLinhasDuplasLetraNoEditorAdmin = limparLinhasDuplasLetraNoEditorAdmin;
+window.salvarEditorMusicaAdmin = salvarEditorMusicaAdmin;
+window.excluirMusicaAdminAtual = excluirMusicaAdminAtual;
+window.abrirModalMusicaAdmin = abrirModalMusicaAdmin;
+window.fecharModalMusicaAdmin = fecharModalMusicaAdmin;
+window.salvarMusicaAdmin = salvarMusicaAdmin;
+window.abrirModalNovaVersao = abrirModalNovaVersao;
+window.fecharModalNovaVersao = fecharModalNovaVersao;
+window.salvarNovaVersao = salvarNovaVersao;
+window.abrirModalEditarMusicaAdmin = abrirModalEditarMusicaAdmin;
+window.fecharModalEditarMusicaAdmin = fecharModalEditarMusicaAdmin;
+window.salvarEdicaoMusicaAdmin = salvarEdicaoMusicaAdmin;
+window.excluirVersaoAdmin = excluirVersaoAdmin;
 
 // ===================== ADMIN: IMPORTADOR HOLYRICS (JSON) =====================
 
@@ -2868,55 +3284,8 @@ let stateModalLetras = {
 
 async function abrirModalEditarLetraAdmin(songId) {
     if (!songId) return;
-
-    let songData = null;
-    try {
-        if (supabaseClient) {
-            const { data, error } = await supabaseClient
-                .from('songs')
-                .select('id, title, lyrics, song_versions(id, key, variation, lyrics)')
-                .eq('id', songId)
-                .single();
-            if (!error && data) songData = data;
-        }
-    } catch (e) {
-        console.warn("Erro ao carregar letra do Supabase:", e);
-    }
-
-    if (!songData) {
-        mostrarToast('Música não encontrada.', 'erro');
-        return;
-    }
-
-    const versions = (songData.song_versions || []).map(v => ({
-        id: v.id,
-        key: v.key || '',
-        variation: v.variation || 'Original',
-        lyrics: v.lyrics || ''
-    }));
-
-    stateModalLetras = {
-        songId: songData.id,
-        songTitle: songData.title || 'Sem Título',
-        songLyrics: songData.lyrics || '',
-        versions: versions,
-        activeVersionId: null
-    };
-
-    document.getElementById('edit-letra-admin-song-id').value = songData.id;
-    const titleEl = document.getElementById('edit-letra-admin-titulo-musica');
-    if (titleEl) titleEl.textContent = songData.title || '';
-
-    const padraoEl = document.getElementById('edit-letra-admin-padrao');
-    if (padraoEl) padraoEl.value = songData.lyrics || '';
-
-    renderizarBotoesVersoesLetraAdmin();
-
-    const containerVersao = document.getElementById('edit-letra-admin-versao-container');
-    if (containerVersao) containerVersao.classList.add('hidden');
-
-    const modal = document.getElementById('modal-editar-letra-admin');
-    if (modal) modal.classList.remove('hidden');
+    await abrirEditorMusicaAdmin(songId);
+    mudarSubAbaEditorAdmin('letra');
 }
 
 function fecharModalEditarLetraAdmin() {
@@ -3046,73 +3415,8 @@ let stateModalCifras = {
 
 async function abrirModalEditarCifraAdmin(songId) {
     if (!songId) return;
-
-    let songData = null;
-    try {
-        if (supabaseClient) {
-            const { data, error } = await supabaseClient
-                .from('songs')
-                .select('id, title, artist, chords, song_versions(id, key, variation, chords)')
-                .eq('id', songId)
-                .single();
-            if (!error && data) songData = data;
-        }
-    } catch (e) {
-        console.warn("Erro ao carregar cifra do Supabase:", e);
-    }
-
-    if (!songData) {
-        const rep = (adminSongsCache || []).find(s => s.id === songId);
-        if (rep) songData = rep;
-    }
-
-    if (!songData) {
-        mostrarToast('Música não encontrada.', 'erro');
-        return;
-    }
-
-    const versions = (songData.song_versions || []).map(v => ({
-        id: v.id,
-        key: v.key || '',
-        variation: v.variation || 'Original',
-        chords: v.chords || ''
-    }));
-
-    stateModalCifras = {
-        songId: songData.id,
-        songTitle: songData.title || 'Sem Título',
-        songArtist: songData.artist || '',
-        songChords: songData.chords || '',
-        versions: versions,
-        activeVersionId: null,
-        previaTexto: ''
-    };
-
-    document.getElementById('edit-cifra-admin-song-id').value = songData.id;
-    const titleEl = document.getElementById('edit-cifra-admin-titulo-musica');
-    if (titleEl) {
-        titleEl.textContent = songData.title ? `${songData.title}${songData.artist ? ' — ' + songData.artist : ''}` : '';
-    }
-
-    const buscaMusicaEl = document.getElementById('edit-cifra-busca-musica');
-    if (buscaMusicaEl) buscaMusicaEl.value = songData.title || '';
-
-    const buscaArtistaEl = document.getElementById('edit-cifra-busca-artista');
-    if (buscaArtistaEl) buscaArtistaEl.value = songData.artist || '';
-
-    const padraoEl = document.getElementById('edit-cifra-admin-padrao');
-    if (padraoEl) padraoEl.value = songData.chords || '';
-
-    const previaContainer = document.getElementById('edit-cifra-previa-container');
-    if (previaContainer) previaContainer.classList.add('hidden');
-
-    renderizarBotoesVersoesCifraAdmin();
-
-    const containerVersao = document.getElementById('edit-cifra-admin-versao-container');
-    if (containerVersao) containerVersao.classList.add('hidden');
-
-    const modal = document.getElementById('modal-editar-cifra-admin');
-    if (modal) modal.classList.remove('hidden');
+    await abrirEditorMusicaAdmin(songId);
+    mudarSubAbaEditorAdmin('cifra');
 }
 
 function fecharModalEditarCifraAdmin() {

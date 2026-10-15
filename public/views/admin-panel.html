@@ -33,7 +33,7 @@
 
         <!-- ===================== HERO CARD ADMIN ===================== -->
         <div class="mb-6 bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm relative overflow-hidden">
-            <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-500 via-amber-500 to-indigo-500"></div>
+            <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-liturge-500 to-amber-700"></div>
             <div class="flex items-center justify-between gap-4 flex-wrap">
                 <div class="flex items-start sm:items-center gap-3.5">
                     <div class="w-12 h-12 rounded-2xl bg-brand-500/10 border border-brand-500/20 text-brand-600 dark:text-brand-400 flex items-center justify-center text-2xl shrink-0 shadow-sm">
@@ -297,7 +297,7 @@
                                         <span class="w-2.5 h-2.5 rounded-full bg-liturge-400"></span> Culto Programado
                                     </span>
                                     <span class="flex items-center gap-1.5">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-purple-400"></span> Múltiplas Programações
+                                        <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Múltiplas Programações
                                     </span>
                                 </div>
                                 <span class="text-slate-500 italic">💡 Clique em um dia para gerenciar</span>
@@ -720,7 +720,7 @@
                         <div onclick="toggleAccordionCulto('accordion-sec-escala')" 
                             class="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer hover:bg-slate-800/40 transition select-none">
                             <div class="flex items-center gap-2.5">
-                                <span class="w-7 h-7 rounded-lg bg-indigo-500/15 text-indigo-400 flex items-center justify-center text-xs font-bold">🎼</span>
+                                <span class="w-7 h-7 rounded-lg bg-liturge-500/15 text-liturge-400 flex items-center justify-center text-xs font-bold">🎼</span>
                                 <h3 class="text-xs sm:text-sm font-bold text-white">Escala de Ministérios & Funções</h3>
                                 <span id="badge-escala-count" class="text-[10px] bg-liturge-500/15 text-liturge-400 border border-liturge-500/30 px-2 py-0.5 rounded-full font-mono font-bold">0 escalados</span>
                             </div>
@@ -742,9 +742,9 @@
                         <div onclick="toggleAccordionCulto('sec-culto-cantores')" 
                             class="flex items-center justify-between p-3.5 sm:p-4 cursor-pointer hover:bg-slate-800/40 transition select-none">
                             <div class="flex items-center gap-2.5">
-                                <span class="w-7 h-7 rounded-lg bg-pink-500/15 text-pink-400 flex items-center justify-center text-xs font-bold">🎤</span>
+                                <span class="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center text-xs font-bold">🎤</span>
                                 <h3 class="text-xs sm:text-sm font-bold text-white">Vocalistas / Escala por Música</h3>
-                                <span id="badge-cantores-count" class="text-[10px] bg-pink-500/15 text-pink-400 border border-pink-500/30 px-2 py-0.5 rounded-full font-mono font-bold">0 selecionados</span>
+                                <span id="badge-cantores-count" class="text-[10px] bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-mono font-bold">0 selecionados</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="text-slate-400 text-xs font-bold accordion-arrow">▼</span>
@@ -913,48 +913,251 @@
 
         <!-- ABA 2: REPERTÓRIO GERAL -->
         <div id="admin-aba-repertorio" class="hidden space-y-4">
-            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-                <h2 class="text-base font-semibold text-slate-300">Repertório Geral de Músicas <span id="admin-repertorio-count" class="text-xs font-normal text-liturge-400 ml-1"></span></h2>
-                <div class="flex gap-2 flex-wrap">
-                    <button onclick="abrirModalImportarPlanilha()"
-                        class="bg-night-950 hover:bg-slate-800 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-sm cursor-pointer">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
-                        <span>Restaurar da Planilha</span>
-                    </button>
-                    <button onclick="abrirModalImportarHolyrics()"
-                        class="bg-night-950 hover:bg-slate-800 text-liturge-400 hover:text-liturge-300 border border-liturge-500/30 px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-sm cursor-pointer">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        <span>Importar Holyrics (JSON)</span>
-                    </button>
-                    <button onclick="limparApenasLetrasAdmin()"
-                        class="bg-night-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 px-3 py-2 rounded-xl font-medium text-xs sm:text-sm transition flex items-center gap-1.5 shadow-sm cursor-pointer">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="9" y1="15" x2="15" y2="15"></line></svg>
-                        <span>Limpar Apenas Letras</span>
-                    </button>
-                    <button onclick="abrirModalMusicaAdmin()"
-                        class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm transition shadow-sm flex items-center gap-1.5 cursor-pointer">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        <span>Adicionar Música</span>
-                    </button>
+            <!-- HUB DO REPERTÓRIO: LISTA E BUSCA -->
+            <div id="admin-repertorio-hub" class="space-y-4">
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <h2 class="text-base font-semibold text-slate-300">Repertório Geral de Músicas <span id="admin-repertorio-count" class="text-xs font-normal text-liturge-400 ml-1"></span></h2>
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="abrirModalImportarPlanilha()"
+                            class="bg-night-950 hover:bg-slate-800 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg>
+                            <span>Restaurar da Planilha</span>
+                        </button>
+                        <button onclick="abrirModalImportarHolyrics()"
+                            class="bg-night-950 hover:bg-slate-800 text-liturge-400 hover:text-liturge-300 border border-liturge-500/30 px-3.5 py-2 rounded-xl font-semibold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            <span>Importar Holyrics (JSON)</span>
+                        </button>
+                        <button onclick="limparApenasLetrasAdmin()"
+                            class="bg-night-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 px-3 py-2 rounded-xl font-medium text-xs sm:text-sm transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                            <span>Limpar Apenas Letras</span>
+                        </button>
+                        <button onclick="abrirEditorNovoMusicaAdmin()"
+                            class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 font-bold px-4 py-2 rounded-xl text-xs sm:text-sm transition shadow-sm flex items-center gap-1.5 cursor-pointer">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            <span>Adicionar Música</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="mb-4 flex flex-col sm:flex-row gap-2">
+                    <input type="text" id="admin-search-repertorio" oninput="filtrarAdminRepertorio()" placeholder="Buscar música no banco..."
+                        class="w-full sm:flex-1 bg-night-900 border border-slate-800 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-liturge-500 font-sans">
+                    <select id="admin-filter-repertorio" onchange="filtrarAdminRepertorio()"
+                        class="bg-night-900 border border-slate-800 px-3 py-2.5 rounded-xl text-sm text-slate-300 focus:outline-none focus:border-liturge-500 font-sans cursor-pointer">
+                        <option value="todas">Todas as Músicas</option>
+                        <option value="com_vs">Com Áudio / VS</option>
+                        <option value="sem_vs">Sem Áudio / VS</option>
+                        <option value="com_yt">Com YouTube</option>
+                        <option value="sem_yt">Sem YouTube</option>
+                        <option value="com_letra">Com letra cadastrada</option>
+                        <option value="sem_letra">Sem letra cadastrada</option>
+                        <option value="multiples_versions">Com mais de 1 versão</option>
+                    </select>
+                </div>
+                <div id="admin-lista-repertorio" class="space-y-3">
+                    <p class="text-slate-500 text-sm">Carregando músicas...</p>
                 </div>
             </div>
-            <div class="mb-4 flex flex-col sm:flex-row gap-2">
-                <input type="text" id="admin-search-repertorio" oninput="filtrarAdminRepertorio()" placeholder="Buscar música no banco..."
-                    class="w-full sm:flex-1 bg-night-900 border border-slate-800 px-4 py-2.5 rounded-xl text-sm text-white focus:outline-none focus:border-liturge-500 font-sans">
-                <select id="admin-filter-repertorio" onchange="filtrarAdminRepertorio()"
-                    class="bg-night-900 border border-slate-800 px-3 py-2.5 rounded-xl text-sm text-slate-300 focus:outline-none focus:border-liturge-500 font-sans cursor-pointer">
-                    <option value="todas">Todas as Músicas</option>
-                    <option value="com_vs">Com Áudio / VS</option>
-                    <option value="sem_vs">Sem Áudio / VS</option>
-                    <option value="com_yt">Com YouTube</option>
-                    <option value="sem_yt">Sem YouTube</option>
-                    <option value="com_letra">Com letra cadastrada</option>
-                    <option value="sem_letra">Sem letra cadastrada</option>
-                    <option value="multiples_versions">Com mais de 1 versão</option>
-                </select>
-            </div>
-            <div id="admin-lista-repertorio" class="space-y-3">
-                <p class="text-slate-500 text-sm">Carregando músicas...</p>
+
+            <!-- VISÃO DEDICADA: EDITOR DE MÚSICA ADMIN (SEM MODAIS FLUTUANTES) -->
+            <div id="admin-visao-musica-editor" class="hidden space-y-5 animate-fade-in">
+                <!-- Barra Superior de Navegação do Editor -->
+                <div class="flex items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+                    <button type="button" onclick="fecharEditorMusicaAdmin()"
+                        class="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand-500 dark:hover:text-brand-400 transition cursor-pointer group">
+                        <span class="p-1 rounded-lg bg-slate-100 dark:bg-slate-800 group-hover:bg-brand-500/10 border border-slate-200 dark:border-slate-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                        </span>
+                        <span>Voltar ao Catálogo</span>
+                    </button>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="btn-admin-editor-excluir" onclick="excluirMusicaAdminAtual()"
+                            class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition flex items-center gap-1.5 cursor-pointer"
+                            title="Excluir esta música do acervo">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            <span class="hidden sm:inline">Excluir</span>
+                        </button>
+                        <button type="button" id="btn-admin-editor-salvar" onclick="salvarEditorMusicaAdmin()"
+                            class="bg-gradient-to-r from-liturge-500 to-amber-600 hover:from-liturge-400 hover:to-amber-500 text-night-950 font-bold px-4 py-1.5 rounded-xl text-xs sm:text-sm transition shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-95">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                            <span>Salvar Alterações</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cabeçalho / Hero da Música em Edição -->
+                <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-12 h-12 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-500 shrink-0 font-bold text-lg">
+                            🎵
+                        </div>
+                        <div class="min-w-0">
+                            <h2 id="admin-editor-header-titulo" class="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">Nova Música</h2>
+                            <p id="admin-editor-header-subtitulo" class="text-xs text-slate-500 dark:text-slate-400 truncate">Edite dados, versões, cifras e letras de forma integrada</p>
+                        </div>
+                    </div>
+                    <span id="admin-editor-status-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-500/10 text-brand-500 border border-brand-500/20 shrink-0">Oficial</span>
+                </div>
+
+                <!-- Abas do Editor -->
+                <div class="border-b border-slate-200 dark:border-slate-800">
+                    <nav class="flex space-x-2 sm:space-x-4 overflow-x-auto no-scrollbar" aria-label="Abas do Editor">
+                        <button type="button" id="tab-btn-admin-editor-geral" onclick="mudarSubAbaEditorAdmin('geral')"
+                            class="py-2.5 px-3 sm:px-4 border-b-2 font-bold text-xs sm:text-sm transition flex items-center gap-1.5 border-brand-500 text-brand-600 dark:text-brand-400 cursor-pointer">
+                            <span>⚙️ Geral & Versões</span>
+                        </button>
+                        <button type="button" id="tab-btn-admin-editor-cifra" onclick="mudarSubAbaEditorAdmin('cifra')"
+                            class="py-2.5 px-3 sm:px-4 border-b-2 font-semibold text-xs sm:text-sm transition flex items-center gap-1.5 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 cursor-pointer">
+                            <span>🎸 Cifra & Acordes</span>
+                        </button>
+                        <button type="button" id="tab-btn-admin-editor-letra" onclick="mudarSubAbaEditorAdmin('letra')"
+                            class="py-2.5 px-3 sm:px-4 border-b-2 font-semibold text-xs sm:text-sm transition flex items-center gap-1.5 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 cursor-pointer">
+                            <span>📄 Letra do Louvor</span>
+                        </button>
+                        <button type="button" id="tab-btn-admin-editor-midia" onclick="mudarSubAbaEditorAdmin('midia')"
+                            class="py-2.5 px-3 sm:px-4 border-b-2 font-semibold text-xs sm:text-sm transition flex items-center gap-1.5 border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 cursor-pointer">
+                            <span>🎬 Mídias & Playback</span>
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Conteúdo das Abas do Editor -->
+                <input type="hidden" id="admin-editor-song-id">
+
+                <!-- ABA 1: GERAL & VERSÕES -->
+                <div id="admin-editor-painel-geral" class="space-y-4">
+                    <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Dados Principais da Música</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="sm:col-span-2">
+                                <label class="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">Título da Música *</label>
+                                <input type="text" id="admin-editor-titulo" required placeholder="Ex: Bondade de Deus"
+                                    class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">Artista / Ministério</label>
+                                <input type="text" id="admin-editor-artista" placeholder="Ex: Isaías Saad"
+                                    class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div>
+                                <label class="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">Tom Base</label>
+                                <input type="text" id="admin-editor-tom" placeholder="Ex: G, D, Em"
+                                    class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm font-mono text-slate-900 dark:text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">BPM (Andamento)</label>
+                                <input type="number" id="admin-editor-bpm" placeholder="Ex: 72"
+                                    class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">Duração</label>
+                                <input type="text" id="admin-editor-duracao" placeholder="Ex: 4:30"
+                                    class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-500">
+                            </div>
+                            <div>
+                                <label class="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">Status</label>
+                                <select id="admin-editor-status"
+                                    class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-500">
+                                    <option value="ativa">Ativa (Repertório)</option>
+                                    <option value="nova">Música Nova (Aprendizado)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bloco de Versões Cadastradas -->
+                    <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                            <div>
+                                <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">Versões e Tons Adicionais</h3>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400">Versões cadastradas com tom específico, ministro ou link dedicado</p>
+                            </div>
+                            <button type="button" onclick="adicionarVersaoInlineAdmin()"
+                                class="px-3 py-1.5 rounded-xl text-xs font-bold bg-brand-500/10 hover:bg-brand-500/20 text-brand-600 dark:text-brand-400 border border-brand-500/30 transition flex items-center gap-1 cursor-pointer">
+                                <span>+ Nova Versão</span>
+                            </button>
+                        </div>
+                        <div id="admin-editor-versoes-lista" class="space-y-2">
+                            <!-- Injetado dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABA 2: CIFRA & ACORDES -->
+                <div id="admin-editor-painel-cifra" class="hidden space-y-4">
+                    <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+                        <!-- Toolbar Cifra Club -->
+                        <div class="p-3 bg-slate-50 dark:bg-night-950 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+                            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                                <input type="text" id="admin-editor-cifra-busca-musica" placeholder="Nome da música no Cifra Club"
+                                    class="flex-1 bg-white dark:bg-night-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-500">
+                                <input type="text" id="admin-editor-cifra-busca-artista" placeholder="Artista / Banda (opcional)"
+                                    class="flex-1 bg-white dark:bg-night-900 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:border-brand-500">
+                                <button type="button" id="btn-admin-editor-buscar-cifra" onclick="buscarCifraClubNoEditorAdmin()"
+                                    class="bg-brand-500 hover:bg-brand-400 text-night-950 font-bold px-3.5 py-1.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer shrink-0">
+                                    <span>🔍 Buscar Cifra</span>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap text-xs pt-1">
+                                <button type="button" onclick="sanitizarCifraNoEditorAdmin()" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition cursor-pointer">
+                                    🧹 Limpar cabeçalho/tablatura
+                                </button>
+                                <button type="button" onclick="copiarLetraDaCifraNoEditorAdmin()" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition cursor-pointer">
+                                    📄 Extrair Letra para a Aba de Letra
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">Conteúdo da Cifra (Texto com Acordes alinhados)</label>
+                            <textarea id="admin-editor-cifra" rows="18" placeholder="Cole aqui a cifra completa..."
+                                class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 text-xs sm:text-sm font-mono text-slate-900 dark:text-white leading-relaxed focus:outline-none focus:border-brand-500 resize-y"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABA 3: LETRA DO LOUVOR -->
+                <div id="admin-editor-painel-letra" class="hidden space-y-4">
+                    <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Letra Padrão do Louvor</span>
+                            <button type="button" onclick="limparLinhasDuplasLetraNoEditorAdmin()"
+                                class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition cursor-pointer">
+                                ✂️ Limpar linhas em branco excessivas
+                            </button>
+                        </div>
+                        <textarea id="admin-editor-letra" rows="18" placeholder="Cole a letra do louvor versículo a versículo..."
+                            class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 text-xs sm:text-sm text-slate-900 dark:text-white leading-relaxed focus:outline-none focus:border-brand-500 resize-y"></textarea>
+                    </div>
+                </div>
+
+                <!-- ABA 4: MÍDIAS & PLAYBACK -->
+                <div id="admin-editor-painel-midia" class="hidden space-y-4">
+                    <div class="bg-white dark:bg-night-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+                        <div>
+                            <label class="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">Link do YouTube (Clipe / Áudio de Referência)</label>
+                            <input type="url" id="admin-editor-yt" placeholder="https://www.youtube.com/watch?v=..."
+                                class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-500">
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1 block">Link do Áudio / VS (Google Drive ou URL direta)</label>
+                            <input type="text" id="admin-editor-vs" placeholder="https://drive.google.com/file/d/..."
+                                class="w-full bg-slate-50 dark:bg-night-950 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-brand-500">
+                        </div>
+
+                        <!-- Player de Teste Rápido -->
+                        <div id="admin-editor-preview-vs-bloco" class="hidden p-3.5 bg-slate-50 dark:bg-night-950 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+                            <span class="text-[11px] font-bold text-brand-500 uppercase tracking-wider block">Pré-escuta do Playback / VS</span>
+                            <audio id="admin-editor-preview-audio" controls class="w-full h-8"></audio>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
