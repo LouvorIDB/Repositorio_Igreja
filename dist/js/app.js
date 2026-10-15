@@ -2379,7 +2379,6 @@ window.toggleMenuFiltrosRepertorio = toggleMenuFiltrosRepertorio;
 window.selecionarFiltroRepertorio = selecionarFiltroRepertorio;
 window.limparBuscaRepertorio = limparBuscaRepertorio;
 window.renderizarLinhaMusicaStreaming = renderizarLinhaMusicaStreaming;
-window.toggleCultoBloco = function() {}; // Mantido para compatibilidade residual
 
 // Gerenciador nativo do botão/gesto "Voltar" do Android (Galaxy S24 / One UI)
 window.tratarBotaoVoltarNativo = function() {
@@ -2799,15 +2798,29 @@ function filtrarMusicas() {
     }
 }
 
-function toggleCultoBloco(idPlaylist, idSeta) {
-    const playlist = document.getElementById(idPlaylist);
+function toggleCultoBloco(idAccordion, idSeta) {
+    const el = document.getElementById(idAccordion);
     const seta = document.getElementById(idSeta);
-    if (!playlist) return;
-    playlist.classList.toggle('hidden');
+    if (!el) return;
+
+    el.classList.toggle('hidden');
+    const isHidden = el.classList.contains('hidden');
     if (seta) {
-        seta.classList.toggle('rotate-180', !playlist.classList.contains('hidden'));
+        if (seta.textContent === '▼' || seta.textContent === '▲') {
+            seta.textContent = isHidden ? '▼' : '▲';
+        }
+        seta.classList.toggle('rotate-180', !isHidden);
+    }
+
+    // Atualiza estado do botão Expandir/Recolher Todos se estiver na tela de histórico
+    const accordions = Array.from(document.querySelectorAll('[id^="accordion-grupo-"]'));
+    const label = document.getElementById('btn-toggle-todos-historico-label');
+    if (label && accordions.length > 0) {
+        const todosAbertos = accordions.every(acc => !acc.classList.contains('hidden'));
+        label.textContent = todosAbertos ? '⌃ Recolher Todos' : '⌄ Expandir Todos';
     }
 }
+window.toggleCultoBloco = toggleCultoBloco;
 
 function toggleComentario(id) { document.getElementById(id).classList.toggle('hidden'); }
 
@@ -4411,7 +4424,7 @@ function renderizarHistoricoCultos() {
 
         html += `
             <div class="bg-night-900/80 border border-slate-800/80 rounded-2xl overflow-hidden shadow-md mb-3">
-                <button onclick="toggleCultoBloco('${idAccordion}', '${idSeta}')" class="w-full flex items-center justify-between bg-night-950/80 hover:bg-night-950 border-b border-slate-800/80 px-4 py-3 transition text-left cursor-pointer">
+                <button type="button" onclick="toggleCultoBloco('${idAccordion}', '${idSeta}')" class="w-full flex items-center justify-between bg-night-950/80 hover:bg-night-950 border-b border-slate-800/80 px-4 py-3 transition text-left cursor-pointer">
                     <h2 class="font-bold text-slate-200 text-xs sm:text-sm uppercase tracking-wider">${mesAno}</h2>
                     <span id="${idSeta}" class="text-slate-400 text-xs font-bold transition-transform">▼</span>
                 </button>
@@ -4423,6 +4436,10 @@ function renderizarHistoricoCultos() {
     });
 
     container.innerHTML = html;
+    const label = document.getElementById('btn-toggle-todos-historico-label');
+    if (label) {
+        label.textContent = '⌄ Expandir Todos';
+    }
 }
 window.renderizarHistoricoCultos = renderizarHistoricoCultos;
 
@@ -4442,34 +4459,42 @@ function toggleHistoricoCultoCard(serviceId) {
         if (arrow) arrow.textContent = '▼';
     }
 }
+window.toggleHistoricoCultoCard = toggleHistoricoCultoCard;
 
-let todosHistoricoAbertos = false;
 function toggleTodosHistorico() {
-    todosHistoricoAbertos = !todosHistoricoAbertos;
-    
-    // Grupos de meses
-    document.querySelectorAll('[id^="accordion-grupo-"]').forEach(el => {
-        if (todosHistoricoAbertos) el.classList.remove('hidden');
+    const accordions = Array.from(document.querySelectorAll('[id^="accordion-grupo-"]'));
+    if (accordions.length === 0) return;
+
+    // Se pelo menos um mês estiver fechado, a ação expande todos os meses
+    const algumFechado = accordions.some(el => el.classList.contains('hidden'));
+    const deveAbrir = algumFechado;
+
+    // Alterna visibilidade dos grupos de meses
+    accordions.forEach(el => {
+        if (deveAbrir) el.classList.remove('hidden');
         else el.classList.add('hidden');
-    });
-    document.querySelectorAll('[id^="seta-grupo-"]').forEach(el => {
-        el.textContent = todosHistoricoAbertos ? '▲' : '▼';
     });
 
-    // Cultos individuais
-    document.querySelectorAll('[id^="content-hist-"]').forEach(el => {
-        if (todosHistoricoAbertos) el.classList.remove('hidden');
-        else el.classList.add('hidden');
+    document.querySelectorAll('[id^="seta-grupo-"]').forEach(el => {
+        el.textContent = deveAbrir ? '▲' : '▼';
     });
-    document.querySelectorAll('[id^="seta-hist-"]').forEach(el => {
-        el.textContent = todosHistoricoAbertos ? '▲' : '▼';
-    });
+
+    // Ao recolher todos os meses, recolhe também qualquer culto individual aberto para limpar a visualização
+    if (!deveAbrir) {
+        document.querySelectorAll('[id^="content-hist-"]').forEach(el => {
+            el.classList.add('hidden');
+        });
+        document.querySelectorAll('[id^="seta-hist-"]').forEach(el => {
+            el.textContent = '▼';
+        });
+    }
 
     const label = document.getElementById('btn-toggle-todos-historico-label');
     if (label) {
-        label.textContent = todosHistoricoAbertos ? '⌃ Recolher Todos' : '⌄ Expandir Todos';
+        label.textContent = deveAbrir ? '⌃ Recolher Todos' : '⌄ Expandir Todos';
     }
 }
+window.toggleTodosHistorico = toggleTodosHistorico;
 
 let playlistOrigemCopiando = null;
 

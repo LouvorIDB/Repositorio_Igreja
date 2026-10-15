@@ -24,3 +24,5 @@ Import_Supabase/
 # Credenciais / configurações locais do clasp
 # .clasp.json
 .adb_wifi_config.json
+.vercel
+.env*
