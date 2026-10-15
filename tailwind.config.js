@@ -1,0 +1,67 @@
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: 'class',
+  content: [
+    './index.html',
+    './public/**/*.html',
+    './public/js/**/*.js',
+    './landing/**/*.html',
+  ],
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'monospace'],
+      },
+      colors: {
+        liturge: {
+          50: '#FFFBEB',
+          100: '#FEF3C7',
+          200: '#FDE68A',
+          300: '#FCD34D',
+          400: '#FBBF24',
+          500: '#F59E0B',
+          600: '#D97706',
+          700: '#B45309',
+          800: '#92400E',
+          900: '#78350F',
+          950: '#451A03',
+        },
+        night: {
+          800: 'rgb(var(--theme-night-800-rgb, 17 24 39) / <alpha-value>)',
+          850: 'rgb(var(--theme-night-850-rgb, 13 21 38) / <alpha-value>)',
+          900: 'rgb(var(--theme-night-900-rgb, 11 17 30) / <alpha-value>)',
+          950: 'rgb(var(--theme-night-950-rgb, 7 11 20) / <alpha-value>)',
+        },
+        brand: {
+          50: 'var(--brand-50, #FFFBEB)',
+          100: 'var(--brand-100, #FEF3C7)',
+          200: 'var(--brand-200, #FDE68A)',
+          300: 'var(--brand-300, #FCD34D)',
+          400: 'var(--brand-400, #FBBF24)',
+          500: 'var(--brand-500, #F59E0B)',
+          600: 'var(--brand-600, #D97706)',
+          700: 'var(--brand-700, #B45309)',
+          800: 'var(--brand-800, #92400E)',
+          900: 'var(--brand-900, #78350F)',
+          950: 'var(--brand-950, #451A03)',
+        },
+        slate: {
+          50: '#f8fafc',
+          100: '#f1f5f9',
+          200: '#e2e8f0',
+          300: '#cbd5e1',
+          400: '#94a3b8',
+          500: '#64748b',
+          600: '#475569',
+          700: 'rgb(var(--theme-slate-700-rgb, 51 65 85) / <alpha-value>)',
+          800: 'rgb(var(--theme-slate-800-rgb, 17 24 39) / <alpha-value>)',
+          850: 'rgb(var(--theme-slate-850-rgb, 13 21 38) / <alpha-value>)',
+          900: 'rgb(var(--theme-slate-900-rgb, 11 17 30) / <alpha-value>)',
+          950: 'rgb(var(--theme-slate-950-rgb, 7 11 20) / <alpha-value>)',
+        },
+      },
+    },
+  },
+  plugins: [],
+};
