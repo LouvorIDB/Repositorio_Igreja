@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "Liturge",
+  "site": "https://app.liturge.app.br",
+  "logo": {
+    "path": "./public/assets/liturge-symbol.svg",
+    "full_logo_path": "./public/assets/liturge-logo-full.svg",
+    "white_logo_path": "./public/assets/liturge-logo-white.svg",
+    "favicon_path": "./public/favicon.svg",
+    "use_in_video": true
+  },
+  "colors": {
+    "background": "#070B14",
+    "foreground": "#F8FAFC",
+    "primary": "#F59E0B",
+    "primary_hover": "#D97706",
+    "muted": "#94A3B8",
+    "card": "#0D1526",
+    "surface": "#111827",
+    "border": "#1E293B",
+    "success": "#10B981",
+    "warning": "#F59E0B",
+    "danger": "#EF4444",
+    "gold_sun": "#FFE082",
+    "gold_deep": "#B45309"
+  },
+  "type": {
+    "family": "'Plus Jakarta Sans', sans-serif",
+    "family_mono": "'JetBrains Mono', monospace",
+    "weight_display": 800,
+    "weight_headings": 700,
+    "weight_body": 500,
+    "letter_spacing_display": "-0.02em",
+    "letter_spacing_wordmark": "0.18em"
+  },
+  "voice": {
+    "register": "litúrgico-moderno, acolhedor, focado em excelência, reverente e tecnologicamente preciso",
+    "person": "primeira pessoa do plural acolhedora (nós / sua equipe / seu ministério)",
+    "do": [
+      "comunicação de honra, serviço e ordem com alegria",
+      "instruções práticas, diretas e acessíveis a voluntários de qualquer idade",
+      "valorizar a pontualidade, preparação e ensaio como atos de excelência"
+    ],
+    "dont": [
+      "jargões corporativos agressivos (ex: alavancar, monetizar, pivotar, churn)",
+      "linguagem fria ou puramente burocrática",
+      "promessas sensacionalistas ou artificiais"
+    ]
+  },
+  "brandmark_concept": {
+    "name": "Nexus Estelar: Constelação dos 8 Ministérios & Hub Central",
+    "metaphor": "O aplicativo Liturge como o ponto de gravidade que conecta 8 ministérios essenciais da igreja (Louvor, Pastoral, Som/Áudio, Projeção/Mídia, Iluminação, Recepção, Infantil e Transmissão) em um único centro luminoso de adoração e liturgia.",
+    "elements": {
+      "central_hub": "O Culto / Altar / Cristo — Grande estrela de 4 pontas curvadas (Stella Polaris) hiper-luminosa",
+      "eight_nodes": "8 nós estelares espalhados com grandezas astronômicas calibradas (3.2px a 6.2px)",
+      "varied_distances": "Distâncias cósmicas variadas (de 36px a 96px do centro) conferindo profundidade estelar real",
+      "convergence_beams": "Feixes de luz solar dourada convergindo diretamente cada ministério para o centro"
+    }
+  },
+  "source": "Liturge Brand Identity & Design System",
+  "captured_at": "2026-10-15"
+}

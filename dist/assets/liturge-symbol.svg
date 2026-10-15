@@ -1,151 +1,96 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%" fill="none">
   <defs>
-    <!-- Gradiente Dourado Principal -->
-    <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FFE082" />
-      <stop offset="50%" stop-color="#FFA726" />
-      <stop offset="100%" stop-color="#E65100" />
-    </linearGradient>
-
-    <!-- Gradiente de Preenchimento das Facetas Translúcidas -->
-    <linearGradient id="facet-grad-1" x1="20%" y1="0%" x2="80%" y2="100%">
-      <stop offset="0%" stop-color="#FFB300" stop-opacity="0.22" />
-      <stop offset="100%" stop-color="#FF6F00" stop-opacity="0.08" />
-    </linearGradient>
-
-    <linearGradient id="facet-grad-2" x1="80%" y1="0%" x2="20%" y2="100%">
-      <stop offset="0%" stop-color="#FFE082" stop-opacity="0.25" />
-      <stop offset="100%" stop-color="#FF8F00" stop-opacity="0.06" />
-    </linearGradient>
-
-    <!-- Brilho Radial dos Nós Centrais -->
-    <radialGradient id="node-glow" cx="50%" cy="50%" r="50%">
+    <!-- Gradiente Dourado Solar Liturge -->
+    <linearGradient id="liturge-gold" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FFF9C4" />
-      <stop offset="35%" stop-color="#FFD54F" />
-      <stop offset="70%" stop-color="#FFA000" stop-opacity="0.9" />
-      <stop offset="100%" stop-color="#FF8F00" stop-opacity="0" />
+      <stop offset="35%" stop-color="#FCD34D" />
+      <stop offset="70%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+
+    <!-- Aura Radiante do Hub Central -->
+    <radialGradient id="liturge-hub-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="25%" stop-color="#FEF08A" />
+      <stop offset="60%" stop-color="#F59E0B" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#D97706" stop-opacity="0" />
     </radialGradient>
 
-    <!-- Filtro de Glow Sutil -->
-    <filter id="liturge-glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="2.5" result="blur" />
+    <!-- Filtro de Glow Sutil para Telões e Palco -->
+    <filter id="liturge-stellar-filter" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.5" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
   </defs>
 
-  <g filter="url(#liturge-glow)">
-    <!-- FACETAS TRANSLÚCIDAS GEOMÉTRICAS (Efeito Cristalográfico da Referência) -->
-    <!-- Faceta Superior -->
-    <polygon points="100,22 148,68 100,46" fill="url(#facet-grad-1)" />
-    <polygon points="100,22 52,68 100,46" fill="url(#facet-grad-2)" />
-    
-    <!-- Facetas Centrais / Isométricas -->
-    <polygon points="100,46 128,84 100,100" fill="url(#facet-grad-2)" />
-    <polygon points="100,46 72,84 100,100" fill="url(#facet-grad-1)" />
-    <polygon points="100,100 128,116 100,154" fill="url(#facet-grad-1)" />
-    <polygon points="100,100 72,116 100,154" fill="url(#facet-grad-2)" />
-    
-    <!-- Facetas Laterais Estelares -->
-    <polygon points="28,62 72,84 52,68" fill="url(#facet-grad-1)" />
-    <polygon points="172,62 128,84 148,68" fill="url(#facet-grad-2)" />
-    <polygon points="28,138 72,116 52,132" fill="url(#facet-grad-2)" />
-    <polygon points="172,138 128,116 148,132" fill="url(#facet-grad-1)" />
-    <polygon points="100,178 52,132 100,154" fill="url(#facet-grad-1)" />
-    <polygon points="100,178 148,132 100,154" fill="url(#facet-grad-2)" />
+  <g filter="url(#liturge-stellar-filter)">
+    <!-- OS 8 FEIXES DE CONVERGÊNCIA DIRETA AO CENTRO (100, 100) -->
+    <!-- 1. Louvor & Músicos: DISTANTE (d=92px) -> (30, 41) -->
+    <line x1="30" y1="41" x2="100" y2="100" stroke="url(#liturge-gold)" stroke-width="2.6" stroke-linecap="round" />
 
-    <!-- MALHA DE ARESTAS (LINHAS DE CONEXÃO DOS MINISTÉRIOS) -->
-    <!-- Contorno Estelar Externo -->
-    <path d="M 100,22 L 148,68 L 172,62 L 148,132 L 172,138 L 100,178 L 52,132 L 28,138 L 52,68 L 28,62 Z" 
-          stroke="url(#gold-grad)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.6" />
+    <!-- 2. Pastoral & Palavra: MÉDIO-LONGO (d=78px) -> (127, 27) -->
+    <line x1="127" y1="27" x2="100" y2="100" stroke="url(#liturge-gold)" stroke-width="2.5" stroke-linecap="round" />
 
-    <!-- Arestas de Conexão dos Vértices Externos para os Intermediários -->
-    <line x1="100" y1="22" x2="100" y2="46" stroke="url(#gold-grad)" stroke-width="1.5" stroke-linecap="round" />
-    <line x1="100" y1="22" x2="28" y2="62" stroke="url(#gold-grad)" stroke-width="1.2" stroke-linecap="round" />
-    <line x1="100" y1="22" x2="172" y2="62" stroke="url(#gold-grad)" stroke-width="1.2" stroke-linecap="round" />
+    <!-- 3. Intercessão / Altar: MUITO PRÓXIMO (d=38px) -> (133, 81) -->
+    <line x1="133" y1="81" x2="100" y2="100" stroke="url(#liturge-gold)" stroke-width="3.0" stroke-linecap="round" />
 
-    <line x1="100" y1="178" x2="100" y2="154" stroke="url(#gold-grad)" stroke-width="1.5" stroke-linecap="round" />
-    <line x1="100" y1="178" x2="28" y2="138" stroke="url(#gold-grad)" stroke-width="1.2" stroke-linecap="round" />
-    <line x1="100" y1="178" x2="172" y2="138" stroke="url(#gold-grad)" stroke-width="1.2" stroke-linecap="round" />
+    <!-- 4. Transmissão & Mídia Externa: MUITO DISTANTE (d=96px) -> (188, 125) -->
+    <line x1="188" y1="125" x2="100" y2="100" stroke="url(#liturge-gold)" stroke-width="2.0" stroke-linecap="round" />
 
-    <!-- Anel Intermediário -->
-    <polygon points="100,46 148,68 148,132 100,154 52,132 52,68" 
-             stroke="url(#gold-grad)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.75" />
+    <!-- 5. Projeção & Telão: MÉDIO (d=62px) -> (136, 151) -->
+    <line x1="136" y1="151" x2="100" y2="100" stroke="url(#liturge-gold)" stroke-width="2.3" stroke-linecap="round" />
 
-    <!-- Cruzamentos Tridimensionais / Poliedro -->
-    <line x1="28" y1="62" x2="72" y2="84" stroke="url(#gold-grad)" stroke-width="1.3" />
-    <line x1="172" y1="62" x2="128" y2="84" stroke="url(#gold-grad)" stroke-width="1.3" />
-    <line x1="28" y1="138" x2="72" y2="116" stroke="url(#gold-grad)" stroke-width="1.3" />
-    <line x1="172" y1="138" x2="128" y2="116" stroke="url(#gold-grad)" stroke-width="1.3" />
+    <!-- 6. Iluminação & Cenas: LONGO (d=88px) -> (77, 185) -->
+    <line x1="77" y1="185" x2="100" y2="100" stroke="url(#liturge-gold)" stroke-width="1.8" stroke-linecap="round" />
 
-    <line x1="52" y1="68" x2="128" y2="84" stroke="url(#gold-grad)" stroke-width="1.1" opacity="0.6" />
-    <line x1="148" y1="68" x2="72" y2="84" stroke="url(#gold-grad)" stroke-width="1.1" opacity="0.6" />
-    <line x1="52" y1="132" x2="128" y2="116" stroke="url(#gold-grad)" stroke-width="1.1" opacity="0.6" />
-    <line x1="148" y1="132" x2="72" y2="116" stroke="url(#gold-grad)" stroke-width="1.1" opacity="0.6" />
+    <!-- 7. Infantil & Próxima Geração: MÉDIO-CURTO (d=52px) -> (57, 130) -->
+    <line x1="57" y1="130" x2="100" y2="100" stroke="url(#liturge-gold)" stroke-width="2.1" stroke-linecap="round" />
 
-    <!-- Hexágono Central Interno (Núcleo Isométrico) -->
-    <polygon points="100,46 128,84 128,116 100,154 72,116 72,84" 
-             stroke="url(#gold-grad)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- 8. Técnica & Áudio: MUITO PRÓXIMO (d=36px) -> (65, 91) -->
+    <line x1="65" y1="91" x2="100" y2="100" stroke="url(#liturge-gold)" stroke-width="3.2" stroke-linecap="round" />
 
-    <!-- Raios do Nó Central (Conexão com os 6 Vértices Centrais) -->
-    <line x1="100" y1="100" x2="100" y2="46" stroke="url(#gold-grad)" stroke-width="1.6" />
-    <line x1="100" y1="100" x2="128" y2="84" stroke="url(#gold-grad)" stroke-width="1.6" />
-    <line x1="100" y1="100" x2="128" y2="116" stroke="url(#gold-grad)" stroke-width="1.6" />
-    <line x1="100" y1="100" x2="100" y2="154" stroke="url(#gold-grad)" stroke-width="1.6" />
-    <line x1="100" y1="100" x2="72" y2="116" stroke="url(#gold-grad)" stroke-width="1.6" />
-    <line x1="100" y1="100" x2="72" y2="84" stroke="url(#gold-grad)" stroke-width="1.6" />
+    <!-- OS 8 PONTOS ESTELARES ESPALHADOS (DISTÂNCIAS E GRANDEZAS VARIADAS) -->
+    <!-- Ponto 1: Louvor & Músicos (d=92px, r=6.2 - Magnitude Grande) -->
+    <circle cx="30" cy="41" r="6.2" fill="#FDE047" />
+    <circle cx="30" cy="41" r="2.8" fill="#FFFFFF" />
 
-    <!-- Arestas Longas Transversais (Estrutura de Tensão) -->
-    <line x1="100" y1="46" x2="100" y2="154" stroke="url(#gold-grad)" stroke-width="1.1" opacity="0.5" stroke-dasharray="2 2" />
-    <line x1="72" y1="84" x2="128" y2="116" stroke="url(#gold-grad)" stroke-width="1.1" opacity="0.4" />
-    <line x1="72" y1="116" x2="128" y2="84" stroke="url(#gold-grad)" stroke-width="1.1" opacity="0.4" />
+    <!-- Ponto 2: Pastoral & Palavra (d=78px, r=5.8 - Magnitude Grande) -->
+    <circle cx="127" cy="27" r="5.8" fill="#FEF08A" />
+    <circle cx="127" cy="27" r="2.6" fill="#FFFFFF" />
 
-    <!-- ================= NÓS LUMINOSOS (VERTICES) ================= -->
-    <!-- Nós Externos Periféricos -->
-    <circle cx="100" cy="22" r="3.2" fill="#FFE082" />
-    <circle cx="100" cy="22" r="5" fill="#FFA000" opacity="0.4" />
+    <!-- Ponto 3: Intercessão / Altar (d=38px, r=4.8 - Magnitude Média, Próxima) -->
+    <circle cx="133" cy="81" r="4.8" fill="#FBBF24" />
+    <circle cx="133" cy="81" r="2.2" fill="#FFFFFF" />
 
-    <circle cx="28" cy="62" r="3" fill="#FFE082" />
-    <circle cx="28" cy="62" r="4.5" fill="#FFA000" opacity="0.4" />
+    <!-- Ponto 4: Transmissão (d=96px, r=4.0 - Magnitude Média-pequena, Distante) -->
+    <circle cx="188" cy="125" r="4.0" fill="#F59E0B" />
+    <circle cx="188" cy="125" r="1.8" fill="#FFFFFF" />
 
-    <circle cx="172" cy="62" r="3" fill="#FFE082" />
-    <circle cx="172" cy="62" r="4.5" fill="#FFA000" opacity="0.4" />
+    <!-- Ponto 5: Projeção & Telão (d=62px, r=5.0 - Magnitude Média) -->
+    <circle cx="136" cy="151" r="5.0" fill="#F59E0B" />
+    <circle cx="136" cy="151" r="2.2" fill="#FFFFFF" />
 
-    <circle cx="28" cy="138" r="3" fill="#FFE082" />
-    <circle cx="28" cy="138" r="4.5" fill="#FFA000" opacity="0.4" />
+    <!-- Ponto 6: Iluminação Cênica (d=88px, r=3.2 - Magnitude Pequena, Distante) -->
+    <circle cx="77" cy="185" r="3.2" fill="#D97706" />
+    <circle cx="77" cy="185" r="1.4" fill="#FFFFFF" />
 
-    <circle cx="172" cy="138" r="3" fill="#FFE082" />
-    <circle cx="172" cy="138" r="4.5" fill="#FFA000" opacity="0.4" />
+    <!-- Ponto 7: Ministério Infantil (d=52px, r=3.6 - Magnitude Pequena-média) -->
+    <circle cx="57" cy="130" r="3.6" fill="#D97706" />
+    <circle cx="57" cy="130" r="1.6" fill="#FFFFFF" />
 
-    <circle cx="100" cy="178" r="3.2" fill="#FFE082" />
-    <circle cx="100" cy="178" r="5" fill="#FFA000" opacity="0.4" />
+    <!-- Ponto 8: Áudio & Som (d=36px, r=5.4 - Magnitude Média-grande, Próxima) -->
+    <circle cx="65" cy="91" r="5.4" fill="#FDE047" />
+    <circle cx="65" cy="91" r="2.4" fill="#FFFFFF" />
 
-    <!-- Nós do Anel Intermediário -->
-    <circle cx="52" cy="68" r="2.8" fill="#FFD54F" />
-    <circle cx="148" cy="68" r="2.8" fill="#FFD54F" />
-    <circle cx="52" cy="132" r="2.8" fill="#FFD54F" />
-    <circle cx="148" cy="132" r="2.8" fill="#FFD54F" />
+    <!-- O PONTO CENTRAL: O CULTO / ALTAR / LITURGE (MAIOR E MAIS BRILHANTE) -->
+    <!-- Aura de dispersão luminosa -->
+    <circle cx="100" cy="100" r="30" fill="url(#liturge-hub-glow)" />
 
-    <!-- Nós do Hexágono Isométrico (Ministérios Primários) -->
-    <circle cx="100" cy="46" r="4" fill="#FFF9C4" />
-    <circle cx="100" cy="46" r="6.5" fill="url(#node-glow)" opacity="0.8" />
+    <!-- Estrela Radiante de 4 Pontas Curvadas (Stella Polaris / Sparkle) -->
+    <path d="M 100,72 Q 100,100 128,100 Q 100,100 100,128 Q 100,100 72,100 Q 100,100 100,72 Z" 
+          fill="#FFFBEB" stroke="#F59E0B" stroke-width="1.2" />
 
-    <circle cx="128" cy="84" r="4" fill="#FFF9C4" />
-    <circle cx="128" cy="84" r="6.5" fill="url(#node-glow)" opacity="0.8" />
-
-    <circle cx="128" cy="116" r="4" fill="#FFF9C4" />
-    <circle cx="128" cy="116" r="6.5" fill="url(#node-glow)" opacity="0.8" />
-
-    <circle cx="100" cy="154" r="4" fill="#FFF9C4" />
-    <circle cx="100" cy="154" r="6.5" fill="url(#node-glow)" opacity="0.8" />
-
-    <circle cx="72" cy="116" r="4" fill="#FFF9C4" />
-    <circle cx="72" cy="116" r="6.5" fill="url(#node-glow)" opacity="0.8" />
-
-    <circle cx="72" cy="84" r="4" fill="#FFF9C4" />
-    <circle cx="72" cy="84" r="6.5" fill="url(#node-glow)" opacity="0.8" />
-
-    <!-- NÓ CENTRAL (O Coração do Culto / Harmonia) -->
-    <circle cx="100" cy="100" r="8" fill="url(#node-glow)" />
-    <circle cx="100" cy="100" r="4.2" fill="#FFFFFF" />
+    <!-- Núcleo solar branco puro -->
+    <circle cx="100" cy="100" r="4.5" fill="#FFFFFF" />
   </g>
 </svg>
