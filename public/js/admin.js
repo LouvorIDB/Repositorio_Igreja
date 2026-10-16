@@ -6713,6 +6713,46 @@ async function buscarTrackNoItunes(termo) {
     return null;
 }
 
+function buscarTrackNoDeezer(termo) {
+    return new Promise((resolve) => {
+        try {
+            const callbackName = 'dz_cb_' + Math.random().toString(36).substring(2, 9);
+            const script = document.createElement('script');
+            script.src = `https://api.deezer.com/search?q=${encodeURIComponent(termo)}&limit=1&output=jsonp&callback=${callbackName}`;
+
+            let timeoutId = setTimeout(() => {
+                if (window[callbackName]) {
+                    delete window[callbackName];
+                    script.remove();
+                    resolve(null);
+                }
+            }, 6000);
+
+            window[callbackName] = (data) => {
+                clearTimeout(timeoutId);
+                delete window[callbackName];
+                script.remove();
+                if (data && data.data && data.data.length > 0 && data.data[0].link) {
+                    resolve(data.data[0].link);
+                } else {
+                    resolve(null);
+                }
+            };
+
+            script.onerror = () => {
+                clearTimeout(timeoutId);
+                delete window[callbackName];
+                script.remove();
+                resolve(null);
+            };
+
+            document.body.appendChild(script);
+        } catch (e) {
+            resolve(null);
+        }
+    });
+}
+
 async function iniciarBuscaAutomaticaLinks() {
     const modal = document.getElementById('modal-curadoria-links-streaming');
     if (!modal) return;
@@ -6788,6 +6828,7 @@ async function iniciarBuscaAutomaticaLinks() {
             queryTermo: queryTermo,
             expanded: false,
             needsItunesLookup: !v0.apple_music_url && !cached.apple_music_url,
+            needsDeezerLookup: !v0.deezer_url && !cached.deezer_url,
             links: {
                 spotify: { url: spotifyUrl, status: spotifyStatus, label: 'Spotify', color: 'emerald' },
                 deezer: { url: deezerUrl, status: deezerStatus, label: 'Deezer', color: 'purple' },
@@ -6801,8 +6842,8 @@ async function iniciarBuscaAutomaticaLinks() {
     window.curadoriaLinksState = state;
     renderizarListaCuradoriaLinks();
 
-    // 3. Consulta em segundo plano no iTunes para obter trackViewUrl exato onde aplicável
-    executarBuscaAssincronaItunes();
+    // 3. Consulta em segundo plano no iTunes e Deezer para obter faixas exatas
+    executarBuscaAssincronaStreaming();
 }
 window.iniciarBuscaAutomaticaLinks = iniciarBuscaAutomaticaLinks;
 
@@ -6812,8 +6853,8 @@ function fecharModalCuradoriaLinks() {
 }
 window.fecharModalCuradoriaLinks = fecharModalCuradoriaLinks;
 
-async function executarBuscaAssincronaItunes() {
-    const pendentes = (window.curadoriaLinksState || []).filter(item => item.needsItunesLookup);
+async function executarBuscaAssincronaStreaming() {
+    const pendentes = (window.curadoriaLinksState || []).filter(item => item.needsItunesLookup || item.needsDeezerLookup);
     if (pendentes.length === 0) return;
 
     const progContainer = document.getElementById('curadoria-progresso-container');
@@ -6828,22 +6869,34 @@ async function executarBuscaAssincronaItunes() {
     for (const item of pendentes) {
         concluidos++;
         const pct = Math.round((concluidos / total) * 100);
-        if (progTexto) progTexto.textContent = `Buscando faixa oficial no iTunes: ${item.title}...`;
+        if (progTexto) progTexto.textContent = `Buscando faixas no iTunes & Deezer: ${item.title}...`;
         if (progContagem) progContagem.textContent = `${pct}% (${concluidos}/${total})`;
 
-        const directTrackUrl = await buscarTrackNoItunes(item.queryTermo);
-        if (directTrackUrl) {
-            item.links.itunes.url = directTrackUrl;
-            // Atualiza input na tela se o elemento existir
-            const inputEl = document.getElementById(`curadoria-input-${item.songId}-itunes`);
-            if (inputEl) inputEl.value = directTrackUrl;
-            const linkTestEl = document.getElementById(`curadoria-testar-${item.songId}-itunes`);
-            if (linkTestEl) linkTestEl.href = directTrackUrl;
+        if (item.needsItunesLookup) {
+            const directTrackUrl = await buscarTrackNoItunes(item.queryTermo);
+            if (directTrackUrl) {
+                item.links.itunes.url = directTrackUrl;
+                const inputEl = document.getElementById(`curadoria-input-${item.songId}-itunes`);
+                if (inputEl) inputEl.value = directTrackUrl;
+                const linkTestEl = document.getElementById(`curadoria-testar-${item.songId}-itunes`);
+                if (linkTestEl) linkTestEl.href = directTrackUrl;
+            }
+            item.needsItunesLookup = false;
         }
 
-        item.needsItunesLookup = false;
-        // Pequena pausa para evitar rate limit
-        await new Promise(r => setTimeout(r, 120));
+        if (item.needsDeezerLookup) {
+            const deezerTrackUrl = await buscarTrackNoDeezer(item.queryTermo);
+            if (deezerTrackUrl) {
+                item.links.deezer.url = deezerTrackUrl;
+                const inputEl = document.getElementById(`curadoria-input-${item.songId}-deezer`);
+                if (inputEl) inputEl.value = deezerTrackUrl;
+                const linkTestEl = document.getElementById(`curadoria-testar-${item.songId}-deezer`);
+                if (linkTestEl) linkTestEl.href = deezerTrackUrl;
+            }
+            item.needsDeezerLookup = false;
+        }
+
+        await new Promise(r => setTimeout(r, 100));
     }
 
     if (progContainer) progContainer.classList.add('hidden');

@@ -1731,6 +1731,50 @@ async function atualizarArtworkMusicaDetalhe(titulo, artista, ytUrl = '') {
     }
 }
 
+function extrairSpotifyEmbedUrl(url) {
+    if (!url) return null;
+    const matchTrack = url.match(/track[/:]([a-zA-Z0-9]+)/);
+    if (matchTrack && matchTrack[1]) {
+        return `https://open.spotify.com/embed/track/${matchTrack[1]}?utm_source=generator&theme=0`;
+    }
+    const matchAlbum = url.match(/album[/:]([a-zA-Z0-9]+)/);
+    if (matchAlbum && matchAlbum[1]) {
+        return `https://open.spotify.com/embed/album/${matchAlbum[1]}?utm_source=generator&theme=0`;
+    }
+    const matchPlaylist = url.match(/playlist[/:]([a-zA-Z0-9]+)/);
+    if (matchPlaylist && matchPlaylist[1]) {
+        return `https://open.spotify.com/embed/playlist/${matchPlaylist[1]}?utm_source=generator&theme=0`;
+    }
+    return null;
+}
+window.extrairSpotifyEmbedUrl = extrairSpotifyEmbedUrl;
+
+function abrirMiniPlayerSpotify(customUrl) {
+    const container = document.getElementById('container-mini-player-spotify');
+    const iframe = document.getElementById('iframe-mini-player-spotify');
+    if (!container || !iframe) return;
+
+    const url = customUrl || (window.musicaAtualDetalhe && (window.musicaAtualDetalhe.spotifyUrl || window.musicaAtualDetalhe.spotify_url));
+    const embedUrl = extrairSpotifyEmbedUrl(url);
+
+    if (embedUrl) {
+        iframe.src = embedUrl;
+        container.classList.remove('hidden');
+        container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else if (url) {
+        window.open(url, '_blank');
+    }
+}
+window.abrirMiniPlayerSpotify = abrirMiniPlayerSpotify;
+
+function fecharMiniPlayerSpotify() {
+    const container = document.getElementById('container-mini-player-spotify');
+    const iframe = document.getElementById('iframe-mini-player-spotify');
+    if (container) container.classList.add('hidden');
+    if (iframe) iframe.src = '';
+}
+window.fecharMiniPlayerSpotify = fecharMiniPlayerSpotify;
+
 function preencherVisaoMusicaDetalhe(musica, options = {}) {
     window.musicaAtualDetalhe = musica;
     window.tomMusicaAtualOriginal = musica.tom || 'C';
@@ -1886,7 +1930,44 @@ function preencherVisaoMusicaDetalhe(musica, options = {}) {
         }
     };
 
-    configurarBotaoPlataforma('btn-musica-link-spotify', musica.spotifyUrl || musica.spotify_url, 'spotify_url');
+    // Configuração Spotify & Mini Player
+    const spotifyUrlFinal = musica.spotifyUrl || musica.spotify_url || (cachedLinks ? cachedLinks.spotify_url : null);
+    const cardSpotify = document.getElementById('card-musica-spotify');
+    const btnLinkSpotify = document.getElementById('btn-musica-link-spotify');
+    const labelSpotifySub = document.getElementById('label-musica-spotify-sub');
+    const btnMiniPlayer = document.getElementById('btn-musica-spotify-tocar-mini');
+    const containerMiniPlayer = document.getElementById('container-mini-player-spotify');
+    const iframeMiniPlayer = document.getElementById('iframe-mini-player-spotify');
+
+    const spotifyEmbedUrl = typeof extrairSpotifyEmbedUrl === 'function' ? extrairSpotifyEmbedUrl(spotifyUrlFinal) : null;
+
+    if (cardSpotify) {
+        if (spotifyUrlFinal && spotifyUrlFinal.trim()) {
+            cardSpotify.classList.remove('opacity-50', 'pointer-events-none');
+            if (btnLinkSpotify) btnLinkSpotify.href = spotifyUrlFinal.trim();
+
+            if (spotifyEmbedUrl) {
+                if (labelSpotifySub) labelSpotifySub.textContent = 'Faixa disponível no Mini Player';
+                if (btnMiniPlayer) btnMiniPlayer.classList.remove('hidden');
+                if (containerMiniPlayer && iframeMiniPlayer) {
+                    iframeMiniPlayer.src = spotifyEmbedUrl;
+                    containerMiniPlayer.classList.remove('hidden');
+                }
+            } else {
+                if (labelSpotifySub) labelSpotifySub.textContent = 'Abrir busca no Spotify';
+                if (btnMiniPlayer) btnMiniPlayer.classList.add('hidden');
+                if (containerMiniPlayer) containerMiniPlayer.classList.add('hidden');
+                if (iframeMiniPlayer) iframeMiniPlayer.src = '';
+            }
+        } else {
+            cardSpotify.classList.add('opacity-50', 'pointer-events-none');
+            if (btnLinkSpotify) btnLinkSpotify.href = '#';
+            if (btnMiniPlayer) btnMiniPlayer.classList.add('hidden');
+            if (containerMiniPlayer) containerMiniPlayer.classList.add('hidden');
+            if (iframeMiniPlayer) iframeMiniPlayer.src = '';
+        }
+    }
+
     configurarBotaoPlataforma('btn-musica-link-deezer', musica.deezerUrl || musica.deezer_url, 'deezer_url');
     configurarBotaoPlataforma('btn-musica-link-apple', musica.appleMusicUrl || musica.apple_music_url, 'apple_music_url');
     configurarBotaoPlataforma('btn-musica-link-cifraclub', musica.cifraclubUrl || musica.cifraclub_url, 'cifraclub_url');
@@ -2046,6 +2127,9 @@ function abrirDetalheMusicaHistorico(musicaData, cultoNome) {
 }
 
 function voltarDeMusicaDetalhe() {
+    if (typeof fecharMiniPlayerSpotify === 'function') {
+        fecharMiniPlayerSpotify();
+    }
     const vMusica = document.getElementById('visao-musica-detalhe');
     if (vMusica) vMusica.classList.add('hidden');
 

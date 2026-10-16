@@ -343,6 +343,31 @@
                 <!-- Seção 2: Links e Ferramentas -->
                 <div class="space-y-3">
                     <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 px-1">Links e Ferramentas</h3>
+
+                    <!-- MINI PLAYER EMBUTIDO SPOTIFY -->
+                    <div id="container-mini-player-spotify" class="hidden space-y-2 p-3 sm:p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 shadow-md animate-fade-in">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                                    Player Spotify
+                                </span>
+                            </div>
+                            <button type="button" onclick="fecharMiniPlayerSpotify()" class="text-xs text-slate-400 hover:text-white transition px-2 py-0.5 rounded-lg hover:bg-slate-800 cursor-pointer">
+                                Ocultar Player ✕
+                            </button>
+                        </div>
+                        <div class="rounded-xl overflow-hidden bg-night-950 border border-slate-800">
+                            <iframe id="iframe-mini-player-spotify" 
+                                style="border-radius:12px; width:100%; border:0;" 
+                                height="152" 
+                                src="" 
+                                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
+                                loading="lazy">
+                            </iframe>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <!-- Ouvir VS no Player Oficial Liturge -->
                         <button type="button" id="btn-musica-ouvir-vs" onclick="tocarVsMusicaAtual()"
@@ -375,19 +400,32 @@
                         </a>
 
                         <!-- Spotify -->
-                        <a id="btn-musica-link-spotify" href="#" target="_blank"
-                            class="p-4 rounded-xl bg-white dark:bg-night-900/80 hover:bg-slate-50 dark:hover:bg-slate-800/60 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white flex items-center justify-between transition group shadow-sm opacity-50 pointer-events-none">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-lg bg-emerald-600/15 text-emerald-500 border border-emerald-500/30 flex items-center justify-center group-hover:scale-105 transition">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 5.524 4.477 10 10 10s10-4.476 10-10c0-5.523-4.477-10-10-10zm4.586 14.424c-.18.295-.563.387-.857.207-2.35-1.434-5.308-1.758-8.793-.963-.335.077-.67-.133-.746-.469-.077-.334.132-.67.467-.747 3.809-.87 7.076-.506 9.722 1.115.293.18.386.564.207.857zm1.224-2.719c-.226.367-.706.482-1.072.257-2.687-1.652-6.785-2.131-9.965-1.166-.413.127-.848-.106-.973-.519-.125-.413.108-.849.52-.973 3.632-1.102 8.147-.568 11.233 1.33.366.224.481.706.257 1.071zm.105-2.835C14.692 8.95 9.375 8.775 6.297 9.71c-.494.15-1.016-.129-1.166-.624-.149-.495.13-1.017.625-1.167 3.532-1.073 9.404-.866 13.115 1.337.445.264.59.838.327 1.282-.264.443-.838.59-1.283.328z"/></svg>
-                                </div>
-                                <div class="text-left">
-                                    <span class="block text-sm font-bold">Ouvir no Spotify</span>
-                                    <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Faixa original ou álbum</span>
+                        <div id="card-musica-spotify"
+                            class="p-4 rounded-xl bg-white dark:bg-night-900/80 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white flex flex-col justify-between transition group shadow-sm opacity-50 pointer-events-none">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 rounded-lg bg-emerald-600/15 text-emerald-500 border border-emerald-500/30 flex items-center justify-center group-hover:scale-105 transition shrink-0">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 5.524 4.477 10 10 10s10-4.476 10-10c0-5.523-4.477-10-10-10zm4.586 14.424c-.18.295-.563.387-.857.207-2.35-1.434-5.308-1.758-8.793-.963-.335.077-.67-.133-.746-.469-.077-.334.132-.67.467-.747 3.809-.87 7.076-.506 9.722 1.115.293.18.386.564.207.857zm1.224-2.719c-.226.367-.706.482-1.072.257-2.687-1.652-6.785-2.131-9.965-1.166-.413.127-.848-.106-.973-.519-.125-.413.108-.849.52-.973 3.632-1.102 8.147-.568 11.233 1.33.366.224.481.706.257 1.071zm.105-2.835C14.692 8.95 9.375 8.775 6.297 9.71c-.494.15-1.016-.129-1.166-.624-.149-.495.13-1.017.625-1.167 3.532-1.073 9.404-.866 13.115 1.337.445.264.59.838.327 1.282-.264.443-.838.59-1.283.328z"/></svg>
+                                    </div>
+                                    <div class="text-left">
+                                        <span class="block text-sm font-bold">Spotify</span>
+                                        <span id="label-musica-spotify-sub" class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Faixa original ou busca</span>
+                                    </div>
                                 </div>
                             </div>
-                            <span class="text-slate-400 group-hover:translate-x-0.5 transition">↗</span>
-                        </a>
+                            <div class="flex items-center gap-2 mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800/80">
+                                <button type="button" id="btn-musica-spotify-tocar-mini" onclick="abrirMiniPlayerSpotify()"
+                                    class="hidden flex-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-night-950 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                    <span>Tocar no Player</span>
+                                </button>
+                                <a id="btn-musica-link-spotify" href="#" target="_blank"
+                                    class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition flex items-center justify-center gap-1 cursor-pointer">
+                                    <span>Abrir Spotify</span>
+                                    <span>↗</span>
+                                </a>
+                            </div>
+                        </div>
 
                         <!-- Deezer -->
                         <a id="btn-musica-link-deezer" href="#" target="_blank"
